@@ -23,6 +23,24 @@ defmodule BracketBattleWeb.Router do
     live "/auth/signin", AuthLive, :index
     get "/auth/verify", AuthController, :verify
     get "/auth/signout", AuthController, :signout
+
+    # Tournament pages
+    live "/tournament/:id", TournamentLive, :index
+    live "/tournament/:id/bracket", BracketEditorLive, :index
+  end
+
+  # Admin routes - require admin user
+  live_session :admin, on_mount: [{BracketBattleWeb.AdminAuth, :ensure_admin}] do
+    scope "/admin", BracketBattleWeb.Admin do
+      pipe_through :browser
+
+      live "/", DashboardLive, :index
+      live "/tournaments", TournamentLive, :index
+      live "/tournaments/new", TournamentLive, :new
+      live "/tournaments/:id", TournamentLive, :edit
+      live "/tournaments/:id/contestants", ContestantsLive, :index
+      live "/tournaments/:id/matchups", MatchupsLive, :index
+    end
   end
 
   # Other scopes may use custom stacks.

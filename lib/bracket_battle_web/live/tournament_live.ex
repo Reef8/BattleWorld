@@ -1,0 +1,600 @@
+defmodule BracketBattleWeb.TournamentLive do
+  @moduledoc """
+  Main tournament page showing the live bracket, voting section, and chat.
+  """
+  use BracketBattleWeb, :live_view
+
+  alias BracketBattle.Accounts
+  alias BracketBattle.Tournaments
+  alias BracketBattle.Brackets
+  alias BracketBattle.Voting
+  alias BracketBattle.Chat
+
+  @impl true
+  def mount(%{"id" => tournament_id}, session, socket) do
+    user = if user_id = session["user_id"] do
+      Accounts.get_user(user_id)
+    end
+
+    tournament = Tournaments.get_tournament!(tournament_id)
+
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}")
+      Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}:votes")
+      Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}:chat")
+
+      # Start countdown timer
+      if tournament.status == "active" do
+        :timer.send_interval(1000, self(), :tick)
+      end
+    end
+
+    # Get user's bracket if they have one
+    user_bracket = if user, do: Brackets.get_user_bracket(tournament_id, user.id)
+    has_bracket = user_bracket && user_bracket.submitted_at
+
+    # Get active matchups for voting
+    active_matchups = if tournament.status == "active" do
+      Tournaments.get_active_matchups(tournament_id)
+      |> load_vote_counts()
+      |> load_user_votes(user)
+    else
+      []
+    end
+
+    # Get all matchups for bracket display
+    all_matchups = Tournaments.get_all_matchups(tournament_id)
+
+    # Get recent chat messages
+    messages = Chat.get_messages(tournament_id, limit: 50)
+
+    {:ok,
+     assign(socket,
+       page_title: tournament.name,
+       current_user: user,
+       tournament: tournament,
+       user_bracket: user_bracket,
+       has_bracket: has_bracket,
+       active_matchups: active_matchups,
+       all_matchups: all_matchups,
+       messages: messages,
+       message_input: "",
+       tab: "bracket"
+     )}
+  end
+
+  defp load_vote_counts(matchups) do
+    Enum.map(matchups, fn matchup ->
+      counts = Voting.get_vote_counts(matchup.id)
+      Map.put(matchup, :vote_counts, counts)
+    end)
+  end
+
+  defp load_user_votes(matchups, nil), do: matchups
+  defp load_user_votes(matchups, user) do
+    Enum.map(matchups, fn matchup ->
+      vote = Voting.get_user_vote(matchup.id, user.id)
+      Map.put(matchup, :user_vote, vote)
+    end)
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="min-h-screen bg-gray-900">
+      <!-- Header -->
+      <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex items-center space-x-4">
+              <a href="/" class="text-gray-400 hover:text-white text-sm">&larr; Home</a>
+              <h1 class="text-xl font-bold text-white"><%= @tournament.name %></h1>
+              <span class={"px-2 py-1 rounded text-xs font-medium #{status_color(@tournament.status)}"}>
+                <%= status_label(@tournament.status) %>
+              </span>
+            </div>
+            <div class="flex items-center space-x-4">
+              <%= if @current_user do %>
+                <%= if @tournament.status == "registration" do %>
+                  <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
+                    <%= if @has_bracket, do: "View Bracket", else: "Fill Bracket" %>
+                  </a>
+                <% end %>
+                <span class="text-gray-400 text-sm"><%= @current_user.display_name || @current_user.email %></span>
+              <% else %>
+                <a href="/auth/signin" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
+                  Sign In
+                </a>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Tab Navigation -->
+      <div class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4">
+          <nav class="flex space-x-4">
+            <button
+              phx-click="switch_tab"
+              phx-value-tab="bracket"
+              class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "bracket", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+            >
+              Bracket
+            </button>
+            <%= if @tournament.status == "active" do %>
+              <button
+                phx-click="switch_tab"
+                phx-value-tab="voting"
+                class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "voting", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+              >
+                Vote
+                <%= if length(@active_matchups) > 0 do %>
+                  <span class="ml-1 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
+                    <%= length(@active_matchups) %>
+                  </span>
+                <% end %>
+              </button>
+            <% end %>
+            <button
+              phx-click="switch_tab"
+              phx-value-tab="leaderboard"
+              class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "leaderboard", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+            >
+              Leaderboard
+            </button>
+            <button
+              phx-click="switch_tab"
+              phx-value-tab="chat"
+              class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "chat", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+            >
+              Chat
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <main class="max-w-7xl mx-auto px-4 py-6">
+        <%= case @tab do %>
+          <% "bracket" -> %>
+            <.bracket_tab matchups={@all_matchups} tournament={@tournament} />
+          <% "voting" -> %>
+            <.voting_tab
+              matchups={@active_matchups}
+              current_user={@current_user}
+              has_bracket={@has_bracket}
+              tournament={@tournament}
+            />
+          <% "leaderboard" -> %>
+            <.leaderboard_tab tournament={@tournament} />
+          <% "chat" -> %>
+            <.chat_tab
+              messages={@messages}
+              current_user={@current_user}
+              message_input={@message_input}
+              tournament={@tournament}
+            />
+        <% end %>
+      </main>
+    </div>
+    """
+  end
+
+  # Bracket Tab - Shows the full tournament bracket
+  defp bracket_tab(assigns) do
+    # Group matchups by round
+    by_round = Enum.group_by(assigns.matchups, & &1.round)
+
+    assigns = assign(assigns, :by_round, by_round)
+
+    ~H"""
+    <div class="space-y-6">
+      <div class="text-center mb-4">
+        <h2 class="text-xl font-bold text-white">Tournament Bracket</h2>
+        <p class="text-gray-400 text-sm">
+          <%= if @tournament.status == "active" do %>
+            Round <%= @tournament.current_round %> in progress
+          <% else %>
+            <%= status_label(@tournament.status) %>
+          <% end %>
+        </p>
+      </div>
+
+      <!-- Simplified bracket view by round -->
+      <div class="overflow-x-auto">
+        <div class="flex gap-4 min-w-[1000px]">
+          <%= for round <- 1..6 do %>
+            <div class="flex-1">
+              <div class="text-center text-sm text-gray-400 mb-2"><%= round_name(round) %></div>
+              <div class="space-y-2">
+                <%= for matchup <- Map.get(@by_round, round, []) |> Enum.sort_by(& &1.position) do %>
+                  <.bracket_matchup matchup={matchup} />
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp bracket_matchup(assigns) do
+    ~H"""
+    <div class={"bg-gray-800 rounded p-2 border #{if @matchup.status == "decided", do: "border-green-700", else: "border-gray-700"}"}>
+      <div class={"flex justify-between items-center py-1 px-2 rounded text-sm #{if @matchup.winner_id == @matchup.contestant_1_id, do: "bg-green-900/30 text-green-400", else: "text-gray-300"}"}>
+        <span>
+          <%= if @matchup.contestant_1 do %>
+            <span class="text-gray-500"><%= @matchup.contestant_1.seed %>.</span>
+            <%= @matchup.contestant_1.name %>
+          <% else %>
+            <span class="text-gray-600 italic">TBD</span>
+          <% end %>
+        </span>
+      </div>
+      <div class={"flex justify-between items-center py-1 px-2 rounded text-sm #{if @matchup.winner_id == @matchup.contestant_2_id, do: "bg-green-900/30 text-green-400", else: "text-gray-300"}"}>
+        <span>
+          <%= if @matchup.contestant_2 do %>
+            <span class="text-gray-500"><%= @matchup.contestant_2.seed %>.</span>
+            <%= @matchup.contestant_2.name %>
+          <% else %>
+            <span class="text-gray-600 italic">TBD</span>
+          <% end %>
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  # Voting Tab
+  defp voting_tab(assigns) do
+    ~H"""
+    <div class="space-y-6">
+      <%= if not @has_bracket do %>
+        <div class="bg-yellow-900/20 border border-yellow-700 rounded-lg p-6 text-center">
+          <p class="text-yellow-400 mb-4">You need to submit a bracket before you can vote!</p>
+          <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded">
+            Fill Out Bracket
+          </a>
+        </div>
+      <% else %>
+        <%= if Enum.empty?(@matchups) do %>
+          <div class="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
+            <p class="text-gray-400">No matchups are currently open for voting.</p>
+          </div>
+        <% else %>
+          <div class="text-center mb-4">
+            <h2 class="text-xl font-bold text-white">Vote on Round <%= @tournament.current_round %></h2>
+            <p class="text-gray-400 text-sm">Click on the contestant you think should win</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <%= for matchup <- @matchups do %>
+              <.voting_card matchup={matchup} current_user={@current_user} />
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp voting_card(assigns) do
+    c1_votes = Map.get(assigns.matchup.vote_counts || %{}, assigns.matchup.contestant_1_id, 0)
+    c2_votes = Map.get(assigns.matchup.vote_counts || %{}, assigns.matchup.contestant_2_id, 0)
+    total = c1_votes + c2_votes
+    c1_pct = if total > 0, do: round(c1_votes / total * 100), else: 50
+    c2_pct = if total > 0, do: round(c2_votes / total * 100), else: 50
+
+    user_voted_for = if assigns.matchup.user_vote, do: assigns.matchup.user_vote.contestant_id
+
+    time_remaining = if assigns.matchup.voting_ends_at do
+      diff = DateTime.diff(assigns.matchup.voting_ends_at, DateTime.utc_now())
+      if diff > 0, do: format_countdown(diff), else: "Voting ended"
+    end
+
+    assigns =
+      assigns
+      |> assign(:c1_votes, c1_votes)
+      |> assign(:c2_votes, c2_votes)
+      |> assign(:c1_pct, c1_pct)
+      |> assign(:c2_pct, c2_pct)
+      |> assign(:total, total)
+      |> assign(:user_voted_for, user_voted_for)
+      |> assign(:time_remaining, time_remaining)
+
+    ~H"""
+    <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <!-- Header with region and timer -->
+      <div class="bg-gray-750 px-3 py-2 flex justify-between items-center border-b border-gray-700">
+        <span class="text-gray-400 text-xs"><%= @matchup.region || "Final Four+" %></span>
+        <span class="text-gray-500 text-xs"><%= @time_remaining %></span>
+      </div>
+
+      <!-- Contestants -->
+      <div class="p-3 space-y-2">
+        <!-- Contestant 1 -->
+        <button
+          phx-click="vote"
+          phx-value-matchup={@matchup.id}
+          phx-value-contestant={@matchup.contestant_1_id}
+          class={"w-full text-left p-3 rounded transition-all #{if @user_voted_for == @matchup.contestant_1_id, do: "bg-purple-600 ring-2 ring-purple-400", else: "bg-gray-700 hover:bg-gray-600"}"}
+        >
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-white text-sm">
+              <span class="text-gray-400"><%= @matchup.contestant_1.seed %>.</span>
+              <%= @matchup.contestant_1.name %>
+            </span>
+            <span class="text-gray-400 text-sm"><%= @c1_pct %>%</span>
+          </div>
+          <div class="w-full bg-gray-600 rounded-full h-1.5">
+            <div class="bg-purple-500 h-1.5 rounded-full transition-all" style={"width: #{@c1_pct}%"}></div>
+          </div>
+        </button>
+
+        <!-- Contestant 2 -->
+        <button
+          phx-click="vote"
+          phx-value-matchup={@matchup.id}
+          phx-value-contestant={@matchup.contestant_2_id}
+          class={"w-full text-left p-3 rounded transition-all #{if @user_voted_for == @matchup.contestant_2_id, do: "bg-purple-600 ring-2 ring-purple-400", else: "bg-gray-700 hover:bg-gray-600"}"}
+        >
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-white text-sm">
+              <span class="text-gray-400"><%= @matchup.contestant_2.seed %>.</span>
+              <%= @matchup.contestant_2.name %>
+            </span>
+            <span class="text-gray-400 text-sm"><%= @c2_pct %>%</span>
+          </div>
+          <div class="w-full bg-gray-600 rounded-full h-1.5">
+            <div class="bg-purple-500 h-1.5 rounded-full transition-all" style={"width: #{@c2_pct}%"}></div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-3 py-2 bg-gray-750 border-t border-gray-700 text-center">
+        <span class="text-gray-500 text-xs"><%= @total %> votes</span>
+      </div>
+    </div>
+    """
+  end
+
+  # Leaderboard Tab
+  defp leaderboard_tab(assigns) do
+    leaderboard = Brackets.get_leaderboard(assigns.tournament.id, limit: 50)
+
+    assigns = assign(assigns, :leaderboard, leaderboard)
+
+    ~H"""
+    <div class="space-y-4">
+      <div class="text-center mb-4">
+        <h2 class="text-xl font-bold text-white">Leaderboard</h2>
+        <p class="text-gray-400 text-sm">Top bracket predictions</p>
+      </div>
+
+      <%= if Enum.empty?(@leaderboard) do %>
+        <div class="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
+          <p class="text-gray-400">No brackets submitted yet.</p>
+        </div>
+      <% else %>
+        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-700 bg-gray-750">
+                <th class="text-left text-gray-400 text-sm font-medium px-4 py-3 w-16">Rank</th>
+                <th class="text-left text-gray-400 text-sm font-medium px-4 py-3">Player</th>
+                <th class="text-right text-gray-400 text-sm font-medium px-4 py-3">Points</th>
+                <th class="text-right text-gray-400 text-sm font-medium px-4 py-3">Correct</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= for entry <- @leaderboard do %>
+                <tr class="border-b border-gray-700 last:border-0 hover:bg-gray-750">
+                  <td class="px-4 py-3">
+                    <span class={"font-bold #{rank_color(entry.rank)}"}><%= entry.rank %></span>
+                  </td>
+                  <td class="px-4 py-3 text-white">
+                    <%= entry.user.display_name || entry.user.email %>
+                  </td>
+                  <td class="px-4 py-3 text-right text-purple-400 font-bold">
+                    <%= entry.total_score %>
+                  </td>
+                  <td class="px-4 py-3 text-right text-gray-400">
+                    <%= entry.correct_picks %>/63
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  # Chat Tab
+  defp chat_tab(assigns) do
+    ~H"""
+    <div class="max-w-2xl mx-auto">
+      <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+        <!-- Chat Header -->
+        <div class="bg-gray-750 px-4 py-3 border-b border-gray-700">
+          <h3 class="text-white font-medium">Tournament Chat</h3>
+        </div>
+
+        <!-- Messages -->
+        <div class="h-96 overflow-y-auto p-4 space-y-3" id="chat-messages" phx-hook="ScrollToBottom">
+          <%= if Enum.empty?(@messages) do %>
+            <p class="text-gray-500 text-center text-sm">No messages yet. Start the conversation!</p>
+          <% else %>
+            <%= for message <- Enum.reverse(@messages) do %>
+              <div class="flex space-x-3">
+                <div class="flex-1">
+                  <div class="flex items-baseline space-x-2">
+                    <span class="text-purple-400 text-sm font-medium">
+                      <%= message.user.display_name || message.user.email %>
+                    </span>
+                    <span class="text-gray-600 text-xs">
+                      <%= format_time(message.inserted_at) %>
+                    </span>
+                  </div>
+                  <p class="text-gray-300 text-sm mt-1"><%= message.content %></p>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+
+        <!-- Input -->
+        <%= if @current_user do %>
+          <form phx-submit="send_message" class="border-t border-gray-700 p-3">
+            <div class="flex space-x-2">
+              <input
+                type="text"
+                name="content"
+                value={@message_input}
+                placeholder="Type a message..."
+                maxlength="500"
+                class="flex-1 bg-gray-700 border-gray-600 text-white rounded px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500"
+                autocomplete="off"
+              />
+              <button
+                type="submit"
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm"
+              >
+                Send
+              </button>
+            </div>
+          </form>
+        <% else %>
+          <div class="border-t border-gray-700 p-4 text-center">
+            <a href="/auth/signin" class="text-purple-400 hover:text-purple-300 text-sm">
+              Sign in to chat
+            </a>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  # Event Handlers
+  @impl true
+  def handle_event("switch_tab", %{"tab" => tab}, socket) do
+    {:noreply, assign(socket, tab: tab)}
+  end
+
+  def handle_event("vote", %{"matchup" => matchup_id, "contestant" => contestant_id}, socket) do
+    if socket.assigns.current_user && socket.assigns.has_bracket do
+      case Voting.cast_vote(matchup_id, socket.assigns.current_user.id, contestant_id) do
+        {:ok, _vote} ->
+          # Reload matchups to show updated vote
+          matchups =
+            Tournaments.get_active_matchups(socket.assigns.tournament.id)
+            |> load_vote_counts()
+            |> load_user_votes(socket.assigns.current_user)
+
+          {:noreply, assign(socket, active_matchups: matchups)}
+
+        {:error, reason} ->
+          {:noreply, put_flash(socket, :error, "Could not vote: #{inspect(reason)}")}
+      end
+    else
+      {:noreply, put_flash(socket, :error, "You must have a submitted bracket to vote")}
+    end
+  end
+
+  def handle_event("send_message", %{"content" => content}, socket) do
+    if socket.assigns.current_user && String.trim(content) != "" do
+      case Chat.send_message(socket.assigns.tournament.id, socket.assigns.current_user.id, content) do
+        {:ok, _message} ->
+          {:noreply, assign(socket, message_input: "")}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Could not send message")}
+      end
+    else
+      {:noreply, socket}
+    end
+  end
+
+  # PubSub Handlers
+  @impl true
+  def handle_info({:vote_cast, %{matchup_id: _, counts: _}}, socket) do
+    # Reload matchups with new vote counts
+    matchups =
+      Tournaments.get_active_matchups(socket.assigns.tournament.id)
+      |> load_vote_counts()
+      |> load_user_votes(socket.assigns.current_user)
+
+    {:noreply, assign(socket, active_matchups: matchups)}
+  end
+
+  def handle_info({:matchup_updated, _matchup}, socket) do
+    all_matchups = Tournaments.get_all_matchups(socket.assigns.tournament.id)
+    active_matchups =
+      Tournaments.get_active_matchups(socket.assigns.tournament.id)
+      |> load_vote_counts()
+      |> load_user_votes(socket.assigns.current_user)
+
+    {:noreply, assign(socket, all_matchups: all_matchups, active_matchups: active_matchups)}
+  end
+
+  def handle_info({:tournament_updated, tournament}, socket) do
+    {:noreply, assign(socket, tournament: tournament)}
+  end
+
+  def handle_info({:new_message, message}, socket) do
+    messages = [message | socket.assigns.messages] |> Enum.take(50)
+    {:noreply, assign(socket, messages: messages)}
+  end
+
+  def handle_info(:tick, socket) do
+    # Force re-render for countdown timers
+    {:noreply, socket}
+  end
+
+  def handle_info(_, socket), do: {:noreply, socket}
+
+  # Helpers
+  defp status_color("draft"), do: "bg-gray-600 text-gray-200"
+  defp status_color("registration"), do: "bg-blue-600 text-blue-100"
+  defp status_color("active"), do: "bg-green-600 text-green-100"
+  defp status_color("completed"), do: "bg-purple-600 text-purple-100"
+  defp status_color(_), do: "bg-gray-600 text-gray-200"
+
+  defp status_label("draft"), do: "Coming Soon"
+  defp status_label("registration"), do: "Registration Open"
+  defp status_label("active"), do: "In Progress"
+  defp status_label("completed"), do: "Completed"
+  defp status_label(_), do: "Unknown"
+
+  defp round_name(1), do: "Round 1"
+  defp round_name(2), do: "Round 2"
+  defp round_name(3), do: "Sweet 16"
+  defp round_name(4), do: "Elite 8"
+  defp round_name(5), do: "Final 4"
+  defp round_name(6), do: "Final"
+
+  defp rank_color(1), do: "text-yellow-400"
+  defp rank_color(2), do: "text-gray-300"
+  defp rank_color(3), do: "text-amber-600"
+  defp rank_color(_), do: "text-gray-400"
+
+  defp format_countdown(seconds) when seconds < 60 do
+    "#{seconds}s"
+  end
+  defp format_countdown(seconds) when seconds < 3600 do
+    "#{div(seconds, 60)}m"
+  end
+  defp format_countdown(seconds) do
+    hours = div(seconds, 3600)
+    mins = div(rem(seconds, 3600), 60)
+    "#{hours}h #{mins}m"
+  end
+
+  defp format_time(datetime) do
+    Calendar.strftime(datetime, "%I:%M %p")
+  end
+end

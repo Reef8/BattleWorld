@@ -2,6 +2,7 @@ defmodule BracketBattleWeb.HomeLive do
   use BracketBattleWeb, :live_view
 
   alias BracketBattle.Accounts
+  alias BracketBattle.Tournaments
 
   @impl true
   def mount(_params, session, socket) do
@@ -9,9 +10,12 @@ defmodule BracketBattleWeb.HomeLive do
       Accounts.get_user(user_id)
     end
 
+    tournament = Tournaments.get_active_tournament()
+
     {:ok,
      assign(socket,
        current_user: user,
+       tournament: tournament,
        page_title: "BracketBattle"
      )}
   end
@@ -30,6 +34,11 @@ defmodule BracketBattleWeb.HomeLive do
 
             <nav class="flex items-center space-x-4">
               <%= if @current_user do %>
+                <%= if @current_user.is_admin do %>
+                  <a href="/admin" class="text-purple-400 hover:text-purple-300 text-sm">
+                    Admin
+                  </a>
+                <% end %>
                 <span class="text-gray-400 text-sm">
                   <%= @current_user.display_name || @current_user.email %>
                 </span>
@@ -63,24 +72,74 @@ defmodule BracketBattleWeb.HomeLive do
 
           <!-- Tournament Status Card -->
           <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 max-w-lg mx-auto">
-            <div class="text-gray-400 text-sm uppercase tracking-wide mb-2">
-              Current Tournament
-            </div>
-            <div class="text-3xl font-bold text-white mb-4">
-              Coming Soon
-            </div>
-            <p class="text-gray-500 mb-6">
-              No active tournament right now. Check back soon for the next battle!
-            </p>
-
-            <%= if @current_user do %>
-              <div class="text-green-400 text-sm">
-                You're signed in and ready to compete!
+            <%= if @tournament do %>
+              <div class="text-gray-400 text-sm uppercase tracking-wide mb-2">
+                <%= status_label(@tournament.status) %>
               </div>
+              <div class="text-3xl font-bold text-white mb-4">
+                <%= @tournament.name %>
+              </div>
+              <p class="text-gray-500 mb-6">
+                <%= @tournament.description || "64 contestants battle it out!" %>
+              </p>
+
+              <%= if @current_user do %>
+                <%= case @tournament.status do %>
+                  <% "registration" -> %>
+                    <div class="space-y-2">
+                      <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        View Tournament
+                      </a>
+                      <div>
+                        <a href={"/tournament/#{@tournament.id}/bracket"} class="text-purple-400 hover:text-purple-300 text-sm">
+                          Fill Out Your Bracket →
+                        </a>
+                      </div>
+                    </div>
+                  <% "active" -> %>
+                    <div class="space-y-2">
+                      <div class="text-green-400 text-sm">Round <%= @tournament.current_round %> voting is open!</div>
+                      <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        Vote Now
+                      </a>
+                    </div>
+                  <% "completed" -> %>
+                    <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                      View Final Bracket
+                    </a>
+                <% end %>
+              <% else %>
+                <div class="space-y-3">
+                  <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    View Tournament
+                  </a>
+                  <div>
+                    <a href="/auth/signin" class="text-purple-400 hover:text-purple-300 text-sm">
+                      Sign in to participate →
+                    </a>
+                  </div>
+                </div>
+              <% end %>
             <% else %>
-              <a href="/auth/signin" class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                Sign In to Get Started
-              </a>
+              <div class="text-gray-400 text-sm uppercase tracking-wide mb-2">
+                Current Tournament
+              </div>
+              <div class="text-3xl font-bold text-white mb-4">
+                Coming Soon
+              </div>
+              <p class="text-gray-500 mb-6">
+                No active tournament right now. Check back soon for the next battle!
+              </p>
+
+              <%= if @current_user do %>
+                <div class="text-green-400 text-sm">
+                  You're signed in and ready to compete!
+                </div>
+              <% else %>
+                <a href="/auth/signin" class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                  Sign In to Get Started
+                </a>
+              <% end %>
             <% end %>
           </div>
 
@@ -127,4 +186,9 @@ defmodule BracketBattleWeb.HomeLive do
     </div>
     """
   end
+
+  defp status_label("registration"), do: "Registration Open"
+  defp status_label("active"), do: "Tournament In Progress"
+  defp status_label("completed"), do: "Tournament Complete"
+  defp status_label(_), do: "Current Tournament"
 end

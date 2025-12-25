@@ -63,7 +63,14 @@ config :phoenix, :json_library, Jason
 # Configure Oban for background jobs
 config :bracket_battle, Oban,
   repo: BracketBattle.Repo,
-  plugins: [Oban.Plugins.Pruner],
+  plugins: [
+    Oban.Plugins.Pruner,
+    # Run CloseVotingWorker every minute to check for expired voting periods
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"* * * * *", BracketBattle.Workers.CloseVotingWorker}
+     ]}
+  ],
   queues: [default: 10, voting: 5, scoring: 5]
 
 # Configure Hammer rate limiter

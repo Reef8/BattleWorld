@@ -43,7 +43,7 @@ defmodule BracketBattle.Tournaments do
   @doc "Create a new tournament (admin only)"
   def create_tournament(attrs, admin_user) do
     %Tournament{}
-    |> Tournament.changeset(Map.put(attrs, :created_by_id, admin_user.id))
+    |> Tournament.changeset(Map.put(attrs, "created_by_id", admin_user.id))
     |> Repo.insert()
   end
 
@@ -139,8 +139,11 @@ defmodule BracketBattle.Tournaments do
 
   @doc "Add contestant to tournament"
   def add_contestant(%Tournament{} = tournament, attrs) do
+    # Convert all keys to strings to avoid mixed key errors
+    string_attrs = for {k, v} <- attrs, into: %{}, do: {to_string(k), v}
+
     %Contestant{}
-    |> Contestant.changeset(Map.put(attrs, :tournament_id, tournament.id))
+    |> Contestant.changeset(Map.put(string_attrs, "tournament_id", tournament.id))
     |> Repo.insert()
   end
 
