@@ -18,11 +18,13 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
      |> assign(page_title: "Matchups - #{tournament.name}")
      |> assign(tournament: tournament)
      |> assign(selected_round: tournament.current_round)
+     |> assign(expanded: MapSet.new())
      |> load_matchups()}
   end
 
   defp load_matchups(socket) do
     round = socket.assigns.selected_round
+    expanded = socket.assigns.expanded
 
     matchups =
       if round > 0 do
@@ -31,11 +33,20 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
         []
       end
 
-    # Get vote counts for each matchup
+    # Get vote counts and voter details for each matchup
     matchups_with_votes =
       Enum.map(matchups, fn matchup ->
         counts = Voting.get_vote_counts(matchup.id)
-        Map.put(matchup, :vote_counts, counts)
+
+        votes = if MapSet.member?(expanded, matchup.id) do
+          Voting.list_votes_for_matchup(matchup.id)
+        else
+          []
+        end
+
+        matchup
+        |> Map.put(:vote_counts, counts)
+        |> Map.put(:votes, votes)
       end)
 
     assign(socket, matchups: matchups_with_votes)
@@ -98,7 +109,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
           <% else %>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <%= for matchup <- @matchups do %>
-                <.matchup_card matchup={matchup} />
+                <.matchup_card matchup={matchup} expanded={MapSet.member?(@expanded, matchup.id)} />
               <% end %>
             </div>
           <% end %>
@@ -206,6 +217,45 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
             <span class="text-gray-500 text-xs">Pending</span>
         <% end %>
       </div>
+
+      <!-- Voters Toggle -->
+      <%= if @total_votes > 0 do %>
+        <div class="px-3 py-2 border-t border-gray-700">
+          <button
+            phx-click="toggle_voters"
+            phx-value-matchup={@matchup.id}
+            class="text-purple-400 hover:text-purple-300 text-xs flex items-center"
+          >
+            <%= if @expanded do %>
+              <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+              </svg>
+              Hide Voters
+            <% else %>
+              <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+              Show Voters (<%= @total_votes %>)
+            <% end %>
+          </button>
+
+          <%= if @expanded and length(@matchup.votes) > 0 do %>
+            <div class="mt-2 pt-2 border-t border-gray-600 max-h-48 overflow-y-auto">
+              <%= for vote <- @matchup.votes do %>
+                <div class="flex justify-between items-center text-xs py-1">
+                  <span class="text-gray-300 truncate flex-1 mr-2">
+                    <%= vote.user.display_name || vote.user.email %>
+                  </span>
+                  <span class={if vote.contestant_id == @matchup.contestant_1_id,
+                    do: "text-blue-400 whitespace-nowrap", else: "text-green-400 whitespace-nowrap"}>
+                    → <%= vote.contestant.name %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     </div>
     """
   end
@@ -215,6 +265,21 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
     {:noreply,
      socket
      |> assign(selected_round: String.to_integer(round))
+     |> load_matchups()}
+  end
+
+  def handle_event("toggle_voters", %{"matchup" => matchup_id}, socket) do
+    expanded = socket.assigns.expanded
+
+    new_expanded = if MapSet.member?(expanded, matchup_id) do
+      MapSet.delete(expanded, matchup_id)
+    else
+      MapSet.put(expanded, matchup_id)
+    end
+
+    {:noreply,
+     socket
+     |> assign(expanded: new_expanded)
      |> load_matchups()}
   end
 

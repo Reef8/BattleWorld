@@ -20,12 +20,19 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
       nil
     end
 
+    brackets = if tournament do
+      Brackets.list_submitted_brackets(tournament.id)
+    else
+      []
+    end
+
     {:ok,
      assign(socket,
        page_title: "Admin Dashboard",
        tournament: tournament,
        all_tournaments: all_tournaments,
-       stats: stats
+       stats: stats,
+       brackets: brackets
      )}
   end
 
@@ -167,6 +174,48 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
             </div>
           <% end %>
         </div>
+
+        <!-- Submitted Brackets -->
+        <%= if @tournament do %>
+          <div class="mb-8">
+            <h2 class="text-lg font-semibold text-white mb-4">
+              Submitted Brackets (<%= length(@brackets) %>)
+            </h2>
+            <%= if Enum.empty?(@brackets) do %>
+              <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 text-center">
+                <p class="text-gray-400">No brackets submitted yet.</p>
+              </div>
+            <% else %>
+              <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <table class="w-full">
+                  <thead class="bg-gray-750">
+                    <tr class="border-b border-gray-700">
+                      <th class="text-left text-gray-400 text-sm font-medium px-4 py-3">User</th>
+                      <th class="text-left text-gray-400 text-sm font-medium px-4 py-3">Submitted</th>
+                      <th class="text-right text-gray-400 text-sm font-medium px-4 py-3">Score</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <%= for bracket <- @brackets do %>
+                      <tr class="border-b border-gray-700 last:border-0 hover:bg-gray-750">
+                        <td class="px-4 py-3 text-white">
+                          <%= bracket.user.display_name || bracket.user.email %>
+                        </td>
+                        <td class="px-4 py-3 text-gray-400 text-sm">
+                          <%= Calendar.strftime(bracket.submitted_at, "%b %d, %I:%M %p") %>
+                        </td>
+                        <td class="px-4 py-3 text-right">
+                          <span class="text-purple-400 font-medium"><%= bracket.total_score %> pts</span>
+                          <span class="text-gray-500 text-sm ml-2">(<%= bracket.correct_picks %> correct)</span>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
 
         <!-- All Tournaments -->
         <div>

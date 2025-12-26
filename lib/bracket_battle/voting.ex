@@ -56,6 +56,15 @@ defmodule BracketBattle.Voting do
     |> Repo.one() > 0
   end
 
+  @doc "List all votes for a matchup with user info"
+  def list_votes_for_matchup(matchup_id) do
+    from(v in Vote,
+      where: v.matchup_id == ^matchup_id,
+      preload: [:user, :contestant]
+    )
+    |> Repo.all()
+  end
+
   @doc "Get total vote count for matchup"
   def get_total_votes(matchup_id) do
     from(v in Vote, where: v.matchup_id == ^matchup_id, select: count())
