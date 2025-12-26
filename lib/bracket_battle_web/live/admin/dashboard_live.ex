@@ -150,6 +150,13 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                       </button>
                     <% "active" -> %>
                       <button
+                        phx-click="end_round_early"
+                        phx-value-id={@tournament.id}
+                        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm"
+                      >
+                        End Round Early
+                      </button>
+                      <button
                         phx-click="advance_round"
                         phx-value-id={@tournament.id}
                         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
@@ -320,6 +327,27 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, "Failed to advance: #{inspect(reason)}")}
+    end
+  end
+
+  def handle_event("end_round_early", %{"id" => id}, socket) do
+    tournament = Tournaments.get_tournament!(id)
+
+    case Tournaments.end_round_early(tournament) do
+      {:ok, {:advanced, updated}} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Round ended! Advanced to round #{updated.current_round}.")
+         |> assign(tournament: updated, stats: update_stats(updated))}
+
+      {:ok, {:ties_pending, tie_ids}} ->
+        {:noreply,
+         socket
+         |> put_flash(:warning, "#{length(tie_ids)} matchup(s) are tied. Please break ties in Matchups page first.")
+         |> assign(tournament: Tournaments.get_tournament!(id), stats: update_stats(tournament))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, "Failed: #{inspect(reason)}")}
     end
   end
 

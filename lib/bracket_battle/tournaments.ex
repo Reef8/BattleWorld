@@ -100,6 +100,37 @@ defmodule BracketBattle.Tournaments do
     |> broadcast_tournament_update()
   end
 
+  @doc "End current round early - tally votes and decide winners"
+  def end_round_early(%Tournament{status: "active", current_round: round} = tournament) do
+    alias BracketBattle.Voting
+
+    Repo.transaction(fn ->
+      # Get all voting matchups for current round
+      matchups = get_matchups_by_round(tournament.id, round)
+                 |> Enum.filter(& &1.status == "voting")
+
+      # Tally each and decide winners (ties left undecided)
+      ties = Enum.reduce(matchups, [], fn matchup, acc ->
+        case Voting.tally_matchup(matchup) do
+          {:ok, _} -> acc
+          {:tie, matchup_id, _, _} -> [matchup_id | acc]
+        end
+      end)
+
+      if Enum.empty?(ties) do
+        # Reload tournament to get fresh state
+        fresh_tournament = get_tournament!(tournament.id)
+        # All decided, advance to next round
+        case advance_round(fresh_tournament) do
+          {:ok, updated} -> {:advanced, updated}
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      else
+        {:ties_pending, ties}
+      end
+    end)
+  end
+
   @doc "Advance to next round after all matchups decided"
   def advance_round(%Tournament{status: "active", current_round: round} = tournament) do
     if all_matchups_decided?(tournament, round) do
