@@ -1085,13 +1085,6 @@ defmodule BracketBattleWeb.TournamentLive do
   defp status_label("completed"), do: "Completed"
   defp status_label(_), do: "Unknown"
 
-  defp round_name(1), do: "Round 1"
-  defp round_name(2), do: "Round 2"
-  defp round_name(3), do: "Sweet 16"
-  defp round_name(4), do: "Elite 8"
-  defp round_name(5), do: "Final 4"
-  defp round_name(6), do: "Final"
-
   defp rank_color(1), do: "text-yellow-400"
   defp rank_color(2), do: "text-gray-300"
   defp rank_color(3), do: "text-amber-600"

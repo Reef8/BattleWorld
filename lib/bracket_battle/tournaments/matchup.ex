@@ -26,15 +26,29 @@ defmodule BracketBattle.Tournaments.Matchup do
     timestamps(type: :utc_datetime)
   end
 
-  def changeset(matchup, attrs) do
+  def changeset(matchup, attrs, tournament \\ nil) do
     matchup
     |> cast(attrs, [:round, :position, :region, :status, :voting_starts_at,
                     :voting_ends_at, :decided_at, :admin_decided,
                     :tournament_id, :contestant_1_id, :contestant_2_id, :winner_id])
     |> validate_required([:round, :position, :tournament_id])
     |> validate_inclusion(:status, @statuses)
-    |> validate_inclusion(:round, 1..6)
+    |> validate_round_for_tournament(tournament)
     |> unique_constraint([:tournament_id, :round, :position])
+  end
+
+  defp validate_round_for_tournament(changeset, nil) do
+    # Fallback to 1-7 (max for 128 contestants) if no tournament provided
+    validate_number(changeset, :round, greater_than_or_equal_to: 1, less_than_or_equal_to: 7)
+  end
+
+  defp validate_round_for_tournament(changeset, %{bracket_size: size}) when is_integer(size) do
+    max_round = trunc(:math.log2(size))
+    validate_number(changeset, :round, greater_than_or_equal_to: 1, less_than_or_equal_to: max_round)
+  end
+
+  defp validate_round_for_tournament(changeset, _) do
+    validate_number(changeset, :round, greater_than_or_equal_to: 1, less_than_or_equal_to: 6)
   end
 
   def statuses, do: @statuses

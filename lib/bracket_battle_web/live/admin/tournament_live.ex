@@ -22,12 +22,22 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
   end
 
   defp apply_action(socket, :new, _params) do
-    changeset = Tournament.changeset(%Tournament{}, %{})
+    tournament = %Tournament{
+      bracket_size: 64,
+      region_count: 4,
+      region_names: Tournament.default_regions()
+    }
+    changeset = Tournament.changeset(tournament, %{})
 
     socket
     |> assign(:page_title, "New Tournament")
-    |> assign(:tournament, %Tournament{})
+    |> assign(:tournament, tournament)
     |> assign(:form, to_form(changeset))
+    |> assign(:show_round_names, false)
+    |> assign(:bracket_size, 64)
+    |> assign(:region_count, 4)
+    |> assign(:region_names, Tournament.default_regions())
+    |> assign(:round_names, %{})
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
@@ -38,6 +48,11 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
     |> assign(:page_title, "Edit: #{tournament.name}")
     |> assign(:tournament, tournament)
     |> assign(:form, to_form(changeset))
+    |> assign(:show_round_names, false)
+    |> assign(:bracket_size, tournament.bracket_size || 64)
+    |> assign(:region_count, tournament.region_count || 4)
+    |> assign(:region_names, tournament.region_names || Tournament.default_regions())
+    |> assign(:round_names, tournament.round_names || %{})
   end
 
   @impl true
@@ -62,7 +77,16 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
         <%= if @live_action == :index do %>
           <.tournament_list tournaments={@all_tournaments} />
         <% else %>
-          <.tournament_form form={@form} tournament={@tournament} action={@live_action} />
+          <.tournament_form
+            form={@form}
+            tournament={@tournament}
+            action={@live_action}
+            bracket_size={@bracket_size}
+            region_count={@region_count}
+            region_names={@region_names}
+            round_names={@round_names}
+            show_round_names={@show_round_names}
+          />
         <% end %>
       </main>
     </div>
@@ -141,9 +165,14 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
   end
 
   defp tournament_form(assigns) do
+    total_rounds = trunc(:math.log2(assigns.bracket_size))
+    contestants_per_region = div(assigns.bracket_size, assigns.region_count)
+    assigns = assign(assigns, :total_rounds, total_rounds)
+    assigns = assign(assigns, :contestants_per_region, contestants_per_region)
+
     ~H"""
     <div class="max-w-2xl">
-      <.form for={@form} phx-submit="save" class="space-y-6">
+      <.form for={@form} phx-submit="save" phx-change="validate" class="space-y-6">
         <div>
           <label class="block text-sm font-medium text-gray-300 mb-2">Tournament Name</label>
           <.input
@@ -192,6 +221,102 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
           </div>
         <% end %>
 
+        <!-- Tournament Configuration -->
+        <%= if !@tournament.id || @tournament.status == "draft" do %>
+          <div class="border-t border-gray-700 pt-6 mt-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Tournament Configuration</h3>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Bracket Size</label>
+                <select
+                  name="tournament[bracket_size]"
+                  phx-change="update_config"
+                  class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2"
+                >
+                  <%= for size <- [8, 16, 32, 64, 128] do %>
+                    <option value={size} selected={@bracket_size == size}>
+                      <%= size %> contestants
+                    </option>
+                  <% end %>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Number of Regions</label>
+                <select
+                  name="tournament[region_count]"
+                  phx-change="update_config"
+                  class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2"
+                >
+                  <%= for count <- valid_region_counts(@bracket_size) do %>
+                    <option value={count} selected={@region_count == count}>
+                      <%= count %> regions (<%= div(@bracket_size, count) %> per region)
+                    </option>
+                  <% end %>
+                </select>
+              </div>
+            </div>
+
+            <p class="text-gray-500 text-sm mb-4">
+              <%= @bracket_size %> contestants / <%= @region_count %> regions = <%= @contestants_per_region %> per region, <%= @total_rounds %> rounds
+            </p>
+
+            <!-- Region Names -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Region Names</label>
+              <div class="grid grid-cols-2 gap-2">
+                <%= for i <- 0..(@region_count - 1) do %>
+                  <input
+                    type="text"
+                    name={"tournament[region_names][#{i}]"}
+                    value={Enum.at(@region_names, i, "Region #{i + 1}")}
+                    placeholder={"Region #{i + 1}"}
+                    class="bg-gray-800 border-gray-600 text-white rounded px-3 py-2 text-sm"
+                  />
+                <% end %>
+              </div>
+            </div>
+
+            <!-- Custom Round Names (Collapsible) -->
+            <div class="mb-4">
+              <button
+                type="button"
+                phx-click="toggle_round_names"
+                class="text-purple-400 hover:text-purple-300 text-sm flex items-center"
+              >
+                <svg class={"w-4 h-4 mr-1 transition-transform #{if @show_round_names, do: "rotate-90"}"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                Custom Round Names
+              </button>
+
+              <%= if @show_round_names do %>
+                <div class="mt-3 space-y-2 pl-5">
+                  <%= for round <- 1..@total_rounds do %>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-gray-400 text-sm w-20">Round <%= round %>:</span>
+                      <input
+                        type="text"
+                        name={"tournament[round_names][#{round}]"}
+                        value={Map.get(@round_names, round) || Map.get(@round_names, to_string(round), "")}
+                        placeholder={default_round_name(round, @total_rounds)}
+                        class="flex-1 bg-gray-800 border-gray-600 text-white rounded px-3 py-2 text-sm"
+                      />
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% else %>
+          <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+            <p class="text-gray-400 text-sm">
+              Configuration locked: <%= @bracket_size %> contestants, <%= @region_count %> regions
+            </p>
+          </div>
+        <% end %>
+
         <div class="flex space-x-4">
           <button
             type="submit"
@@ -216,7 +341,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
               navigate={"/admin/tournaments/#{@tournament.id}/contestants"}
               class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm"
             >
-              Manage Contestants (<%= length(@tournament.contestants) %>/64)
+              Manage Contestants (<%= length(@tournament.contestants) %>/<%= @bracket_size %>)
             </.link>
             <.link
               navigate={"/admin/tournaments/#{@tournament.id}/matchups"}
@@ -233,7 +358,55 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
 
   @impl true
   def handle_event("save", %{"tournament" => params}, socket) do
+    # Process region_names from indexed map to list
+    params = process_region_names(params)
+    # Process round_names similarly
+    params = process_round_names(params)
+
     save_tournament(socket, socket.assigns.live_action, params)
+  end
+
+  def handle_event("validate", %{"tournament" => params}, socket) do
+    params = process_region_names(params)
+    params = process_round_names(params)
+
+    changeset =
+      socket.assigns.tournament
+      |> Tournament.changeset(params)
+      |> Map.put(:action, :validate)
+
+    # Update region_names and round_names assigns to preserve what user typed
+    region_names = params["region_names"] || socket.assigns.region_names
+    round_names = params["round_names"] || socket.assigns.round_names
+
+    {:noreply,
+     socket
+     |> assign(:form, to_form(changeset))
+     |> assign(:region_names, region_names)
+     |> assign(:round_names, round_names)}
+  end
+
+  def handle_event("update_config", %{"tournament" => params}, socket) do
+    bracket_size = String.to_integer(params["bracket_size"] || "64")
+    region_count = String.to_integer(params["region_count"] || "4")
+
+    # Ensure region_count is valid for bracket_size
+    valid_counts = valid_region_counts(bracket_size)
+    region_count = if region_count in valid_counts, do: region_count, else: hd(valid_counts)
+
+    # Adjust region names if count changed
+    current_names = socket.assigns.region_names
+    region_names = adjust_region_names(current_names, region_count)
+
+    {:noreply,
+     socket
+     |> assign(:bracket_size, bracket_size)
+     |> assign(:region_count, region_count)
+     |> assign(:region_names, region_names)}
+  end
+
+  def handle_event("toggle_round_names", _, socket) do
+    {:noreply, assign(socket, :show_round_names, !socket.assigns.show_round_names)}
   end
 
   def handle_event("delete", %{"id" => id}, socket) do
@@ -251,12 +424,41 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
     end
   end
 
+  defp process_region_names(%{"region_names" => names} = params) when is_map(names) do
+    # Convert indexed map to list, filtering out Phoenix's _unused_* keys
+    list = names
+    |> Enum.reject(fn {k, _} -> String.starts_with?(k, "_") end)
+    |> Enum.sort_by(fn {k, _} -> String.to_integer(k) end)
+    |> Enum.map(fn {_, v} -> v end)
+
+    Map.put(params, "region_names", list)
+  end
+  defp process_region_names(params), do: params
+
+  defp process_round_names(%{"round_names" => names} = params) when is_map(names) do
+    # Filter out empty values and Phoenix's _unused_* keys, convert keys to integers
+    cleaned = names
+    |> Enum.reject(fn {k, v} -> v == "" || String.starts_with?(k, "_") end)
+    |> Map.new(fn {k, v} -> {String.to_integer(k), v} end)
+
+    Map.put(params, "round_names", cleaned)
+  end
+  defp process_round_names(params), do: params
+
+  defp adjust_region_names(current, count) when length(current) >= count do
+    Enum.take(current, count)
+  end
+  defp adjust_region_names(current, count) do
+    # Add default names for new regions
+    current ++ Enum.map((length(current) + 1)..count, &"Region #{&1}")
+  end
+
   defp save_tournament(socket, :new, params) do
     case Tournaments.create_tournament(params, socket.assigns.current_user) do
       {:ok, tournament} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Tournament created! Now add 64 contestants.")
+         |> put_flash(:info, "Tournament created! Now add #{tournament.bracket_size} contestants.")
          |> push_navigate(to: "/admin/tournaments/#{tournament.id}/contestants")}
 
       {:error, changeset} ->
@@ -283,4 +485,22 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
   defp status_color("active"), do: "bg-green-600 text-green-100"
   defp status_color("completed"), do: "bg-purple-600 text-purple-100"
   defp status_color(_), do: "bg-gray-600 text-gray-200"
+
+  # Get valid region counts for a bracket size (must divide evenly)
+  defp valid_region_counts(bracket_size) do
+    Enum.filter(2..8, fn count ->
+      rem(bracket_size, count) == 0 && div(bracket_size, count) >= 2
+    end)
+  end
+
+  # Generate default round names based on total rounds
+  defp default_round_name(round, total_rounds) do
+    cond do
+      round == total_rounds -> "Championship"
+      round == total_rounds - 1 -> "Final Four"
+      round == total_rounds - 2 -> "Elite 8"
+      round == total_rounds - 3 -> "Sweet 16"
+      true -> "Round #{round}"
+    end
+  end
 end

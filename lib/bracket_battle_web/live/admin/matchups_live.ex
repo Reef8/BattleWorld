@@ -2,11 +2,13 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
   use BracketBattleWeb, :live_view
 
   alias BracketBattle.Tournaments
+  alias BracketBattle.Tournaments.Tournament
   alias BracketBattle.Voting
 
   @impl true
   def mount(%{"id" => tournament_id}, _session, socket) do
     tournament = Tournaments.get_tournament!(tournament_id)
+    total_rounds = Tournament.total_rounds(tournament)
 
     if connected?(socket) do
       Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}")
@@ -17,6 +19,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
      socket
      |> assign(page_title: "Matchups - #{tournament.name}")
      |> assign(tournament: tournament)
+     |> assign(total_rounds: total_rounds)
      |> assign(selected_round: tournament.current_round)
      |> assign(expanded: MapSet.new())
      |> load_matchups()}
@@ -84,8 +87,8 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
           </div>
         <% else %>
           <!-- Round Selector -->
-          <div class="flex space-x-2 mb-6">
-            <%= for round <- 1..6 do %>
+          <div class="flex flex-wrap gap-2 mb-6">
+            <%= for round <- 1..@total_rounds do %>
               <button
                 phx-click="select_round"
                 phx-value-round={round}
@@ -96,7 +99,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
                   true -> "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 end}"}
               >
-                <%= round_name(round) %>
+                <%= Tournaments.get_round_name(@tournament, round) %>
               </button>
             <% end %>
           </div>
@@ -315,13 +318,6 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
-
-  defp round_name(1), do: "Round 1"
-  defp round_name(2), do: "Round 2"
-  defp round_name(3), do: "Sweet 16"
-  defp round_name(4), do: "Elite 8"
-  defp round_name(5), do: "Final 4"
-  defp round_name(6), do: "Championship"
 
   defp status_color("draft"), do: "bg-gray-600 text-gray-200"
   defp status_color("registration"), do: "bg-blue-600 text-blue-100"

@@ -1,28 +1,56 @@
 defmodule BracketBattle.Scoring do
   @moduledoc """
   Context for bracket scoring using ESPN-style points.
-  Round 1: 10 points, Round 2: 20, Round 3: 40, Round 4: 80, Round 5: 160, Round 6: 320
+  Default: Round 1: 10 points, Round 2: 20, Round 3: 40, Round 4: 80, Round 5: 160, Round 6: 320
+  Supports custom scoring per tournament.
   """
 
   import Ecto.Query
   alias BracketBattle.Repo
   alias BracketBattle.Brackets.UserBracket
   alias BracketBattle.Tournaments
+  alias BracketBattle.Tournaments.Tournament
 
-  # ESPN-style scoring: 10, 20, 40, 80, 160, 320
-  @points_per_round %{
+  # Default ESPN-style scoring: doubles each round
+  @default_points_per_round %{
     1 => 10,
     2 => 20,
     3 => 40,
     4 => 80,
     5 => 160,
-    6 => 320
+    6 => 320,
+    7 => 640
   }
 
-  @doc "Get points for a specific round"
-  def points_for_round(round), do: Map.get(@points_per_round, round, 0)
+  @doc "Get points for a specific round (uses default scoring)"
+  def points_for_round(round), do: Map.get(@default_points_per_round, round, 0)
 
-  @doc "Get max possible score"
+  @doc "Get points for a specific round in a tournament (supports custom scoring)"
+  def points_for_round(%Tournament{} = tournament, round) do
+    custom = Map.get(tournament.scoring_config || %{}, round) ||
+             Map.get(tournament.scoring_config || %{}, to_string(round))
+
+    if custom do
+      custom
+    else
+      # Default: 10 * 2^(round-1)
+      Map.get(@default_points_per_round, round, 10 * trunc(:math.pow(2, round - 1)))
+    end
+  end
+
+  @doc "Get max possible score for a tournament"
+  def max_possible_score(%Tournament{} = tournament) do
+    bracket_size = tournament.bracket_size || 64
+    total_rounds = Tournament.total_rounds(tournament)
+
+    Enum.reduce(1..total_rounds, 0, fn round, acc ->
+      matchups_in_round = div(bracket_size, trunc(:math.pow(2, round)))
+      points = points_for_round(tournament, round)
+      acc + (matchups_in_round * points)
+    end)
+  end
+
+  @doc "Get max possible score (default 64-contestant tournament)"
   def max_possible_score do
     # 32*10 + 16*20 + 8*40 + 4*80 + 2*160 + 1*320 = 1920
     320 + 320 + 320 + 320 + 320 + 320
@@ -42,11 +70,13 @@ defmodule BracketBattle.Scoring do
 
   @doc "Calculate score for single bracket"
   def calculate_and_update_score(%UserBracket{} = bracket, official_results) do
+    tournament = Tournaments.get_tournament!(bracket.tournament_id)
+    total_rounds = Tournament.total_rounds(tournament)
     picks = bracket.picks || %{}
 
-    scores = for round <- 1..6 do
-      round_positions = get_positions_for_round(round)
-      points = @points_per_round[round]
+    scores = for round <- 1..total_rounds do
+      round_positions = get_positions_for_round(tournament, round)
+      points = points_for_round(tournament, round)
 
       correct = Enum.count(round_positions, fn pos ->
         pick = Map.get(picks, to_string(pos))
@@ -60,7 +90,7 @@ defmodule BracketBattle.Scoring do
     round_scores = Map.new(scores, fn {r, pts, _} -> {:"round_#{r}_score", pts} end)
     total_score = Enum.sum(Enum.map(scores, fn {_, pts, _} -> pts end))
     correct_picks = Enum.sum(Enum.map(scores, fn {_, _, c} -> c end))
-    possible = calculate_possible_score(picks, official_results)
+    possible = calculate_possible_score(tournament, picks, official_results)
 
     bracket
     |> UserBracket.score_changeset(
@@ -83,41 +113,37 @@ defmodule BracketBattle.Scoring do
   # ============================================================================
 
   defp get_official_results(tournament_id) do
+    tournament = Tournaments.get_tournament!(tournament_id)
     matchups = Tournaments.get_all_matchups(tournament_id)
 
     matchups
     |> Enum.filter(& &1.winner_id)
-    |> Map.new(fn m -> {matchup_to_position(m), m.winner_id} end)
+    |> Map.new(fn m -> {matchup_to_position(m, tournament), m.winner_id} end)
   end
 
-  defp matchup_to_position(%{round: round, position: pos}) do
-    # Convert round/position to bracket position (1-63)
-    base = case round do
-      1 -> 0
-      2 -> 32
-      3 -> 48
-      4 -> 56
-      5 -> 60
-      6 -> 62
-    end
-    base + pos
+  defp matchup_to_position(%{round: round, position: pos}, tournament) do
+    # Convert round/position to bracket position (1 to total_matchups)
+    bracket_size = tournament.bracket_size || 64
+    base = calculate_base_position(bracket_size, round)
+    base + pos - 1
   end
 
-  defp get_positions_for_round(round) do
-    case round do
-      1 -> Enum.to_list(1..32)
-      2 -> Enum.to_list(33..48)
-      3 -> Enum.to_list(49..56)
-      4 -> Enum.to_list(57..60)
-      5 -> Enum.to_list(61..62)
-      6 -> [63]
-    end
+  # Calculate base position for a round (sum of matchups in all previous rounds)
+  defp calculate_base_position(bracket_size, round) do
+    Enum.reduce(1..(round - 1), 1, fn r, acc ->
+      acc + div(bracket_size, trunc(:math.pow(2, r)))
+    end)
   end
 
-  defp calculate_possible_score(picks, official_results) do
+  defp get_positions_for_round(%Tournament{bracket_size: bracket_size}, round) do
+    base = calculate_base_position(bracket_size || 64, round)
+    matchups = div(bracket_size || 64, trunc(:math.pow(2, round)))
+    Enum.to_list(base..(base + matchups - 1))
+  end
+
+  defp calculate_possible_score(%Tournament{} = tournament, picks, official_results) do
     # Calculate maximum possible remaining score
-    # Start with current score, then add max points for undecided matchups
-    # where the picked contestant is still alive
+    total_rounds = Tournament.total_rounds(tournament)
 
     decided_positions = Map.keys(official_results)
     max_decided_position = if Enum.empty?(decided_positions), do: 0, else: Enum.max(decided_positions)
@@ -125,9 +151,9 @@ defmodule BracketBattle.Scoring do
     # Get eliminated contestants (losers from decided matchups)
     eliminated = get_eliminated_contestants(official_results)
 
-    remaining_score = for round <- 1..6 do
-      positions = get_positions_for_round(round)
-      points = @points_per_round[round]
+    remaining_score = for round <- 1..total_rounds do
+      positions = get_positions_for_round(tournament, round)
+      points = points_for_round(tournament, round)
 
       viable_count = Enum.count(positions, fn pos ->
         pick = Map.get(picks, to_string(pos))

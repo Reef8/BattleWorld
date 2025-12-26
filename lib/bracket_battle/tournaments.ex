@@ -67,9 +67,11 @@ defmodule BracketBattle.Tournaments do
   # TOURNAMENT STATE MACHINE
   # ============================================================================
 
-  @doc "Transition: draft -> registration (after 64 contestants added)"
+  @doc "Transition: draft -> registration (after all contestants added)"
   def open_registration(%Tournament{status: "draft"} = tournament) do
-    if count_contestants(tournament.id) == 64 do
+    expected_count = tournament.bracket_size || 64
+
+    if count_contestants(tournament.id) == expected_count do
       tournament
       |> Tournament.changeset(%{status: "registration"})
       |> Repo.update()
@@ -142,10 +144,12 @@ defmodule BracketBattle.Tournaments do
 
   @doc "Advance to next round after all matchups decided"
   def advance_round(%Tournament{status: "active", current_round: round} = tournament) do
+    total_rounds = Tournament.total_rounds(tournament)
+
     if all_matchups_decided?(tournament, round) do
       next_round = round + 1
 
-      if next_round > 6 do
+      if next_round > total_rounds do
         complete_tournament(tournament)
       else
         Repo.transaction(fn ->
@@ -187,14 +191,14 @@ defmodule BracketBattle.Tournaments do
     string_attrs = for {k, v} <- attrs, into: %{}, do: {to_string(k), v}
 
     %Contestant{}
-    |> Contestant.changeset(Map.put(string_attrs, "tournament_id", tournament.id))
+    |> Contestant.changeset(Map.put(string_attrs, "tournament_id", tournament.id), tournament)
     |> Repo.insert()
   end
 
   @doc "Update contestant"
-  def update_contestant(%Contestant{} = contestant, attrs) do
+  def update_contestant(%Contestant{} = contestant, attrs, tournament \\ nil) do
     contestant
-    |> Contestant.changeset(attrs)
+    |> Contestant.changeset(attrs, tournament)
     |> Repo.update()
   end
 
@@ -275,24 +279,71 @@ defmodule BracketBattle.Tournaments do
   end
 
   # ============================================================================
+  # ROUND NAME HELPERS
+  # ============================================================================
+
+  @doc "Generate default round names based on bracket size"
+  def default_round_names(bracket_size) do
+    total = trunc(:math.log2(bracket_size))
+
+    # Build from the end (Championship) backwards
+    base = %{total => "Championship"}
+
+    base
+    |> maybe_add_round_name(total, 1, "Final Four")
+    |> maybe_add_round_name(total, 2, "Elite 8")
+    |> maybe_add_round_name(total, 3, "Sweet 16")
+    |> fill_remaining_rounds(total)
+  end
+
+  defp maybe_add_round_name(names, total, offset, name) do
+    round = total - offset
+    if round >= 1, do: Map.put(names, round, name), else: names
+  end
+
+  defp fill_remaining_rounds(names, total) do
+    Enum.reduce(1..total, names, fn round, acc ->
+      if Map.has_key?(acc, round), do: acc, else: Map.put(acc, round, "Round #{round}")
+    end)
+  end
+
+  @doc "Get round name for a tournament"
+  def get_round_name(%Tournament{round_names: custom, bracket_size: size}, round) do
+    # Try custom name first (handle both integer and string keys)
+    custom_name = Map.get(custom || %{}, round) || Map.get(custom || %{}, to_string(round))
+
+    if custom_name && custom_name != "" do
+      custom_name
+    else
+      # Fall back to default
+      default_names = default_round_names(size || 64)
+      Map.get(default_names, round, "Round #{round}")
+    end
+  end
+
+  # ============================================================================
   # PRIVATE HELPERS
   # ============================================================================
 
   defp generate_all_matchups(tournament) do
     contestants = list_contestants(tournament.id)
 
+    # Get tournament configuration
+    bracket_size = tournament.bracket_size || 64
+    _region_count = tournament.region_count || 4
+    region_names = tournament.region_names || ["East", "West", "South", "Midwest"]
+    contestants_per_region = Tournament.contestants_per_region(tournament)
+    total_rounds = Tournament.total_rounds(tournament)
+
     # Group by region
     by_region = Enum.group_by(contestants, & &1.region)
 
-    # Generate Round 1 matchups (32 games)
-    # Standard NCAA seeding: 1v16, 8v9, 5v12, 4v13, 6v11, 3v14, 7v10, 2v15
-    seed_pairs = [{1, 16}, {8, 9}, {5, 12}, {4, 13}, {6, 11}, {3, 14}, {7, 10}, {2, 15}]
-
-    regions = ["East", "West", "South", "Midwest"]
+    # Get seeding pattern for this bracket size
+    seed_pairs = seeding_pattern(contestants_per_region)
 
     # Generate Round 1 matchups
     {_, round_1_matchups} =
-      Enum.reduce(regions, {1, []}, fn region, {pos, matchups} ->
+      Enum.reduce(region_names, {1, []}, fn region, {pos, matchups} ->
         region_contestants = Map.get(by_region, region, [])
 
         {new_pos, new_matchups} =
@@ -319,12 +370,19 @@ defmodule BracketBattle.Tournaments do
         {new_pos, new_matchups}
       end)
 
-    # Generate placeholder matchups for rounds 2-6
-    for round <- 2..6 do
-      matchups_in_round = div(64, trunc(:math.pow(2, round)))
+    # Calculate how many rounds have regions (before Final Four equivalent)
+    region_rounds = calculate_region_rounds(contestants_per_region)
+
+    # Generate placeholder matchups for rounds 2+
+    for round <- 2..total_rounds do
+      matchups_in_round = div(bracket_size, trunc(:math.pow(2, round)))
 
       for pos <- 1..matchups_in_round do
-        region = if round <= 4, do: get_region_for_position(round, pos), else: nil
+        region = if round <= region_rounds do
+          get_region_for_position(round, pos, region_names, contestants_per_region)
+        else
+          nil
+        end
 
         %Matchup{}
         |> Matchup.changeset(%{
@@ -341,27 +399,47 @@ defmodule BracketBattle.Tournaments do
     round_1_matchups
   end
 
-  defp get_region_for_position(round, pos) do
-    # For rounds 2-4, determine which region based on position
-    # Each region has: 4 matchups in R2, 2 in R3, 1 in R4
-    regions = ["East", "West", "South", "Midwest"]
+  # Calculate how many rounds have regional matchups
+  defp calculate_region_rounds(contestants_per_region) do
+    # Rounds with regions = log2(contestants_per_region)
+    # e.g., 16 per region = 4 rounds (R1-R4), then Final Four+
+    trunc(:math.log2(contestants_per_region))
+  end
 
-    case round do
-      2 ->
-        # R2: positions 1-4 = East, 5-8 = West, 9-12 = South, 13-16 = Midwest
-        Enum.at(regions, div(pos - 1, 4))
+  defp get_region_for_position(round, pos, region_names, contestants_per_region) do
+    # Calculate matchups per region in this round
+    matchups_per_region = div(contestants_per_region, trunc(:math.pow(2, round)))
 
-      3 ->
-        # R3: positions 1-2 = East, 3-4 = West, 5-6 = South, 7-8 = Midwest
-        Enum.at(regions, div(pos - 1, 2))
-
-      4 ->
-        # R4 (Elite 8): positions 1 = East, 2 = West, 3 = South, 4 = Midwest
-        Enum.at(regions, pos - 1)
-
-      _ ->
-        nil
+    if matchups_per_region >= 1 do
+      region_index = div(pos - 1, matchups_per_region)
+      Enum.at(region_names, region_index)
+    else
+      nil
     end
+  end
+
+  @doc "Get seeding pattern for a given number of contestants per region"
+  def seeding_pattern(contestants_per_region) do
+    case contestants_per_region do
+      2 -> [{1, 2}]
+      4 -> [{1, 4}, {2, 3}]
+      8 -> [{1, 8}, {4, 5}, {3, 6}, {2, 7}]
+      16 -> [{1, 16}, {8, 9}, {5, 12}, {4, 13}, {6, 11}, {3, 14}, {7, 10}, {2, 15}]
+      32 -> generate_seeding_pattern(32)
+      _ -> generate_seeding_pattern(contestants_per_region)
+    end
+  end
+
+  defp generate_seeding_pattern(size) do
+    # Standard bracket seeding: 1 vs size, then recursively fill
+    # This ensures proper bracket placement
+    do_generate_seeds(1, size)
+  end
+
+  defp do_generate_seeds(low, high) when low >= high, do: []
+  defp do_generate_seeds(low, high) do
+    [{low, high}] ++ do_generate_seeds(low + 1, high - 1)
+    |> Enum.take(div(high - low + 1, 2))
   end
 
   defp activate_round(tournament, round) do

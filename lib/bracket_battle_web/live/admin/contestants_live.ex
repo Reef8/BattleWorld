@@ -2,12 +2,18 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
   use BracketBattleWeb, :live_view
 
   alias BracketBattle.Tournaments
-  alias BracketBattle.Tournaments.Contestant
+  alias BracketBattle.Tournaments.{Contestant, Tournament}
 
   @impl true
   def mount(%{"id" => tournament_id}, _session, socket) do
     tournament = Tournaments.get_tournament!(tournament_id)
     contestants = Tournaments.list_contestants(tournament_id)
+
+    # Use tournament's configured regions
+    regions = tournament.region_names || Contestant.default_regions()
+    max_seed = Tournament.max_seed(tournament)
+    contestants_per_region = Tournament.contestants_per_region(tournament)
+    bracket_size = tournament.bracket_size || 64
 
     # Group by region for display
     by_region = Enum.group_by(contestants, & &1.region)
@@ -18,13 +24,16 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
        tournament: tournament,
        contestants: contestants,
        by_region: by_region,
-       regions: Contestant.regions(),
+       regions: regions,
+       max_seed: max_seed,
+       contestants_per_region: contestants_per_region,
+       bracket_size: bracket_size,
        show_form: false,
        show_bulk: false,
        editing: nil,
        form: nil,
        bulk_text: "",
-       bulk_region: "East"
+       bulk_region: hd(regions)
      )}
   end
 
@@ -47,7 +56,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
                 <%= @tournament.status %>
               </span>
               <span class="text-gray-400 text-sm">
-                <%= length(@contestants) %>/64 contestants
+                <%= length(@contestants) %>/<%= @bracket_size %> contestants
               </span>
             </div>
           </div>
@@ -59,12 +68,12 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
         <div class="mb-6">
           <div class="flex justify-between text-sm text-gray-400 mb-1">
             <span>Contestants Added</span>
-            <span><%= length(@contestants) %> / 64</span>
+            <span><%= length(@contestants) %> / <%= @bracket_size %></span>
           </div>
           <div class="w-full bg-gray-700 rounded-full h-2">
             <div
               class="bg-purple-600 h-2 rounded-full transition-all"
-              style={"width: #{length(@contestants) / 64 * 100}%"}
+              style={"width: #{length(@contestants) / @bracket_size * 100}%"}
             ></div>
           </div>
         </div>
@@ -82,7 +91,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
               phx-click="show_bulk"
               class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm"
             >
-              Bulk Import (16 at once)
+              Bulk Import (<%= @contestants_per_region %> at once)
             </button>
           </div>
         <% else %>
@@ -122,12 +131,12 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
               </div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-300 mb-1">Seed (1-16)</label>
+                  <label class="block text-sm font-medium text-gray-300 mb-1">Seed (1-<%= @max_seed %>)</label>
                   <.input
                     field={@form[:seed]}
                     type="number"
                     min="1"
-                    max="16"
+                    max={@max_seed}
                     class="w-full bg-gray-700 border-gray-600 text-white rounded px-3 py-2"
                   />
                 </div>
@@ -158,17 +167,17 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
           <div class="mb-6 bg-gray-800 rounded-lg p-6 border border-gray-700">
             <h3 class="text-lg font-semibold text-white mb-2">Bulk Import - <%= @bulk_region %> Region</h3>
             <p class="text-gray-400 text-sm mb-4">
-              Paste 16 names (one per line). They will be assigned seeds 1-16 in order.
+              Paste <%= @contestants_per_region %> names (one per line). They will be assigned seeds 1-<%= @max_seed %> in order.
             </p>
 
-            <div class="flex space-x-2 mb-4">
+            <div class="flex flex-wrap gap-2 mb-4">
               <%= for region <- @regions do %>
                 <button
                   phx-click="set_bulk_region"
                   phx-value-region={region}
                   class={"px-3 py-1 rounded text-sm #{if @bulk_region == region, do: "bg-purple-600 text-white", else: "bg-gray-700 text-gray-300 hover:bg-gray-600"}"}
                 >
-                  <%= region %> (<%= length(Map.get(@by_region, region, [])) %>/16)
+                  <%= region %> (<%= length(Map.get(@by_region, region, [])) %>/<%= @contestants_per_region %>)
                 </button>
               <% end %>
             </div>
@@ -176,14 +185,14 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
             <form phx-submit="bulk_import">
               <textarea
                 name="names"
-                rows="16"
+                rows={@contestants_per_region}
                 placeholder="Spider-Man&#10;Iron Man&#10;Thor&#10;..."
                 class="w-full bg-gray-700 border-gray-600 text-white rounded px-3 py-2 font-mono text-sm"
               ><%= @bulk_text %></textarea>
 
               <div class="flex space-x-2 mt-4">
                 <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
-                  Import 16 to <%= @bulk_region %>
+                  Import <%= @contestants_per_region %> to <%= @bulk_region %>
                 </button>
                 <button type="button" phx-click="cancel_bulk" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
                   Cancel
@@ -194,18 +203,18 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
         <% end %>
 
         <!-- Contestants by Region -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class={"grid grid-cols-1 md:grid-cols-2 gap-6 #{if length(@regions) > 4, do: "lg:grid-cols-4", else: "lg:grid-cols-#{length(@regions)}"}"}>
           <%= for region <- @regions do %>
             <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
               <div class="bg-gray-750 px-4 py-3 border-b border-gray-700">
                 <div class="flex justify-between items-center">
                   <h3 class="font-semibold text-white"><%= region %></h3>
                   <span class="text-gray-400 text-sm">
-                    <%= length(Map.get(@by_region, region, [])) %>/16
+                    <%= length(Map.get(@by_region, region, [])) %>/<%= @contestants_per_region %>
                   </span>
                 </div>
               </div>
-              <div class="p-2">
+              <div class="p-2 max-h-96 overflow-y-auto">
                 <%= if region_contestants = Map.get(@by_region, region, []) do %>
                   <%= for contestant <- Enum.sort_by(region_contestants, & &1.seed) do %>
                     <div class="flex items-center justify-between p-2 hover:bg-gray-700 rounded">
@@ -234,7 +243,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
                     </div>
                   <% end %>
 
-                  <%= for seed <- 1..16, not Enum.any?(region_contestants, & &1.seed == seed) do %>
+                  <%= for seed <- 1..@max_seed, not Enum.any?(region_contestants, & &1.seed == seed) do %>
                     <div class="flex items-center p-2 text-gray-600">
                       <span class="text-sm w-6"><%= seed %>.</span>
                       <span class="text-sm italic">Empty</span>
@@ -252,7 +261,13 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
 
   @impl true
   def handle_event("show_form", _, socket) do
-    changeset = Contestant.changeset(%Contestant{}, %{region: "East", seed: next_available_seed(socket.assigns.by_region, "East")})
+    first_region = hd(socket.assigns.regions)
+    tournament = socket.assigns.tournament
+    changeset = Contestant.changeset(
+      %Contestant{},
+      %{region: first_region, seed: next_available_seed(socket.assigns.by_region, first_region, socket.assigns.max_seed)},
+      tournament
+    )
     {:noreply, assign(socket, show_form: true, show_bulk: false, form: to_form(changeset), editing: nil)}
   end
 
@@ -274,13 +289,15 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
 
   def handle_event("edit", %{"id" => id}, socket) do
     contestant = Tournaments.get_contestant!(id)
-    changeset = Contestant.changeset(contestant, %{})
+    changeset = Contestant.changeset(contestant, %{}, socket.assigns.tournament)
     {:noreply, assign(socket, show_form: true, show_bulk: false, form: to_form(changeset), editing: contestant)}
   end
 
   def handle_event("save_contestant", %{"contestant" => params}, socket) do
+    tournament = socket.assigns.tournament
+
     if socket.assigns.editing do
-      case Tournaments.update_contestant(socket.assigns.editing, params) do
+      case Tournaments.update_contestant(socket.assigns.editing, params, tournament) do
         {:ok, _} ->
           {:noreply, refresh_contestants(socket) |> assign(show_form: false, editing: nil)}
 
@@ -288,7 +305,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
           {:noreply, assign(socket, form: to_form(changeset))}
       end
     else
-      case Tournaments.add_contestant(socket.assigns.tournament, params) do
+      case Tournaments.add_contestant(tournament, params) do
         {:ok, _} ->
           {:noreply, refresh_contestants(socket) |> put_flash(:info, "Contestant added")}
 
@@ -301,16 +318,17 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
   def handle_event("bulk_import", %{"names" => names_text}, socket) do
     region = socket.assigns.bulk_region
     tournament = socket.assigns.tournament
+    contestants_per_region = socket.assigns.contestants_per_region
 
     names =
       names_text
       |> String.split("\n")
       |> Enum.map(&String.trim/1)
       |> Enum.filter(&(&1 != ""))
-      |> Enum.take(16)
+      |> Enum.take(contestants_per_region)
 
-    if length(names) != 16 do
-      {:noreply, put_flash(socket, :error, "Please provide exactly 16 names (got #{length(names)})")}
+    if length(names) != contestants_per_region do
+      {:noreply, put_flash(socket, :error, "Please provide exactly #{contestants_per_region} names (got #{length(names)})")}
     else
       # Check if region already has contestants
       existing = Map.get(socket.assigns.by_region, region, [])
@@ -318,7 +336,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
       if length(existing) > 0 do
         {:noreply, put_flash(socket, :error, "#{region} region already has contestants. Delete them first.")}
       else
-        # Import all 16
+        # Import all contestants for this region
         results =
           names
           |> Enum.with_index(1)
@@ -338,7 +356,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
            socket
            |> refresh_contestants()
            |> assign(show_bulk: false, bulk_text: "")
-           |> put_flash(:info, "Imported 16 contestants to #{region}")}
+           |> put_flash(:info, "Imported #{contestants_per_region} contestants to #{region}")}
         end
       end
     end
@@ -362,9 +380,9 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
     assign(socket, contestants: contestants, by_region: by_region)
   end
 
-  defp next_available_seed(by_region, region) do
+  defp next_available_seed(by_region, region, max_seed) do
     existing = Map.get(by_region, region, []) |> Enum.map(& &1.seed)
-    Enum.find(1..16, fn s -> s not in existing end) || 1
+    Enum.find(1..max_seed, fn s -> s not in existing end) || 1
   end
 
   defp status_color("draft"), do: "bg-gray-600 text-gray-200"
