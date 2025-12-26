@@ -180,17 +180,33 @@ defmodule BracketBattleWeb.TournamentLive do
     """
   end
 
-  # Bracket Tab - Shows the full tournament bracket
+  # Bracket Tab - ESPN-style bracket with 4 regions converging to Final Four
   defp bracket_tab(assigns) do
-    # Group matchups by round
+    # Group matchups by round and region
     by_round = Enum.group_by(assigns.matchups, & &1.round)
 
-    assigns = assign(assigns, :by_round, by_round)
+    # Separate matchups by region for rounds 1-4
+    east_matchups = get_region_matchups(assigns.matchups, "East")
+    west_matchups = get_region_matchups(assigns.matchups, "West")
+    south_matchups = get_region_matchups(assigns.matchups, "South")
+    midwest_matchups = get_region_matchups(assigns.matchups, "Midwest")
+
+    # Final Four and Championship (rounds 5-6)
+    final_four = Map.get(by_round, 5, []) |> Enum.sort_by(& &1.position)
+    championship = Map.get(by_round, 6, []) |> Enum.sort_by(& &1.position)
+
+    assigns = assigns
+      |> assign(:east_matchups, east_matchups)
+      |> assign(:west_matchups, west_matchups)
+      |> assign(:south_matchups, south_matchups)
+      |> assign(:midwest_matchups, midwest_matchups)
+      |> assign(:final_four, final_four)
+      |> assign(:championship, championship)
 
     ~H"""
-    <div class="space-y-6">
+    <div class="space-y-4">
       <div class="text-center mb-4">
-        <h2 class="text-xl font-bold text-white">Tournament Bracket</h2>
+        <h2 class="text-2xl font-bold text-white">Tournament Bracket</h2>
         <p class="text-gray-400 text-sm">
           <%= if @tournament.status == "active" do %>
             Round <%= @tournament.current_round %> in progress
@@ -200,47 +216,253 @@ defmodule BracketBattleWeb.TournamentLive do
         </p>
       </div>
 
-      <!-- Simplified bracket view by round -->
-      <div class="overflow-x-auto">
-        <div class="flex gap-4 min-w-[1000px]">
-          <%= for round <- 1..6 do %>
+      <!-- ESPN-Style Bracket Layout -->
+      <div class="overflow-x-auto pb-4">
+        <div class="min-w-[1400px]">
+          <!-- Top Half: East (left) and West (right) -->
+          <div class="flex">
+            <!-- EAST REGION - flows left to right -->
             <div class="flex-1">
-              <div class="text-center text-sm text-gray-400 mb-2"><%= round_name(round) %></div>
-              <div class="space-y-2">
-                <%= for matchup <- Map.get(@by_round, round, []) |> Enum.sort_by(& &1.position) do %>
-                  <.bracket_matchup matchup={matchup} />
-                <% end %>
+              <div class="text-center mb-3">
+                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">East</span>
               </div>
+              <.region_bracket_left matchups={@east_matchups} />
             </div>
-          <% end %>
+
+            <!-- CENTER COLUMN - Final Four Top + Championship -->
+            <div class="w-72 flex flex-col items-center justify-end px-4">
+              <!-- Final Four Game 1 (East vs West winners) -->
+              <%= if length(@final_four) > 0 do %>
+                <div class="mb-2">
+                  <div class="text-center text-xs text-gray-500 mb-1">Final Four</div>
+                  <.bracket_matchup_box matchup={Enum.at(@final_four, 0)} />
+                </div>
+              <% end %>
+            </div>
+
+            <!-- WEST REGION - flows right to left -->
+            <div class="flex-1">
+              <div class="text-center mb-3">
+                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">West</span>
+              </div>
+              <.region_bracket_right matchups={@west_matchups} />
+            </div>
+          </div>
+
+          <!-- Championship in Center -->
+          <div class="flex justify-center my-6">
+            <div class="text-center">
+              <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
+              <%= if length(@championship) > 0 do %>
+                <.bracket_matchup_box matchup={Enum.at(@championship, 0)} highlight={true} />
+              <% end %>
+            </div>
+          </div>
+
+          <!-- Bottom Half: South (left) and Midwest (right) -->
+          <div class="flex">
+            <!-- SOUTH REGION - flows left to right -->
+            <div class="flex-1">
+              <div class="text-center mb-3">
+                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">South</span>
+              </div>
+              <.region_bracket_left matchups={@south_matchups} />
+            </div>
+
+            <!-- CENTER COLUMN - Final Four Bottom -->
+            <div class="w-72 flex flex-col items-center justify-start px-4">
+              <!-- Final Four Game 2 (South vs Midwest winners) -->
+              <%= if length(@final_four) > 1 do %>
+                <div class="mt-2">
+                  <div class="text-center text-xs text-gray-500 mb-1">Final Four</div>
+                  <.bracket_matchup_box matchup={Enum.at(@final_four, 1)} />
+                </div>
+              <% end %>
+            </div>
+
+            <!-- MIDWEST REGION - flows right to left -->
+            <div class="flex-1">
+              <div class="text-center mb-3">
+                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">Midwest</span>
+              </div>
+              <.region_bracket_right matchups={@midwest_matchups} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
     """
   end
 
-  defp bracket_matchup(assigns) do
+  # Get matchups for a specific region, grouped by round
+  defp get_region_matchups(matchups, region) do
+    matchups
+    |> Enum.filter(fn m -> m.region == region end)
+    |> Enum.group_by(& &1.round)
+    |> Enum.map(fn {round, ms} -> {round, Enum.sort_by(ms, & &1.position)} end)
+    |> Enum.into(%{})
+  end
+
+  # Left-side region bracket (East, South) - flows left to right
+  defp region_bracket_left(assigns) do
     ~H"""
-    <div class={"bg-gray-800 rounded p-2 border #{if @matchup.status == "decided", do: "border-green-700", else: "border-gray-700"}"}>
-      <div class={"flex justify-between items-center py-1 px-2 rounded text-sm #{if @matchup.winner_id == @matchup.contestant_1_id, do: "bg-green-900/30 text-green-400", else: "text-gray-300"}"}>
-        <span>
-          <%= if @matchup.contestant_1 do %>
-            <span class="text-gray-500"><%= @matchup.contestant_1.seed %>.</span>
-            <%= @matchup.contestant_1.name %>
-          <% else %>
-            <span class="text-gray-600 italic">TBD</span>
-          <% end %>
-        </span>
+    <div class="flex items-center">
+      <!-- Round 1 (8 matchups) -->
+      <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <%= for matchup <- Map.get(@matchups, 1, []) do %>
+          <div class="relative">
+            <.bracket_matchup_box matchup={matchup} size="small" />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
       </div>
-      <div class={"flex justify-between items-center py-1 px-2 rounded text-sm #{if @matchup.winner_id == @matchup.contestant_2_id, do: "bg-green-900/30 text-green-400", else: "text-gray-300"}"}>
-        <span>
-          <%= if @matchup.contestant_2 do %>
-            <span class="text-gray-500"><%= @matchup.contestant_2.seed %>.</span>
-            <%= @matchup.contestant_2.name %>
-          <% else %>
-            <span class="text-gray-600 italic">TBD</span>
-          <% end %>
+
+      <!-- Round 2 (4 matchups) -->
+      <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
+        <%= for matchup <- Map.get(@matchups, 2, []) do %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.bracket_matchup_box matchup={matchup} size="small" />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Sweet 16 (2 matchups) -->
+      <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
+        <%= for matchup <- Map.get(@matchups, 3, []) do %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.bracket_matchup_box matchup={matchup} />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Elite 8 (1 matchup) -->
+      <div class="flex flex-col justify-center ml-3" style="min-height: 640px;">
+        <%= for matchup <- Map.get(@matchups, 4, []) do %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.bracket_matchup_box matchup={matchup} />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  # Right-side region bracket (West, Midwest) - flows right to left
+  defp region_bracket_right(assigns) do
+    ~H"""
+    <div class="flex items-center justify-end">
+      <!-- Elite 8 (1 matchup) -->
+      <div class="flex flex-col justify-center mr-3" style="min-height: 640px;">
+        <%= for matchup <- Map.get(@matchups, 4, []) do %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.bracket_matchup_box matchup={matchup} />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Sweet 16 (2 matchups) -->
+      <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
+        <%= for matchup <- Map.get(@matchups, 3, []) do %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.bracket_matchup_box matchup={matchup} />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Round 2 (4 matchups) -->
+      <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
+        <%= for matchup <- Map.get(@matchups, 2, []) do %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.bracket_matchup_box matchup={matchup} size="small" />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Round 1 (8 matchups) -->
+      <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <%= for matchup <- Map.get(@matchups, 1, []) do %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.bracket_matchup_box matchup={matchup} size="small" />
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  # Individual matchup box component
+  defp bracket_matchup_box(assigns) do
+    assigns = assigns
+      |> Map.put_new(:size, "normal")
+      |> Map.put_new(:highlight, false)
+
+    ~H"""
+    <div class={[
+      "bg-gray-800 border rounded overflow-hidden",
+      @size == "small" && "w-36",
+      @size == "normal" && "w-44",
+      @highlight && "border-yellow-500 ring-1 ring-yellow-500/50",
+      !@highlight && @matchup.status == "decided" && "border-green-600",
+      !@highlight && @matchup.status != "decided" && "border-gray-700"
+    ]}>
+      <!-- Contestant 1 -->
+      <div class={[
+        "flex items-center px-2 py-1 border-b border-gray-700",
+        @matchup.winner_id && @matchup.winner_id == @matchup.contestant_1_id && "bg-green-900/40"
+      ]}>
+        <span class={[
+          "text-xs font-mono w-5",
+          @matchup.winner_id == @matchup.contestant_1_id && "text-green-400",
+          @matchup.winner_id != @matchup.contestant_1_id && "text-gray-500"
+        ]}>
+          <%= if @matchup.contestant_1, do: @matchup.contestant_1.seed, else: "" %>
         </span>
+        <span class={[
+          "text-xs truncate flex-1",
+          @matchup.winner_id == @matchup.contestant_1_id && "text-green-400 font-semibold",
+          @matchup.winner_id != @matchup.contestant_1_id && "text-gray-300"
+        ]}>
+          <%= if @matchup.contestant_1, do: @matchup.contestant_1.name, else: "TBD" %>
+        </span>
+        <%= if @matchup.winner_id == @matchup.contestant_1_id do %>
+          <span class="text-green-400 text-xs">✓</span>
+        <% end %>
+      </div>
+      <!-- Contestant 2 -->
+      <div class={[
+        "flex items-center px-2 py-1",
+        @matchup.winner_id && @matchup.winner_id == @matchup.contestant_2_id && "bg-green-900/40"
+      ]}>
+        <span class={[
+          "text-xs font-mono w-5",
+          @matchup.winner_id == @matchup.contestant_2_id && "text-green-400",
+          @matchup.winner_id != @matchup.contestant_2_id && "text-gray-500"
+        ]}>
+          <%= if @matchup.contestant_2, do: @matchup.contestant_2.seed, else: "" %>
+        </span>
+        <span class={[
+          "text-xs truncate flex-1",
+          @matchup.winner_id == @matchup.contestant_2_id && "text-green-400 font-semibold",
+          @matchup.winner_id != @matchup.contestant_2_id && "text-gray-300"
+        ]}>
+          <%= if @matchup.contestant_2, do: @matchup.contestant_2.name, else: "TBD" %>
+        </span>
+        <%= if @matchup.winner_id == @matchup.contestant_2_id do %>
+          <span class="text-green-400 text-xs">✓</span>
+        <% end %>
       </div>
     </div>
     """
