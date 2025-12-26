@@ -295,13 +295,17 @@ defmodule BracketBattleWeb.TournamentLive do
             </div>
           </div>
 
-          <!-- Championship in Center -->
-          <div class="flex justify-center my-6">
-            <div class="text-center">
-              <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
-              <%= if length(@championship) > 0 do %>
-                <.bracket_matchup_box matchup={Enum.at(@championship, 0)} highlight={true} user_picks={@user_picks} />
-              <% end %>
+          <!-- Championship in Center - uses relative/absolute positioning to align with Final Four -->
+          <div class="relative my-6" style="height: 80px;">
+            <div class="absolute left-[56.5%] -translate-x-1/2">
+              <div class="w-72 flex items-center justify-center px-4">
+                <div class="text-center">
+                  <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
+                  <%= if length(@championship) > 0 do %>
+                    <.bracket_matchup_box matchup={Enum.at(@championship, 0)} highlight={true} user_picks={@user_picks} />
+                  <% end %>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -423,7 +427,7 @@ defmodule BracketBattleWeb.TournamentLive do
           <div class="relative">
             <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
+            <!-- No line on right - this connects to Final Four in center -->
           </div>
         <% end %>
       </div>
@@ -439,7 +443,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex flex-col justify-center" style="min-height: 640px;">
         <%= for matchup <- Map.get(@matchups, 4, []) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
+            <!-- No line on left - this connects to Final Four in center -->
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
@@ -497,6 +501,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex flex-col justify-around" style="min-height: 640px;">
         <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 1, [])) do %>
           <div class="relative">
+            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
             <!-- Horizontal line to connector (toward Round 2) -->
             <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <!-- Vertical connector: pairs connect (0-1, 2-3, 4-5, 6-7) -->
@@ -507,7 +512,6 @@ defmodule BracketBattleWeb.TournamentLive do
               <!-- Bottom of pair - line goes up -->
               <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 40px;"></div>
             <% end %>
-            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
           </div>
         <% end %>
       </div>
@@ -583,21 +587,25 @@ defmodule BracketBattleWeb.TournamentLive do
         "flex items-center px-2 py-1 border-t border-l border-r rounded-t",
         @c1_pick_status == :correct && "bg-green-900/40 border-green-600",
         @c1_pick_status == :incorrect && "bg-red-900/40 border-red-600",
-        @c1_pick_status in [:pending, :no_pick] && "border-gray-700"
+        @c1_pick_status in [:pending, :no_pick] && "border-gray-700",
+        !@matchup.contestant_1 && "justify-center"
       ]}>
-        <span class={[
-          "text-xs font-mono w-5",
-          @c1_pick_status == :correct && "text-green-400",
-          @c1_pick_status == :incorrect && "text-red-400",
-          @c1_pick_status in [:pending, :no_pick] && "text-gray-500"
-        ]}>
-          <%= if @matchup.contestant_1, do: @matchup.contestant_1.seed, else: "" %>
-        </span>
+        <%= if @matchup.contestant_1 do %>
+          <span class={[
+            "text-xs font-mono w-5",
+            @c1_pick_status == :correct && "text-green-400",
+            @c1_pick_status == :incorrect && "text-red-400",
+            @c1_pick_status in [:pending, :no_pick] && "text-gray-500"
+          ]}>
+            <%= @matchup.contestant_1.seed %>
+          </span>
+        <% end %>
         <span class={[
           "text-xs truncate flex-1",
           @c1_pick_status == :correct && "text-green-400 font-semibold",
           @c1_pick_status == :incorrect && "text-red-400",
-          @c1_pick_status in [:pending, :no_pick] && "text-gray-300"
+          @c1_pick_status in [:pending, :no_pick] && "text-gray-300",
+          !@matchup.contestant_1 && "text-center"
         ]}>
           <%= if @matchup.contestant_1, do: @matchup.contestant_1.name, else: "TBD" %>
         </span>
@@ -616,21 +624,25 @@ defmodule BracketBattleWeb.TournamentLive do
         "flex items-center px-2 py-1 border-b border-l border-r rounded-b",
         @c2_pick_status == :correct && "bg-green-900/40 border-green-600",
         @c2_pick_status == :incorrect && "bg-red-900/40 border-red-600",
-        @c2_pick_status in [:pending, :no_pick] && "border-gray-700"
+        @c2_pick_status in [:pending, :no_pick] && "border-gray-700",
+        !@matchup.contestant_2 && "justify-center"
       ]}>
-        <span class={[
-          "text-xs font-mono w-5",
-          @c2_pick_status == :correct && "text-green-400",
-          @c2_pick_status == :incorrect && "text-red-400",
-          @c2_pick_status in [:pending, :no_pick] && "text-gray-500"
-        ]}>
-          <%= if @matchup.contestant_2, do: @matchup.contestant_2.seed, else: "" %>
-        </span>
+        <%= if @matchup.contestant_2 do %>
+          <span class={[
+            "text-xs font-mono w-5",
+            @c2_pick_status == :correct && "text-green-400",
+            @c2_pick_status == :incorrect && "text-red-400",
+            @c2_pick_status in [:pending, :no_pick] && "text-gray-500"
+          ]}>
+            <%= @matchup.contestant_2.seed %>
+          </span>
+        <% end %>
         <span class={[
           "text-xs truncate flex-1",
           @c2_pick_status == :correct && "text-green-400 font-semibold",
           @c2_pick_status == :incorrect && "text-red-400",
-          @c2_pick_status in [:pending, :no_pick] && "text-gray-300"
+          @c2_pick_status in [:pending, :no_pick] && "text-gray-300",
+          !@matchup.contestant_2 && "text-center"
         ]}>
           <%= if @matchup.contestant_2, do: @matchup.contestant_2.name, else: "TBD" %>
         </span>
