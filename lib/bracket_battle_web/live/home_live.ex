@@ -3,6 +3,7 @@ defmodule BracketBattleWeb.HomeLive do
 
   alias BracketBattle.Accounts
   alias BracketBattle.Tournaments
+  alias BracketBattle.Voting
 
   @impl true
   def mount(_params, session, socket) do
@@ -12,10 +13,17 @@ defmodule BracketBattleWeb.HomeLive do
 
     tournament = Tournaments.get_active_tournament()
 
+    has_voted = if user && tournament && tournament.status == "active" do
+      Voting.has_voted_in_round?(tournament.id, user.id, tournament.current_round)
+    else
+      false
+    end
+
     {:ok,
      assign(socket,
        current_user: user,
        tournament: tournament,
+       has_voted: has_voted,
        page_title: "BracketBattle"
      )}
   end
@@ -100,7 +108,7 @@ defmodule BracketBattleWeb.HomeLive do
                     <div class="space-y-2">
                       <div class="text-green-400 text-sm">Round <%= @tournament.current_round %> voting is open!</div>
                       <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                        Vote Now
+                        <%= if @has_voted, do: "View Bracket", else: "Vote Now" %>
                       </a>
                     </div>
                   <% "completed" -> %>

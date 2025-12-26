@@ -71,6 +71,22 @@ defmodule BracketBattle.Voting do
     |> Repo.one()
   end
 
+  @doc "Check if user has voted on all matchups in a round"
+  def has_voted_in_round?(tournament_id, user_id, round) do
+    matchup_count = from(m in Matchup,
+      where: m.tournament_id == ^tournament_id and m.round == ^round,
+      select: count()
+    ) |> Repo.one()
+
+    vote_count = from(v in Vote,
+      join: m in Matchup, on: v.matchup_id == m.id,
+      where: m.tournament_id == ^tournament_id and m.round == ^round and v.user_id == ^user_id,
+      select: count()
+    ) |> Repo.one()
+
+    vote_count > 0 and vote_count == matchup_count
+  end
+
   # ============================================================================
   # VOTE TALLYING (called by Oban job)
   # ============================================================================
