@@ -355,43 +355,75 @@ defmodule BracketBattleWeb.TournamentLive do
     <div class="flex items-center">
       <!-- Round 1 (8 matchups) -->
       <div class="flex flex-col justify-around" style="min-height: 640px;">
-        <%= for matchup <- Map.get(@matchups, 1, []) do %>
+        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 1, [])) do %>
           <div class="relative">
             <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            <!-- Horizontal line to connector -->
+            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
+            <!-- Vertical connector: pairs connect (0-1, 2-3, 4-5, 6-7) -->
+            <%= if rem(idx, 2) == 0 do %>
+              <!-- Top of pair - line goes down -->
+              <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 40px;"></div>
+            <% else %>
+              <!-- Bottom of pair - line goes up -->
+              <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 40px;"></div>
+            <% end %>
           </div>
         <% end %>
       </div>
+
+      <!-- Connector column R1->R2 -->
+      <div class="w-4"></div>
 
       <!-- Round 2 (4 matchups) -->
-      <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
-        <%= for matchup <- Map.get(@matchups, 2, []) do %>
+      <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 2, [])) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <!-- Horizontal line from connector -->
+            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            <!-- Horizontal line to next connector -->
+            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
+            <!-- Vertical connector for pairs -->
+            <%= if rem(idx, 2) == 0 do %>
+              <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 80px;"></div>
+            <% else %>
+              <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 80px;"></div>
+            <% end %>
           </div>
         <% end %>
       </div>
+
+      <!-- Connector column R2->R3 -->
+      <div class="w-4"></div>
 
       <!-- Sweet 16 (2 matchups) -->
-      <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
-        <%= for matchup <- Map.get(@matchups, 3, []) do %>
+      <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 3, [])) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
+            <!-- Vertical connector for pair -->
+            <%= if rem(idx, 2) == 0 do %>
+              <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 160px;"></div>
+            <% else %>
+              <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 160px;"></div>
+            <% end %>
           </div>
         <% end %>
       </div>
 
+      <!-- Connector column R3->R4 -->
+      <div class="w-4"></div>
+
       <!-- Elite 8 (1 matchup) -->
-      <div class="flex flex-col justify-center ml-3" style="min-height: 640px;">
+      <div class="flex flex-col justify-center" style="min-height: 640px;">
         <%= for matchup <- Map.get(@matchups, 4, []) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
       </div>
@@ -404,43 +436,77 @@ defmodule BracketBattleWeb.TournamentLive do
     ~H"""
     <div class="flex items-center justify-end">
       <!-- Elite 8 (1 matchup) -->
-      <div class="flex flex-col justify-center mr-3" style="min-height: 640px;">
+      <div class="flex flex-col justify-center" style="min-height: 640px;">
         <%= for matchup <- Map.get(@matchups, 4, []) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
       </div>
+
+      <!-- Connector column R4<-R3 -->
+      <div class="w-4"></div>
 
       <!-- Sweet 16 (2 matchups) -->
-      <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
-        <%= for matchup <- Map.get(@matchups, 3, []) do %>
+      <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 3, [])) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <!-- Horizontal line to next connector (toward Elite 8) -->
+            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
+            <!-- Vertical connector for pair -->
+            <%= if rem(idx, 2) == 0 do %>
+              <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 160px;"></div>
+            <% else %>
+              <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 160px;"></div>
+            <% end %>
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            <!-- Horizontal line from connector (from Round 2) -->
+            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
       </div>
 
+      <!-- Connector column R3<-R2 -->
+      <div class="w-4"></div>
+
       <!-- Round 2 (4 matchups) -->
-      <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
-        <%= for matchup <- Map.get(@matchups, 2, []) do %>
+      <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 2, [])) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <!-- Horizontal line to next connector (toward Sweet 16) -->
+            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
+            <!-- Vertical connector for pairs -->
+            <%= if rem(idx, 2) == 0 do %>
+              <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 80px;"></div>
+            <% else %>
+              <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 80px;"></div>
+            <% end %>
             <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            <!-- Horizontal line from connector (from Round 1) -->
+            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
       </div>
+
+      <!-- Connector column R2<-R1 -->
+      <div class="w-4"></div>
 
       <!-- Round 1 (8 matchups) -->
       <div class="flex flex-col justify-around" style="min-height: 640px;">
-        <%= for matchup <- Map.get(@matchups, 1, []) do %>
+        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 1, [])) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <!-- Horizontal line to connector (toward Round 2) -->
+            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
+            <!-- Vertical connector: pairs connect (0-1, 2-3, 4-5, 6-7) -->
+            <%= if rem(idx, 2) == 0 do %>
+              <!-- Top of pair - line goes down -->
+              <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 40px;"></div>
+            <% else %>
+              <!-- Bottom of pair - line goes up -->
+              <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 40px;"></div>
+            <% end %>
             <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
           </div>
         <% end %>
