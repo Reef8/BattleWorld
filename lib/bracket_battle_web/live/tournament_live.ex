@@ -507,20 +507,17 @@ defmodule BracketBattleWeb.TournamentLive do
 
     ~H"""
     <div class={[
-      "bg-gray-800 border rounded overflow-hidden",
+      "bg-gray-800 rounded overflow-hidden",
       @size == "small" && "w-36",
       @size == "normal" && "w-44",
-      @highlight && "border-yellow-500 ring-1 ring-yellow-500/50",
-      !@highlight && @has_incorrect && "border-red-600",
-      !@highlight && @has_correct && !@has_incorrect && "border-green-600",
-      !@highlight && !@has_correct && !@has_incorrect && @matchup.status == "decided" && "border-gray-600",
-      !@highlight && !@has_correct && !@has_incorrect && @matchup.status != "decided" && "border-gray-700"
+      @highlight && "border border-yellow-500 ring-1 ring-yellow-500/50"
     ]}>
       <!-- Contestant 1 -->
       <div class={[
-        "flex items-center px-2 py-1 border-b border-gray-700",
-        @c1_pick_status == :correct && "bg-green-900/40",
-        @c1_pick_status == :incorrect && "bg-red-900/40"
+        "flex items-center px-2 py-1 border-t border-l border-r rounded-t",
+        @c1_pick_status == :correct && "bg-green-900/40 border-green-600",
+        @c1_pick_status == :incorrect && "bg-red-900/40 border-red-600",
+        @c1_pick_status in [:pending, :no_pick] && "border-gray-700"
       ]}>
         <span class={[
           "text-xs font-mono w-5",
@@ -546,11 +543,14 @@ defmodule BracketBattleWeb.TournamentLive do
           <% true -> %>
         <% end %>
       </div>
+      <!-- Middle divider - always gray -->
+      <div class="border-t border-gray-700"></div>
       <!-- Contestant 2 -->
       <div class={[
-        "flex items-center px-2 py-1",
-        @c2_pick_status == :correct && "bg-green-900/40",
-        @c2_pick_status == :incorrect && "bg-red-900/40"
+        "flex items-center px-2 py-1 border-b border-l border-r rounded-b",
+        @c2_pick_status == :correct && "bg-green-900/40 border-green-600",
+        @c2_pick_status == :incorrect && "bg-red-900/40 border-red-600",
+        @c2_pick_status in [:pending, :no_pick] && "border-gray-700"
       ]}>
         <span class={[
           "text-xs font-mono w-5",
