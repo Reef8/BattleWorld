@@ -37,3 +37,6 @@ npm-debug.log
 
 # Secrets file (contains API keys)
 /config/secrets.exs
+
+# Environment variables file
+.env
