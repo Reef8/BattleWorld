@@ -13,7 +13,11 @@ defmodule BracketBattle.Tournaments do
 
   @doc "Get the current active tournament (only one at a time)"
   def get_active_tournament do
-    from(t in Tournament, where: t.status in ["registration", "active"])
+    from(t in Tournament,
+      where: t.status in ["registration", "active"],
+      order_by: [desc: t.inserted_at],
+      limit: 1
+    )
     |> Repo.one()
     |> Repo.preload([:contestants, :matchups, :created_by])
   end

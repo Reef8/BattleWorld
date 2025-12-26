@@ -182,6 +182,35 @@ defmodule BracketBattleWeb.TournamentLive do
 
   # Bracket Tab - ESPN-style bracket with 4 regions converging to Final Four
   defp bracket_tab(assigns) do
+    # For tournaments in registration/draft, show message instead of empty bracket
+    if assigns.tournament.status in ["draft", "registration"] do
+      assigns = assign(assigns, :status, assigns.tournament.status)
+      ~H"""
+      <div class="text-center py-12">
+        <div class="text-6xl mb-4">🏆</div>
+        <h2 class="text-2xl font-bold text-white mb-2">Bracket Coming Soon</h2>
+        <p class="text-gray-400 mb-6">
+          <%= if @status == "registration" do %>
+            The bracket will be revealed when the tournament starts.
+            <br/>Fill out your predictions now before it begins!
+          <% else %>
+            The tournament is still being set up.
+          <% end %>
+        </p>
+        <%= if @status == "registration" do %>
+          <a href={"/tournament/#{@tournament.id}/bracket"}
+             class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+            Fill Out Your Bracket →
+          </a>
+        <% end %>
+      </div>
+      """
+    else
+      bracket_tab_content(assigns)
+    end
+  end
+
+  defp bracket_tab_content(assigns) do
     # Group matchups by round and region
     by_round = Enum.group_by(assigns.matchups, & &1.round)
 

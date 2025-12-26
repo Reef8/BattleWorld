@@ -194,7 +194,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
         <!-- Round 1 -->
         <div class="space-y-2">
           <div class="text-xs text-gray-500 text-center mb-2">Round 1</div>
-          <%= for {idx, {seed_a, seed_b}} <- Enum.with_index(@seed_pairs) do %>
+          <%= for {{seed_a, seed_b}, idx} <- Enum.with_index(@seed_pairs) do %>
             <% position = @region_offset + idx + 1 %>
             <.matchup_slot
               position={position}
@@ -258,18 +258,26 @@ defmodule BracketBattleWeb.BracketEditorLive do
   defp matchup_slot(assigns) do
     ~H"""
     <div class="bg-gray-700/50 rounded p-1 space-y-1">
-      <.contestant_button
-        contestant={@contestant_a}
-        position={@position}
-        picks={@picks}
-        is_submitted={@is_submitted}
-      />
-      <.contestant_button
-        contestant={@contestant_b}
-        position={@position}
-        picks={@picks}
-        is_submitted={@is_submitted}
-      />
+      <%= if @contestant_a do %>
+        <.contestant_button
+          contestant={@contestant_a}
+          position={@position}
+          picks={@picks}
+          is_submitted={@is_submitted}
+        />
+      <% else %>
+        <div class="h-6 px-2 py-1 text-xs text-red-500">Missing contestant</div>
+      <% end %>
+      <%= if @contestant_b do %>
+        <.contestant_button
+          contestant={@contestant_b}
+          position={@position}
+          picks={@picks}
+          is_submitted={@is_submitted}
+        />
+      <% else %>
+        <div class="h-6 px-2 py-1 text-xs text-red-500">Missing contestant</div>
+      <% end %>
     </div>
     """
   end
