@@ -383,8 +383,6 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex flex-col justify-around" style="min-height: 640px;">
         <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 2, [])) do %>
           <div class="relative">
-            <!-- Horizontal line from connector -->
-            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
             <!-- Horizontal line to next connector -->
             <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -405,7 +403,6 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex flex-col justify-around" style="min-height: 640px;">
         <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 3, [])) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
             <!-- Vertical connector for pair -->
@@ -425,7 +422,6 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex flex-col justify-center" style="min-height: 640px;">
         <%= for matchup <- Map.get(@matchups, 4, []) do %>
           <div class="relative">
-            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
             <!-- No line on right - this connects to Final Four in center -->
           </div>
