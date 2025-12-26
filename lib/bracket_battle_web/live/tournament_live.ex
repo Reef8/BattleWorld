@@ -48,6 +48,12 @@ defmodule BracketBattleWeb.TournamentLive do
     # Get recent chat messages
     messages = Chat.get_messages(tournament_id, limit: 50)
 
+    # Build pending_votes from existing user votes (using string keys for consistency)
+    pending_votes = active_matchups
+      |> Enum.filter(fn m -> m.user_vote end)
+      |> Enum.map(fn m -> {to_string(m.id), to_string(m.user_vote.contestant_id)} end)
+      |> Enum.into(%{})
+
     {:ok,
      assign(socket,
        page_title: tournament.name,
@@ -59,7 +65,9 @@ defmodule BracketBattleWeb.TournamentLive do
        all_matchups: all_matchups,
        messages: messages,
        message_input: "",
-       tab: "bracket"
+       tab: "bracket",
+       pending_votes: pending_votes,
+       submitted: false
      )}
   end
 
@@ -164,6 +172,8 @@ defmodule BracketBattleWeb.TournamentLive do
               current_user={@current_user}
               has_bracket={@has_bracket}
               tournament={@tournament}
+              pending_votes={@pending_votes}
+              submitted={@submitted}
             />
           <% "leaderboard" -> %>
             <.leaderboard_tab tournament={@tournament} />
@@ -499,9 +509,18 @@ defmodule BracketBattleWeb.TournamentLive do
 
   # Voting Tab
   defp voting_tab(assigns) do
+    votes_cast = map_size(assigns.pending_votes)
+    total_matchups = length(assigns.matchups)
+    all_voted = votes_cast == total_matchups && total_matchups > 0
+
+    assigns = assigns
+      |> assign(:votes_cast, votes_cast)
+      |> assign(:total_matchups, total_matchups)
+      |> assign(:all_voted, all_voted)
+
     ~H"""
     <div class="space-y-6">
-      <%= if not @has_bracket do %>
+      <%= if !@has_bracket do %>
         <div class="bg-yellow-900/20 border border-yellow-700 rounded-lg p-6 text-center">
           <p class="text-yellow-400 mb-4">You need to submit a bracket before you can vote!</p>
           <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded">
@@ -514,6 +533,19 @@ defmodule BracketBattleWeb.TournamentLive do
             <p class="text-gray-400">No matchups are currently open for voting.</p>
           </div>
         <% else %>
+          <!-- Success Banner -->
+          <%= if @submitted do %>
+            <div class="bg-green-900/30 border border-green-600 rounded-lg p-4 mb-6 flex items-center justify-between">
+              <div class="flex items-center">
+                <svg class="w-6 h-6 text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span class="text-green-400 font-medium">Your votes have been submitted!</span>
+              </div>
+              <span class="text-green-400/70 text-sm">You can change your votes until voting ends</span>
+            </div>
+          <% end %>
+
           <div class="text-center mb-4">
             <h2 class="text-xl font-bold text-white">Vote on Round <%= @tournament.current_round %></h2>
             <p class="text-gray-400 text-sm">Click on the contestant you think should win</p>
@@ -521,8 +553,41 @@ defmodule BracketBattleWeb.TournamentLive do
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <%= for matchup <- @matchups do %>
-              <.voting_card matchup={matchup} current_user={@current_user} />
+              <.voting_card matchup={matchup} current_user={@current_user} pending_vote={Map.get(@pending_votes, to_string(matchup.id))} />
             <% end %>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="mt-8 pt-6 border-t border-gray-700">
+            <div class="flex flex-col items-center space-y-4">
+              <div class="text-center">
+                <span class={[
+                  "text-lg font-semibold",
+                  @all_voted && "text-green-400",
+                  !@all_voted && "text-gray-400"
+                ]}>
+                  <%= @votes_cast %>/<%= @total_matchups %> matchups selected
+                </span>
+                <%= if @all_voted do %>
+                  <span class="ml-2 text-green-400">✓</span>
+                <% end %>
+              </div>
+              <button
+                phx-click="submit_votes"
+                phx-disable-with="Submitting..."
+                disabled={@votes_cast == 0}
+                class={[
+                  "px-8 py-3 rounded-lg font-semibold text-lg transition-all",
+                  @votes_cast > 0 && "bg-purple-600 hover:bg-purple-700 text-white cursor-pointer",
+                  @votes_cast == 0 && "bg-gray-700 text-gray-500 cursor-not-allowed"
+                ]}
+              >
+                Submit Votes
+              </button>
+              <p class="text-gray-500 text-sm">
+                You can change your votes until voting ends
+              </p>
+            </div>
           </div>
         <% end %>
       <% end %>
@@ -537,7 +602,8 @@ defmodule BracketBattleWeb.TournamentLive do
     c1_pct = if total > 0, do: round(c1_votes / total * 100), else: 50
     c2_pct = if total > 0, do: round(c2_votes / total * 100), else: 50
 
-    user_voted_for = if assigns.matchup.user_vote, do: assigns.matchup.user_vote.contestant_id
+    # Use pending_vote for highlighting (local selection before submit)
+    selected = assigns.pending_vote
 
     time_remaining = if assigns.matchup.voting_ends_at do
       diff = DateTime.diff(assigns.matchup.voting_ends_at, DateTime.utc_now())
@@ -551,7 +617,7 @@ defmodule BracketBattleWeb.TournamentLive do
       |> assign(:c1_pct, c1_pct)
       |> assign(:c2_pct, c2_pct)
       |> assign(:total, total)
-      |> assign(:user_voted_for, user_voted_for)
+      |> assign(:selected, selected)
       |> assign(:time_remaining, time_remaining)
 
     ~H"""
@@ -566,17 +632,25 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="p-3 space-y-2">
         <!-- Contestant 1 -->
         <button
-          phx-click="vote"
+          phx-click="select_vote"
           phx-value-matchup={@matchup.id}
           phx-value-contestant={@matchup.contestant_1_id}
-          class={"w-full text-left p-3 rounded transition-all #{if @user_voted_for == @matchup.contestant_1_id, do: "bg-purple-600 ring-2 ring-purple-400", else: "bg-gray-700 hover:bg-gray-600"}"}
+          class={[
+            "w-full text-left p-3 rounded transition-all duration-200",
+            is_selected(@selected, @matchup.contestant_1_id) && "bg-purple-600 ring-2 ring-purple-400 scale-[1.02]",
+            !is_selected(@selected, @matchup.contestant_1_id) && "bg-gray-700 hover:bg-gray-600"
+          ]}
         >
           <div class="flex justify-between items-center mb-1">
             <span class="text-white text-sm">
               <span class="text-gray-400"><%= @matchup.contestant_1.seed %>.</span>
               <%= @matchup.contestant_1.name %>
             </span>
-            <span class="text-gray-400 text-sm"><%= @c1_pct %>%</span>
+            <%= if is_selected(@selected, @matchup.contestant_1_id) do %>
+              <span class="text-white font-bold text-xs">SELECTED</span>
+            <% else %>
+              <span class="text-gray-400 text-sm"><%= @c1_pct %>%</span>
+            <% end %>
           </div>
           <div class="w-full bg-gray-600 rounded-full h-1.5">
             <div class="bg-purple-500 h-1.5 rounded-full transition-all" style={"width: #{@c1_pct}%"}></div>
@@ -585,17 +659,25 @@ defmodule BracketBattleWeb.TournamentLive do
 
         <!-- Contestant 2 -->
         <button
-          phx-click="vote"
+          phx-click="select_vote"
           phx-value-matchup={@matchup.id}
           phx-value-contestant={@matchup.contestant_2_id}
-          class={"w-full text-left p-3 rounded transition-all #{if @user_voted_for == @matchup.contestant_2_id, do: "bg-purple-600 ring-2 ring-purple-400", else: "bg-gray-700 hover:bg-gray-600"}"}
+          class={[
+            "w-full text-left p-3 rounded transition-all duration-200",
+            is_selected(@selected, @matchup.contestant_2_id) && "bg-purple-600 ring-2 ring-purple-400 scale-[1.02]",
+            !is_selected(@selected, @matchup.contestant_2_id) && "bg-gray-700 hover:bg-gray-600"
+          ]}
         >
           <div class="flex justify-between items-center mb-1">
             <span class="text-white text-sm">
               <span class="text-gray-400"><%= @matchup.contestant_2.seed %>.</span>
               <%= @matchup.contestant_2.name %>
             </span>
-            <span class="text-gray-400 text-sm"><%= @c2_pct %>%</span>
+            <%= if is_selected(@selected, @matchup.contestant_2_id) do %>
+              <span class="text-white font-bold text-xs">SELECTED</span>
+            <% else %>
+              <span class="text-gray-400 text-sm"><%= @c2_pct %>%</span>
+            <% end %>
           </div>
           <div class="w-full bg-gray-600 rounded-full h-1.5">
             <div class="bg-purple-500 h-1.5 rounded-full transition-all" style={"width: #{@c2_pct}%"}></div>
@@ -736,20 +818,47 @@ defmodule BracketBattleWeb.TournamentLive do
     {:noreply, assign(socket, tab: tab)}
   end
 
-  def handle_event("vote", %{"matchup" => matchup_id, "contestant" => contestant_id}, socket) do
+  # Select a vote locally (doesn't save to database yet)
+  def handle_event("select_vote", %{"matchup" => matchup_id, "contestant" => contestant_id}, socket) do
     if socket.assigns.current_user && socket.assigns.has_bracket do
-      case Voting.cast_vote(matchup_id, socket.assigns.current_user.id, contestant_id) do
-        {:ok, _vote} ->
-          # Reload matchups to show updated vote
-          matchups =
-            Tournaments.get_active_matchups(socket.assigns.tournament.id)
-            |> load_vote_counts()
-            |> load_user_votes(socket.assigns.current_user)
+      # Keep IDs as strings (UUIDs), reset submitted state when changing votes
+      pending_votes = Map.put(socket.assigns.pending_votes, matchup_id, contestant_id)
+      {:noreply, assign(socket, pending_votes: pending_votes, submitted: false)}
+    else
+      {:noreply, put_flash(socket, :error, "You must have a submitted bracket to vote")}
+    end
+  end
 
-          {:noreply, assign(socket, active_matchups: matchups)}
+  # Submit all pending votes to the database
+  def handle_event("submit_votes", _params, socket) do
+    if socket.assigns.current_user && socket.assigns.has_bracket do
+      user_id = socket.assigns.current_user.id
+      pending_votes = socket.assigns.pending_votes
 
-        {:error, reason} ->
-          {:noreply, put_flash(socket, :error, "Could not vote: #{inspect(reason)}")}
+      # Cast each vote
+      results = Enum.map(pending_votes, fn {matchup_id, contestant_id} ->
+        Voting.cast_vote(matchup_id, user_id, contestant_id)
+      end)
+
+      # Check for errors
+      errors = Enum.filter(results, fn
+        {:error, _} -> true
+        _ -> false
+      end)
+
+      if Enum.empty?(errors) do
+        # Reload matchups to show updated vote counts
+        matchups =
+          Tournaments.get_active_matchups(socket.assigns.tournament.id)
+          |> load_vote_counts()
+          |> load_user_votes(socket.assigns.current_user)
+
+        {:noreply,
+         socket
+         |> assign(active_matchups: matchups, submitted: true)
+         |> put_flash(:info, "Votes submitted successfully!")}
+      else
+        {:noreply, put_flash(socket, :error, "Some votes could not be saved. Please try again.")}
       end
     else
       {:noreply, put_flash(socket, :error, "You must have a submitted bracket to vote")}
@@ -847,5 +956,11 @@ defmodule BracketBattleWeb.TournamentLive do
 
   defp format_time(datetime) do
     Calendar.strftime(datetime, "%I:%M %p")
+  end
+
+  # Check if a contestant is selected (handles nil and string comparison)
+  defp is_selected(nil, _), do: false
+  defp is_selected(selected, contestant_id) do
+    to_string(selected) == to_string(contestant_id)
   end
 end

@@ -5,10 +5,8 @@ defmodule BracketBattleWeb.BracketEditorLive do
   alias BracketBattle.Tournaments
   alias BracketBattle.Brackets
 
-  @regions ["East", "West", "South", "Midwest"]
-
-  # Matchup position mapping
-  # Round 1: positions 1-32 (8 per region)
+  # Position mapping for bracket
+  # Round 1: positions 1-32 (8 per region: East 1-8, West 9-16, South 17-24, Midwest 25-32)
   # Round 2: positions 33-48 (4 per region)
   # Sweet 16: positions 49-56 (2 per region)
   # Elite 8: positions 57-60 (1 per region)
@@ -36,6 +34,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
       # Group contestants by region for Round 1
       by_region = Enum.group_by(contestants, & &1.region)
 
+      # Build region data with seed lookups
+      regions_data = build_regions_data(by_region)
+
       {:ok,
        assign(socket,
          page_title: "Fill Bracket - #{tournament.name}",
@@ -44,12 +45,37 @@ defmodule BracketBattleWeb.BracketEditorLive do
          bracket: bracket,
          picks: bracket.picks || %{},
          contestants_map: contestants_map,
-         by_region: by_region,
-         regions: @regions,
+         regions_data: regions_data,
          is_submitted: not is_nil(bracket.submitted_at),
          picks_count: count_picks(bracket.picks || %{})
        )}
     end
+  end
+
+  defp build_regions_data(by_region) do
+    seed_pairs = [{1, 16}, {8, 9}, {5, 12}, {4, 13}, {6, 11}, {3, 14}, {7, 10}, {2, 15}]
+
+    %{
+      "East" => build_region_data(Map.get(by_region, "East", []), seed_pairs, 0),
+      "West" => build_region_data(Map.get(by_region, "West", []), seed_pairs, 8),
+      "South" => build_region_data(Map.get(by_region, "South", []), seed_pairs, 16),
+      "Midwest" => build_region_data(Map.get(by_region, "Midwest", []), seed_pairs, 24)
+    }
+  end
+
+  defp build_region_data(contestants, seed_pairs, offset) do
+    by_seed = Map.new(contestants, fn c -> {c.seed, c} end)
+
+    matchups = Enum.with_index(seed_pairs)
+    |> Enum.map(fn {{seed_a, seed_b}, idx} ->
+      %{
+        position: offset + idx + 1,
+        contestant_a: Map.get(by_seed, seed_a),
+        contestant_b: Map.get(by_seed, seed_b)
+      }
+    end)
+
+    %{matchups: matchups, offset: offset}
   end
 
   @impl true
@@ -62,7 +88,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center space-x-4">
               <a href="/" class="text-gray-400 hover:text-white text-sm">
-                &larr; Home
+                ← Home
               </a>
               <h1 class="text-xl font-bold text-white"><%= @tournament.name %></h1>
             </div>
@@ -104,68 +130,117 @@ defmodule BracketBattleWeb.BracketEditorLive do
         </div>
       <% end %>
 
-      <main class="max-w-7xl mx-auto px-4 py-6">
+      <main class="px-4 py-6">
         <!-- Instructions -->
-        <div class="mb-6 text-center">
+        <div class="mb-4 text-center">
+          <h2 class="text-2xl font-bold text-white mb-2">Fill Your Bracket</h2>
           <p class="text-gray-400 text-sm">
             Click on a contestant to pick them as the winner. Your picks auto-save as you go.
           </p>
         </div>
 
-        <!-- Bracket Grid -->
-        <div class="overflow-x-auto">
-          <div class="min-w-[1200px]">
-            <!-- Regional brackets (2x2 grid) -->
-            <div class="grid grid-cols-2 gap-8 mb-8">
-              <!-- Left side: East and South -->
-              <div class="space-y-8">
-                <.region_bracket
+        <!-- ESPN-Style Bracket Layout -->
+        <div class="overflow-x-auto pb-4">
+          <div class="min-w-[1400px]">
+            <!-- Top Half: East (left) and West (right) -->
+            <div class="flex">
+              <!-- EAST REGION - flows left to right -->
+              <div class="flex-1">
+                <div class="text-center mb-3">
+                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">East</span>
+                </div>
+                <.region_bracket_left
+                  region_data={@regions_data["East"]}
+                  picks={@picks}
+                  contestants_map={@contestants_map}
+                  is_submitted={@is_submitted}
                   region="East"
-                  contestants={Map.get(@by_region, "East", [])}
-                  picks={@picks}
-                  contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
-                  region_offset={0}
-                />
-                <.region_bracket
-                  region="South"
-                  contestants={Map.get(@by_region, "South", [])}
-                  picks={@picks}
-                  contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
-                  region_offset={16}
                 />
               </div>
 
-              <!-- Right side: West and Midwest -->
-              <div class="space-y-8">
-                <.region_bracket
-                  region="West"
-                  contestants={Map.get(@by_region, "West", [])}
+              <!-- CENTER COLUMN - Final Four Top + Championship -->
+              <div class="w-80 flex flex-col items-center justify-end px-4">
+                <.final_four_slot
+                  position={61}
+                  label="Final Four"
+                  source_a={57}
+                  source_b={58}
+                  placeholder_a="East Winner"
+                  placeholder_b="West Winner"
                   picks={@picks}
                   contestants_map={@contestants_map}
                   is_submitted={@is_submitted}
-                  region_offset={8}
                 />
-                <.region_bracket
-                  region="Midwest"
-                  contestants={Map.get(@by_region, "Midwest", [])}
+              </div>
+
+              <!-- WEST REGION - flows right to left -->
+              <div class="flex-1">
+                <div class="text-center mb-3">
+                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">West</span>
+                </div>
+                <.region_bracket_right
+                  region_data={@regions_data["West"]}
                   picks={@picks}
                   contestants_map={@contestants_map}
                   is_submitted={@is_submitted}
-                  region_offset={24}
+                  region="West"
                 />
               </div>
             </div>
 
-            <!-- Final Four and Championship -->
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <h3 class="text-lg font-bold text-white text-center mb-6">Final Four & Championship</h3>
-              <.final_four
+            <!-- Championship in Center -->
+            <div class="flex justify-center my-6">
+              <.championship_slot
                 picks={@picks}
                 contestants_map={@contestants_map}
                 is_submitted={@is_submitted}
               />
+            </div>
+
+            <!-- Bottom Half: South (left) and Midwest (right) -->
+            <div class="flex">
+              <!-- SOUTH REGION - flows left to right -->
+              <div class="flex-1">
+                <div class="text-center mb-3">
+                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">South</span>
+                </div>
+                <.region_bracket_left
+                  region_data={@regions_data["South"]}
+                  picks={@picks}
+                  contestants_map={@contestants_map}
+                  is_submitted={@is_submitted}
+                  region="South"
+                />
+              </div>
+
+              <!-- CENTER COLUMN - Final Four Bottom -->
+              <div class="w-80 flex flex-col items-center justify-start px-4">
+                <.final_four_slot
+                  position={62}
+                  label="Final Four"
+                  source_a={59}
+                  source_b={60}
+                  placeholder_a="South Winner"
+                  placeholder_b="Midwest Winner"
+                  picks={@picks}
+                  contestants_map={@contestants_map}
+                  is_submitted={@is_submitted}
+                />
+              </div>
+
+              <!-- MIDWEST REGION - flows right to left -->
+              <div class="flex-1">
+                <div class="text-center mb-3">
+                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">Midwest</span>
+                </div>
+                <.region_bracket_right
+                  region_data={@regions_data["Midwest"]}
+                  picks={@picks}
+                  contestants_map={@contestants_map}
+                  is_submitted={@is_submitted}
+                  region="Midwest"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -174,273 +249,480 @@ defmodule BracketBattleWeb.BracketEditorLive do
     """
   end
 
-  # Regional bracket component
-  defp region_bracket(assigns) do
-    # Get seed pairs for Round 1 (NCAA style)
-    seed_pairs = [{1, 16}, {8, 9}, {5, 12}, {4, 13}, {6, 11}, {3, 14}, {7, 10}, {2, 15}]
+  # Left-side region bracket (East, South) - flows left to right
+  defp region_bracket_left(assigns) do
+    offset = assigns.region_data.offset
 
-    contestants_by_seed = Map.new(assigns.contestants, fn c -> {c.seed, c} end)
+    # Calculate positions for later rounds
+    r2_base = 32 + div(offset, 2)
+    r3_base = 48 + div(offset, 4)
+    r4_pos = 56 + div(offset, 8) + 1
 
-    assigns =
-      assigns
-      |> assign(:seed_pairs, seed_pairs)
-      |> assign(:contestants_by_seed, contestants_by_seed)
+    assigns = assigns
+      |> assign(:r2_base, r2_base)
+      |> assign(:r3_base, r3_base)
+      |> assign(:r4_pos, r4_pos)
+      |> assign(:offset, offset)
 
     ~H"""
-    <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-      <h3 class="text-lg font-bold text-white mb-4"><%= @region %> Region</h3>
+    <div class="flex items-center">
+      <!-- Round 1 (8 matchups) -->
+      <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <%= for matchup <- @region_data.matchups do %>
+          <div class="relative">
+            <.pick_matchup_box
+              position={matchup.position}
+              contestant_a={matchup.contestant_a}
+              contestant_b={matchup.contestant_b}
+              picks={@picks}
+              is_submitted={@is_submitted}
+              size="small"
+            />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
 
-      <div class="flex gap-4">
-        <!-- Round 1 -->
-        <div class="space-y-2">
-          <div class="text-xs text-gray-500 text-center mb-2">Round 1</div>
-          <%= for {{seed_a, seed_b}, idx} <- Enum.with_index(@seed_pairs) do %>
-            <% position = @region_offset + idx + 1 %>
-            <.matchup_slot
+      <!-- Round 2 (4 matchups) -->
+      <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
+        <%= for idx <- 0..3 do %>
+          <% position = @r2_base + idx + 1 %>
+          <% source_a = @offset + idx * 2 + 1 %>
+          <% source_b = @offset + idx * 2 + 2 %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.pick_matchup_box_from_picks
               position={position}
-              contestant_a={Map.get(@contestants_by_seed, seed_a)}
-              contestant_b={Map.get(@contestants_by_seed, seed_b)}
+              source_a={source_a}
+              source_b={source_b}
+              picks={@picks}
+              contestants_map={@contestants_map}
+              is_submitted={@is_submitted}
+              size="small"
+            />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Sweet 16 (2 matchups) -->
+      <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
+        <%= for idx <- 0..1 do %>
+          <% position = @r3_base + idx + 1 %>
+          <% source_a = @r2_base + idx * 2 + 1 %>
+          <% source_b = @r2_base + idx * 2 + 2 %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.pick_matchup_box_from_picks
+              position={position}
+              source_a={source_a}
+              source_b={source_b}
               picks={@picks}
               contestants_map={@contestants_map}
               is_submitted={@is_submitted}
             />
-          <% end %>
-        </div>
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
 
-        <!-- Round 2 -->
-        <div class="space-y-2 pt-6">
-          <div class="text-xs text-gray-500 text-center mb-2">Round 2</div>
-          <%= for idx <- 0..3 do %>
-            <% position = 32 + div(@region_offset, 2) + idx + 1 %>
-            <.pick_slot
-              position={position}
-              picks={@picks}
-              contestants_map={@contestants_map}
-              is_submitted={@is_submitted}
-              source_positions={[@region_offset + idx * 2 + 1, @region_offset + idx * 2 + 2]}
-            />
-          <% end %>
-        </div>
-
-        <!-- Sweet 16 -->
-        <div class="space-y-2 pt-12">
-          <div class="text-xs text-gray-500 text-center mb-2">Sweet 16</div>
-          <%= for idx <- 0..1 do %>
-            <% position = 48 + div(@region_offset, 4) + idx + 1 %>
-            <.pick_slot
-              position={position}
-              picks={@picks}
-              contestants_map={@contestants_map}
-              is_submitted={@is_submitted}
-              source_positions={[32 + div(@region_offset, 2) + idx * 2 + 1, 32 + div(@region_offset, 2) + idx * 2 + 2]}
-            />
-          <% end %>
-        </div>
-
-        <!-- Elite 8 -->
-        <div class="space-y-2 pt-20">
-          <div class="text-xs text-gray-500 text-center mb-2">Elite 8</div>
-          <% position = 56 + div(@region_offset, 8) + 1 %>
-          <.pick_slot
-            position={position}
+      <!-- Elite 8 (1 matchup) -->
+      <div class="flex flex-col justify-center ml-3" style="min-height: 640px;">
+        <div class="relative">
+          <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+          <.pick_matchup_box_from_picks
+            position={@r4_pos}
+            source_a={@r3_base + 1}
+            source_b={@r3_base + 2}
             picks={@picks}
             contestants_map={@contestants_map}
             is_submitted={@is_submitted}
-            source_positions={[48 + div(@region_offset, 4) + 1, 48 + div(@region_offset, 4) + 2]}
           />
+          <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
         </div>
       </div>
     </div>
     """
   end
 
-  # Round 1 matchup slot with two known contestants
-  defp matchup_slot(assigns) do
+  # Right-side region bracket (West, Midwest) - flows right to left
+  defp region_bracket_right(assigns) do
+    offset = assigns.region_data.offset
+
+    # Calculate positions for later rounds
+    r2_base = 32 + div(offset, 2)
+    r3_base = 48 + div(offset, 4)
+    r4_pos = 56 + div(offset, 8) + 1
+
+    assigns = assigns
+      |> assign(:r2_base, r2_base)
+      |> assign(:r3_base, r3_base)
+      |> assign(:r4_pos, r4_pos)
+      |> assign(:offset, offset)
+
     ~H"""
-    <div class="bg-gray-700/50 rounded p-1 space-y-1">
-      <%= if @contestant_a do %>
-        <.contestant_button
-          contestant={@contestant_a}
-          position={@position}
-          picks={@picks}
-          is_submitted={@is_submitted}
-        />
-      <% else %>
-        <div class="h-6 px-2 py-1 text-xs text-red-500">Missing contestant</div>
-      <% end %>
-      <%= if @contestant_b do %>
-        <.contestant_button
-          contestant={@contestant_b}
-          position={@position}
-          picks={@picks}
-          is_submitted={@is_submitted}
-        />
-      <% else %>
-        <div class="h-6 px-2 py-1 text-xs text-red-500">Missing contestant</div>
-      <% end %>
+    <div class="flex items-center justify-end">
+      <!-- Elite 8 (1 matchup) -->
+      <div class="flex flex-col justify-center mr-3" style="min-height: 640px;">
+        <div class="relative">
+          <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+          <.pick_matchup_box_from_picks
+            position={@r4_pos}
+            source_a={@r3_base + 1}
+            source_b={@r3_base + 2}
+            picks={@picks}
+            contestants_map={@contestants_map}
+            is_submitted={@is_submitted}
+          />
+          <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+        </div>
+      </div>
+
+      <!-- Sweet 16 (2 matchups) -->
+      <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
+        <%= for idx <- 0..1 do %>
+          <% position = @r3_base + idx + 1 %>
+          <% source_a = @r2_base + idx * 2 + 1 %>
+          <% source_b = @r2_base + idx * 2 + 2 %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.pick_matchup_box_from_picks
+              position={position}
+              source_a={source_a}
+              source_b={source_b}
+              picks={@picks}
+              contestants_map={@contestants_map}
+              is_submitted={@is_submitted}
+            />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Round 2 (4 matchups) -->
+      <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
+        <%= for idx <- 0..3 do %>
+          <% position = @r2_base + idx + 1 %>
+          <% source_a = @offset + idx * 2 + 1 %>
+          <% source_b = @offset + idx * 2 + 2 %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.pick_matchup_box_from_picks
+              position={position}
+              source_a={source_a}
+              source_b={source_b}
+              picks={@picks}
+              contestants_map={@contestants_map}
+              is_submitted={@is_submitted}
+              size="small"
+            />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Round 1 (8 matchups) -->
+      <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <%= for matchup <- @region_data.matchups do %>
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.pick_matchup_box
+              position={matchup.position}
+              contestant_a={matchup.contestant_a}
+              contestant_b={matchup.contestant_b}
+              picks={@picks}
+              is_submitted={@is_submitted}
+              size="small"
+            />
+          </div>
+        <% end %>
+      </div>
     </div>
     """
   end
 
-  # Pick slot for rounds 2+ where contestants come from previous picks
-  defp pick_slot(assigns) do
-    # Get the two possible contestants from source positions
-    source_a = Map.get(assigns.picks, to_string(Enum.at(assigns.source_positions, 0)))
-    source_b = Map.get(assigns.picks, to_string(Enum.at(assigns.source_positions, 1)))
+  # Matchup box for Round 1 where contestants are known
+  defp pick_matchup_box(assigns) do
+    assigns = Map.put_new(assigns, :size, "normal")
+    current_pick = Map.get(assigns.picks, to_string(assigns.position))
 
-    contestant_a = if source_a, do: Map.get(assigns.contestants_map, source_a)
-    contestant_b = if source_b, do: Map.get(assigns.contestants_map, source_b)
+    assigns = assign(assigns, :current_pick, current_pick)
 
-    assigns =
-      assigns
+    ~H"""
+    <div class={[
+      "bg-gray-800 border rounded overflow-hidden",
+      @size == "small" && "w-36",
+      @size == "normal" && "w-44",
+      @current_pick && "border-purple-500",
+      !@current_pick && "border-gray-700"
+    ]}>
+      <.pick_contestant_row
+        contestant={@contestant_a}
+        position={@position}
+        is_picked={@current_pick == (@contestant_a && @contestant_a.id)}
+        is_submitted={@is_submitted}
+        has_border={true}
+      />
+      <.pick_contestant_row
+        contestant={@contestant_b}
+        position={@position}
+        is_picked={@current_pick == (@contestant_b && @contestant_b.id)}
+        is_submitted={@is_submitted}
+        has_border={false}
+      />
+    </div>
+    """
+  end
+
+  # Matchup box for later rounds where contestants come from picks
+  defp pick_matchup_box_from_picks(assigns) do
+    assigns = Map.put_new(assigns, :size, "normal")
+
+    # Get contestants from previous picks
+    pick_a = Map.get(assigns.picks, to_string(assigns.source_a))
+    pick_b = Map.get(assigns.picks, to_string(assigns.source_b))
+
+    contestant_a = if pick_a, do: Map.get(assigns.contestants_map, pick_a)
+    contestant_b = if pick_b, do: Map.get(assigns.contestants_map, pick_b)
+
+    current_pick = Map.get(assigns.picks, to_string(assigns.position))
+
+    assigns = assigns
       |> assign(:contestant_a, contestant_a)
       |> assign(:contestant_b, contestant_b)
+      |> assign(:current_pick, current_pick)
 
     ~H"""
-    <div class="bg-gray-700/50 rounded p-1 space-y-1 min-h-[60px]">
-      <%= if @contestant_a do %>
-        <.contestant_button
-          contestant={@contestant_a}
-          position={@position}
-          picks={@picks}
-          is_submitted={@is_submitted}
-        />
-      <% else %>
-        <div class="h-6 px-2 py-1 text-xs text-gray-600 italic">TBD</div>
-      <% end %>
-      <%= if @contestant_b do %>
-        <.contestant_button
-          contestant={@contestant_b}
-          position={@position}
-          picks={@picks}
-          is_submitted={@is_submitted}
-        />
-      <% else %>
-        <div class="h-6 px-2 py-1 text-xs text-gray-600 italic">TBD</div>
-      <% end %>
+    <div class={[
+      "bg-gray-800 border rounded overflow-hidden",
+      @size == "small" && "w-36",
+      @size == "normal" && "w-44",
+      @current_pick && "border-purple-500",
+      !@current_pick && "border-gray-700"
+    ]}>
+      <.pick_contestant_row
+        contestant={@contestant_a}
+        position={@position}
+        is_picked={@current_pick == (@contestant_a && @contestant_a.id)}
+        is_submitted={@is_submitted}
+        has_border={true}
+      />
+      <.pick_contestant_row
+        contestant={@contestant_b}
+        position={@position}
+        is_picked={@current_pick == (@contestant_b && @contestant_b.id)}
+        is_submitted={@is_submitted}
+        has_border={false}
+      />
     </div>
     """
   end
 
-  # Individual contestant button
-  defp contestant_button(assigns) do
-    is_picked = Map.get(assigns.picks, to_string(assigns.position)) == assigns.contestant.id
-
-    assigns = assign(assigns, :is_picked, is_picked)
-
+  # Individual contestant row (clickable)
+  defp pick_contestant_row(assigns) do
     ~H"""
-    <button
-      phx-click="pick"
-      phx-value-position={@position}
-      phx-value-contestant={@contestant.id}
-      disabled={@is_submitted}
-      class={"w-full text-left px-2 py-1 rounded text-xs transition-colors #{if @is_picked, do: "bg-purple-600 text-white", else: "bg-gray-600 hover:bg-gray-500 text-gray-200"} #{if @is_submitted, do: "cursor-default"}"}
-    >
-      <span class="text-gray-400 mr-1"><%= @contestant.seed %>.</span>
-      <span class="truncate"><%= @contestant.name %></span>
-    </button>
+    <%= if @contestant do %>
+      <button
+        phx-click="pick"
+        phx-value-position={@position}
+        phx-value-contestant={@contestant.id}
+        disabled={@is_submitted}
+        class={[
+          "w-full flex items-center px-2 py-1 transition-colors text-left",
+          @has_border && "border-b border-gray-700",
+          @is_picked && "bg-purple-600/40",
+          !@is_picked && !@is_submitted && "hover:bg-gray-700",
+          @is_submitted && "cursor-default"
+        ]}
+      >
+        <span class={[
+          "text-xs font-mono w-5",
+          @is_picked && "text-purple-300",
+          !@is_picked && "text-gray-500"
+        ]}>
+          <%= @contestant.seed %>
+        </span>
+        <span class={[
+          "text-xs truncate flex-1",
+          @is_picked && "text-white font-semibold",
+          !@is_picked && "text-gray-300"
+        ]}>
+          <%= @contestant.name %>
+        </span>
+        <%= if @is_picked do %>
+          <span class="text-purple-300 text-xs">✓</span>
+        <% end %>
+      </button>
+    <% else %>
+      <div class={[
+        "flex items-center px-2 py-1",
+        @has_border && "border-b border-gray-700"
+      ]}>
+        <span class="text-xs text-gray-600 italic">TBD</span>
+      </div>
+    <% end %>
     """
   end
 
-  # Final Four and Championship
-  defp final_four(assigns) do
-    # Final Four: positions 61-62
-    # Championship: position 63
+  # Final Four slot
+  defp final_four_slot(assigns) do
+    pick_a = Map.get(assigns.picks, to_string(assigns.source_a))
+    pick_b = Map.get(assigns.picks, to_string(assigns.source_b))
 
-    # Elite 8 winners feed into Final Four
-    # Position 61: winners of positions 57 (East) and 58 (West)
-    # Position 62: winners of positions 59 (South) and 60 (Midwest)
+    contestant_a = if pick_a, do: Map.get(assigns.contestants_map, pick_a)
+    contestant_b = if pick_b, do: Map.get(assigns.contestants_map, pick_b)
 
-    ff1_a = get_pick_contestant(assigns.picks, assigns.contestants_map, "57")
-    ff1_b = get_pick_contestant(assigns.picks, assigns.contestants_map, "58")
-    ff2_a = get_pick_contestant(assigns.picks, assigns.contestants_map, "59")
-    ff2_b = get_pick_contestant(assigns.picks, assigns.contestants_map, "60")
+    current_pick = Map.get(assigns.picks, to_string(assigns.position))
 
-    champ_a = get_pick_contestant(assigns.picks, assigns.contestants_map, "61")
-    champ_b = get_pick_contestant(assigns.picks, assigns.contestants_map, "62")
-
-    assigns =
-      assigns
-      |> assign(:ff1_a, ff1_a)
-      |> assign(:ff1_b, ff1_b)
-      |> assign(:ff2_a, ff2_a)
-      |> assign(:ff2_b, ff2_b)
-      |> assign(:champ_a, champ_a)
-      |> assign(:champ_b, champ_b)
+    assigns = assigns
+      |> assign(:contestant_a, contestant_a)
+      |> assign(:contestant_b, contestant_b)
+      |> assign(:current_pick, current_pick)
 
     ~H"""
-    <div class="flex justify-center items-center gap-8">
-      <!-- Final Four Game 1 (East vs West) -->
-      <div class="text-center">
-        <div class="text-xs text-gray-500 mb-2">Final Four</div>
-        <div class="bg-gray-700/50 rounded p-2 space-y-1 w-40">
-          <%= if @ff1_a do %>
-            <.contestant_button contestant={@ff1_a} position={61} picks={@picks} is_submitted={@is_submitted} />
-          <% else %>
-            <div class="h-6 px-2 py-1 text-xs text-gray-600 italic">East Winner</div>
-          <% end %>
-          <%= if @ff1_b do %>
-            <.contestant_button contestant={@ff1_b} position={61} picks={@picks} is_submitted={@is_submitted} />
-          <% else %>
-            <div class="h-6 px-2 py-1 text-xs text-gray-600 italic">West Winner</div>
-          <% end %>
-        </div>
-      </div>
-
-      <!-- Championship -->
-      <div class="text-center">
-        <div class="text-xs text-gray-500 mb-2">Championship</div>
-        <div class="bg-purple-900/30 border border-purple-700 rounded p-2 space-y-1 w-44">
-          <%= if @champ_a do %>
-            <.contestant_button contestant={@champ_a} position={63} picks={@picks} is_submitted={@is_submitted} />
-          <% else %>
-            <div class="h-6 px-2 py-1 text-xs text-gray-600 italic">TBD</div>
-          <% end %>
-          <%= if @champ_b do %>
-            <.contestant_button contestant={@champ_b} position={63} picks={@picks} is_submitted={@is_submitted} />
-          <% else %>
-            <div class="h-6 px-2 py-1 text-xs text-gray-600 italic">TBD</div>
-          <% end %>
-        </div>
-
-        <!-- Champion display -->
-        <div class="mt-4">
-          <div class="text-xs text-gray-500 mb-1">Champion</div>
-          <div class="bg-yellow-900/30 border border-yellow-600 rounded p-2 w-44">
-            <%= if champion = get_pick_contestant(@picks, @contestants_map, "63") do %>
-              <div class="text-yellow-400 font-bold text-sm"><%= champion.name %></div>
-            <% else %>
-              <div class="text-gray-600 italic text-sm">Pick your champion!</div>
-            <% end %>
+    <div class="text-center">
+      <div class="text-xs text-gray-500 mb-1"><%= @label %></div>
+      <div class={[
+        "bg-gray-800 border rounded overflow-hidden w-44",
+        @current_pick && "border-purple-500",
+        !@current_pick && "border-gray-700"
+      ]}>
+        <%= if @contestant_a do %>
+          <button
+            phx-click="pick"
+            phx-value-position={@position}
+            phx-value-contestant={@contestant_a.id}
+            disabled={@is_submitted}
+            class={[
+              "w-full flex items-center px-2 py-1 transition-colors text-left border-b border-gray-700",
+              @current_pick == @contestant_a.id && "bg-purple-600/40",
+              @current_pick != @contestant_a.id && !@is_submitted && "hover:bg-gray-700"
+            ]}
+          >
+            <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
+            <span class={["text-xs truncate flex-1", @current_pick == @contestant_a.id && "text-white font-semibold", @current_pick != @contestant_a.id && "text-gray-300"]}>
+              <%= @contestant_a.name %>
+            </span>
+            <%= if @current_pick == @contestant_a.id do %><span class="text-purple-300 text-xs">✓</span><% end %>
+          </button>
+        <% else %>
+          <div class="flex items-center px-2 py-1 border-b border-gray-700">
+            <span class="text-xs text-gray-600 italic"><%= @placeholder_a %></span>
           </div>
-        </div>
-      </div>
+        <% end %>
 
-      <!-- Final Four Game 2 (South vs Midwest) -->
-      <div class="text-center">
-        <div class="text-xs text-gray-500 mb-2">Final Four</div>
-        <div class="bg-gray-700/50 rounded p-2 space-y-1 w-40">
-          <%= if @ff2_a do %>
-            <.contestant_button contestant={@ff2_a} position={62} picks={@picks} is_submitted={@is_submitted} />
-          <% else %>
-            <div class="h-6 px-2 py-1 text-xs text-gray-600 italic">South Winner</div>
-          <% end %>
-          <%= if @ff2_b do %>
-            <.contestant_button contestant={@ff2_b} position={62} picks={@picks} is_submitted={@is_submitted} />
-          <% else %>
-            <div class="h-6 px-2 py-1 text-xs text-gray-600 italic">Midwest Winner</div>
-          <% end %>
-        </div>
+        <%= if @contestant_b do %>
+          <button
+            phx-click="pick"
+            phx-value-position={@position}
+            phx-value-contestant={@contestant_b.id}
+            disabled={@is_submitted}
+            class={[
+              "w-full flex items-center px-2 py-1 transition-colors text-left",
+              @current_pick == @contestant_b.id && "bg-purple-600/40",
+              @current_pick != @contestant_b.id && !@is_submitted && "hover:bg-gray-700"
+            ]}
+          >
+            <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
+            <span class={["text-xs truncate flex-1", @current_pick == @contestant_b.id && "text-white font-semibold", @current_pick != @contestant_b.id && "text-gray-300"]}>
+              <%= @contestant_b.name %>
+            </span>
+            <%= if @current_pick == @contestant_b.id do %><span class="text-purple-300 text-xs">✓</span><% end %>
+          </button>
+        <% else %>
+          <div class="flex items-center px-2 py-1">
+            <span class="text-xs text-gray-600 italic"><%= @placeholder_b %></span>
+          </div>
+        <% end %>
       </div>
     </div>
     """
   end
 
-  defp get_pick_contestant(picks, contestants_map, position) do
-    case Map.get(picks, position) do
-      nil -> nil
-      contestant_id -> Map.get(contestants_map, contestant_id)
-    end
+  # Championship slot
+  defp championship_slot(assigns) do
+    # Championship contestants come from Final Four picks
+    pick_a = Map.get(assigns.picks, "61")
+    pick_b = Map.get(assigns.picks, "62")
+
+    contestant_a = if pick_a, do: Map.get(assigns.contestants_map, pick_a)
+    contestant_b = if pick_b, do: Map.get(assigns.contestants_map, pick_b)
+
+    current_pick = Map.get(assigns.picks, "63")
+    champion = if current_pick, do: Map.get(assigns.contestants_map, current_pick)
+
+    assigns = assigns
+      |> assign(:contestant_a, contestant_a)
+      |> assign(:contestant_b, contestant_b)
+      |> assign(:current_pick, current_pick)
+      |> assign(:champion, champion)
+
+    ~H"""
+    <div class="text-center">
+      <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
+      <div class={[
+        "bg-gray-800 border rounded overflow-hidden w-48",
+        @current_pick && "border-yellow-500 ring-1 ring-yellow-500/50",
+        !@current_pick && "border-gray-700"
+      ]}>
+        <%= if @contestant_a do %>
+          <button
+            phx-click="pick"
+            phx-value-position={63}
+            phx-value-contestant={@contestant_a.id}
+            disabled={@is_submitted}
+            class={[
+              "w-full flex items-center px-2 py-1.5 transition-colors text-left border-b border-gray-700",
+              @current_pick == @contestant_a.id && "bg-yellow-600/30",
+              @current_pick != @contestant_a.id && !@is_submitted && "hover:bg-gray-700"
+            ]}
+          >
+            <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
+            <span class={["text-sm truncate flex-1", @current_pick == @contestant_a.id && "text-yellow-400 font-bold", @current_pick != @contestant_a.id && "text-gray-300"]}>
+              <%= @contestant_a.name %>
+            </span>
+            <%= if @current_pick == @contestant_a.id do %><span class="text-yellow-400 text-xs">👑</span><% end %>
+          </button>
+        <% else %>
+          <div class="flex items-center px-2 py-1.5 border-b border-gray-700">
+            <span class="text-xs text-gray-600 italic">Final Four Winner 1</span>
+          </div>
+        <% end %>
+
+        <%= if @contestant_b do %>
+          <button
+            phx-click="pick"
+            phx-value-position={63}
+            phx-value-contestant={@contestant_b.id}
+            disabled={@is_submitted}
+            class={[
+              "w-full flex items-center px-2 py-1.5 transition-colors text-left",
+              @current_pick == @contestant_b.id && "bg-yellow-600/30",
+              @current_pick != @contestant_b.id && !@is_submitted && "hover:bg-gray-700"
+            ]}
+          >
+            <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
+            <span class={["text-sm truncate flex-1", @current_pick == @contestant_b.id && "text-yellow-400 font-bold", @current_pick != @contestant_b.id && "text-gray-300"]}>
+              <%= @contestant_b.name %>
+            </span>
+            <%= if @current_pick == @contestant_b.id do %><span class="text-yellow-400 text-xs">👑</span><% end %>
+          </button>
+        <% else %>
+          <div class="flex items-center px-2 py-1.5">
+            <span class="text-xs text-gray-600 italic">Final Four Winner 2</span>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Champion display -->
+      <%= if @champion do %>
+        <div class="mt-3 bg-yellow-900/40 border border-yellow-600 rounded p-3">
+          <div class="text-xs text-yellow-500 mb-1">Your Champion</div>
+          <div class="text-yellow-400 font-bold text-lg">🏆 <%= @champion.name %></div>
+        </div>
+      <% end %>
+    </div>
+    """
   end
 
   @impl true
