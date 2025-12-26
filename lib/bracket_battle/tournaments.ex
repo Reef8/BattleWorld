@@ -103,8 +103,9 @@ defmodule BracketBattle.Tournaments do
   @doc "End current round early - tally votes and decide winners"
   def end_round_early(%Tournament{status: "active", current_round: round} = tournament) do
     alias BracketBattle.Voting
+    alias BracketBattle.Scoring
 
-    Repo.transaction(fn ->
+    result = Repo.transaction(fn ->
       # Get all voting matchups for current round
       matchups = get_matchups_by_round(tournament.id, round)
                  |> Enum.filter(& &1.status == "voting")
@@ -129,6 +130,14 @@ defmodule BracketBattle.Tournaments do
         {:ties_pending, ties}
       end
     end)
+
+    # Recalculate scores after matchups decided
+    case result do
+      {:ok, _} -> Scoring.recalculate_all_scores(tournament.id)
+      _ -> :ok
+    end
+
+    result
   end
 
   @doc "Advance to next round after all matchups decided"

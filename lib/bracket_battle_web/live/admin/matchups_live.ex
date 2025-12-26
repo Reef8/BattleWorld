@@ -288,6 +288,9 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
 
     case Tournaments.decide_matchup(matchup, winner_id, true) do
       {:ok, _} ->
+        # Recalculate scores after admin decides
+        BracketBattle.Scoring.recalculate_all_scores(socket.assigns.tournament.id)
+
         {:noreply,
          socket
          |> load_matchups()

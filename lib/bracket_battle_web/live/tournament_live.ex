@@ -165,7 +165,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <main class="max-w-7xl mx-auto px-4 py-6">
         <%= case @tab do %>
           <% "bracket" -> %>
-            <.bracket_tab matchups={@all_matchups} tournament={@tournament} />
+            <.bracket_tab matchups={@all_matchups} tournament={@tournament} user_bracket={@user_bracket} />
           <% "voting" -> %>
             <.voting_tab
               matchups={@active_matchups}
@@ -216,6 +216,9 @@ defmodule BracketBattleWeb.TournamentLive do
       </div>
       """
     else
+      # Get user's picks if they have a bracket
+      picks = if assigns.user_bracket, do: assigns.user_bracket.picks || %{}, else: %{}
+      assigns = assign(assigns, :user_picks, picks)
       bracket_tab_content(assigns)
     end
   end
@@ -234,6 +237,9 @@ defmodule BracketBattleWeb.TournamentLive do
     final_four = Map.get(by_round, 5, []) |> Enum.sort_by(& &1.position)
     championship = Map.get(by_round, 6, []) |> Enum.sort_by(& &1.position)
 
+    # Get user picks (already set by bracket_tab)
+    user_picks = Map.get(assigns, :user_picks, %{})
+
     assigns = assigns
       |> assign(:east_matchups, east_matchups)
       |> assign(:west_matchups, west_matchups)
@@ -241,6 +247,7 @@ defmodule BracketBattleWeb.TournamentLive do
       |> assign(:midwest_matchups, midwest_matchups)
       |> assign(:final_four, final_four)
       |> assign(:championship, championship)
+      |> assign(:user_picks, user_picks)
 
     ~H"""
     <div class="space-y-4">
@@ -265,7 +272,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center mb-3">
                 <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">East</span>
               </div>
-              <.region_bracket_left matchups={@east_matchups} />
+              <.region_bracket_left matchups={@east_matchups} user_picks={@user_picks} />
             </div>
 
             <!-- CENTER COLUMN - Final Four Top + Championship -->
@@ -274,7 +281,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <%= if length(@final_four) > 0 do %>
                 <div class="mb-2">
                   <div class="text-center text-xs text-gray-500 mb-1">Final Four</div>
-                  <.bracket_matchup_box matchup={Enum.at(@final_four, 0)} />
+                  <.bracket_matchup_box matchup={Enum.at(@final_four, 0)} user_picks={@user_picks} />
                 </div>
               <% end %>
             </div>
@@ -284,7 +291,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center mb-3">
                 <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">West</span>
               </div>
-              <.region_bracket_right matchups={@west_matchups} />
+              <.region_bracket_right matchups={@west_matchups} user_picks={@user_picks} />
             </div>
           </div>
 
@@ -293,7 +300,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <div class="text-center">
               <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
               <%= if length(@championship) > 0 do %>
-                <.bracket_matchup_box matchup={Enum.at(@championship, 0)} highlight={true} />
+                <.bracket_matchup_box matchup={Enum.at(@championship, 0)} highlight={true} user_picks={@user_picks} />
               <% end %>
             </div>
           </div>
@@ -305,7 +312,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center mb-3">
                 <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">South</span>
               </div>
-              <.region_bracket_left matchups={@south_matchups} />
+              <.region_bracket_left matchups={@south_matchups} user_picks={@user_picks} />
             </div>
 
             <!-- CENTER COLUMN - Final Four Bottom -->
@@ -314,7 +321,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <%= if length(@final_four) > 1 do %>
                 <div class="mt-2">
                   <div class="text-center text-xs text-gray-500 mb-1">Final Four</div>
-                  <.bracket_matchup_box matchup={Enum.at(@final_four, 1)} />
+                  <.bracket_matchup_box matchup={Enum.at(@final_four, 1)} user_picks={@user_picks} />
                 </div>
               <% end %>
             </div>
@@ -324,7 +331,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center mb-3">
                 <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">Midwest</span>
               </div>
-              <.region_bracket_right matchups={@midwest_matchups} />
+              <.region_bracket_right matchups={@midwest_matchups} user_picks={@user_picks} />
             </div>
           </div>
         </div>
@@ -350,7 +357,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex flex-col justify-around" style="min-height: 640px;">
         <%= for matchup <- Map.get(@matchups, 1, []) do %>
           <div class="relative">
-            <.bracket_matchup_box matchup={matchup} size="small" />
+            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
@@ -361,7 +368,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <%= for matchup <- Map.get(@matchups, 2, []) do %>
           <div class="relative">
             <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.bracket_matchup_box matchup={matchup} size="small" />
+            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
@@ -372,7 +379,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <%= for matchup <- Map.get(@matchups, 3, []) do %>
           <div class="relative">
             <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.bracket_matchup_box matchup={matchup} />
+            <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
@@ -383,7 +390,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <%= for matchup <- Map.get(@matchups, 4, []) do %>
           <div class="relative">
             <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.bracket_matchup_box matchup={matchup} />
+            <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
@@ -401,7 +408,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <%= for matchup <- Map.get(@matchups, 4, []) do %>
           <div class="relative">
             <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.bracket_matchup_box matchup={matchup} />
+            <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
@@ -412,7 +419,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <%= for matchup <- Map.get(@matchups, 3, []) do %>
           <div class="relative">
             <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.bracket_matchup_box matchup={matchup} />
+            <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
@@ -423,7 +430,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <%= for matchup <- Map.get(@matchups, 2, []) do %>
           <div class="relative">
             <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.bracket_matchup_box matchup={matchup} size="small" />
+            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
             <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
@@ -434,7 +441,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <%= for matchup <- Map.get(@matchups, 1, []) do %>
           <div class="relative">
             <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.bracket_matchup_box matchup={matchup} size="small" />
+            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
           </div>
         <% end %>
       </div>
@@ -447,6 +454,56 @@ defmodule BracketBattleWeb.TournamentLive do
     assigns = assigns
       |> Map.put_new(:size, "normal")
       |> Map.put_new(:highlight, false)
+      |> Map.put_new(:user_picks, %{})
+
+    round = assigns.matchup.round
+    position = assigns.matchup.position
+
+    # For rounds 2+, check if each contestant was correctly picked in the previous round
+    # The indicator shows whether the user correctly predicted this contestant would advance
+    {c1_pick_status, c2_pick_status} = if round > 1 and assigns.matchup.contestant_1_id do
+      # Calculate the two source positions from previous round that feed into this matchup
+      # Each matchup in round N is fed by 2 consecutive matchups in round N-1
+      source_pos_1 = (position - 1) * 2 + 1  # First feeder matchup
+      source_pos_2 = (position - 1) * 2 + 2  # Second feeder matchup
+
+      source_bracket_pos_1 = matchup_to_bracket_position(round - 1, source_pos_1)
+      source_bracket_pos_2 = matchup_to_bracket_position(round - 1, source_pos_2)
+
+      # Get user's picks for those source positions
+      user_pick_1 = Map.get(assigns.user_picks, to_string(source_bracket_pos_1))
+      user_pick_2 = Map.get(assigns.user_picks, to_string(source_bracket_pos_2))
+
+      # Contestant 1 came from source_pos_1, Contestant 2 came from source_pos_2
+      c1_status = cond do
+        is_nil(assigns.matchup.contestant_1_id) -> :pending
+        is_nil(user_pick_1) -> :no_pick
+        to_string(user_pick_1) == to_string(assigns.matchup.contestant_1_id) -> :correct
+        true -> :incorrect
+      end
+
+      c2_status = cond do
+        is_nil(assigns.matchup.contestant_2_id) -> :pending
+        is_nil(user_pick_2) -> :no_pick
+        to_string(user_pick_2) == to_string(assigns.matchup.contestant_2_id) -> :correct
+        true -> :incorrect
+      end
+
+      {c1_status, c2_status}
+    else
+      # Round 1 - no previous picks to check
+      {:no_pick, :no_pick}
+    end
+
+    # Overall matchup border based on both contestant statuses
+    has_correct = c1_pick_status == :correct or c2_pick_status == :correct
+    has_incorrect = c1_pick_status == :incorrect or c2_pick_status == :incorrect
+
+    assigns = assigns
+      |> assign(:c1_pick_status, c1_pick_status)
+      |> assign(:c2_pick_status, c2_pick_status)
+      |> assign(:has_correct, has_correct)
+      |> assign(:has_incorrect, has_incorrect)
 
     ~H"""
     <div class={[
@@ -454,57 +511,86 @@ defmodule BracketBattleWeb.TournamentLive do
       @size == "small" && "w-36",
       @size == "normal" && "w-44",
       @highlight && "border-yellow-500 ring-1 ring-yellow-500/50",
-      !@highlight && @matchup.status == "decided" && "border-green-600",
-      !@highlight && @matchup.status != "decided" && "border-gray-700"
+      !@highlight && @has_incorrect && "border-red-600",
+      !@highlight && @has_correct && !@has_incorrect && "border-green-600",
+      !@highlight && !@has_correct && !@has_incorrect && @matchup.status == "decided" && "border-gray-600",
+      !@highlight && !@has_correct && !@has_incorrect && @matchup.status != "decided" && "border-gray-700"
     ]}>
       <!-- Contestant 1 -->
       <div class={[
         "flex items-center px-2 py-1 border-b border-gray-700",
-        @matchup.winner_id && @matchup.winner_id == @matchup.contestant_1_id && "bg-green-900/40"
+        @c1_pick_status == :correct && "bg-green-900/40",
+        @c1_pick_status == :incorrect && "bg-red-900/40"
       ]}>
         <span class={[
           "text-xs font-mono w-5",
-          @matchup.winner_id == @matchup.contestant_1_id && "text-green-400",
-          @matchup.winner_id != @matchup.contestant_1_id && "text-gray-500"
+          @c1_pick_status == :correct && "text-green-400",
+          @c1_pick_status == :incorrect && "text-red-400",
+          @c1_pick_status in [:pending, :no_pick] && "text-gray-500"
         ]}>
           <%= if @matchup.contestant_1, do: @matchup.contestant_1.seed, else: "" %>
         </span>
         <span class={[
           "text-xs truncate flex-1",
-          @matchup.winner_id == @matchup.contestant_1_id && "text-green-400 font-semibold",
-          @matchup.winner_id != @matchup.contestant_1_id && "text-gray-300"
+          @c1_pick_status == :correct && "text-green-400 font-semibold",
+          @c1_pick_status == :incorrect && "text-red-400",
+          @c1_pick_status in [:pending, :no_pick] && "text-gray-300"
         ]}>
           <%= if @matchup.contestant_1, do: @matchup.contestant_1.name, else: "TBD" %>
         </span>
-        <%= if @matchup.winner_id == @matchup.contestant_1_id do %>
-          <span class="text-green-400 text-xs">✓</span>
+        <%= cond do %>
+          <% @c1_pick_status == :correct -> %>
+            <span class="text-green-400 text-xs">✓</span>
+          <% @c1_pick_status == :incorrect -> %>
+            <span class="text-red-400 text-xs">✗</span>
+          <% true -> %>
         <% end %>
       </div>
       <!-- Contestant 2 -->
       <div class={[
         "flex items-center px-2 py-1",
-        @matchup.winner_id && @matchup.winner_id == @matchup.contestant_2_id && "bg-green-900/40"
+        @c2_pick_status == :correct && "bg-green-900/40",
+        @c2_pick_status == :incorrect && "bg-red-900/40"
       ]}>
         <span class={[
           "text-xs font-mono w-5",
-          @matchup.winner_id == @matchup.contestant_2_id && "text-green-400",
-          @matchup.winner_id != @matchup.contestant_2_id && "text-gray-500"
+          @c2_pick_status == :correct && "text-green-400",
+          @c2_pick_status == :incorrect && "text-red-400",
+          @c2_pick_status in [:pending, :no_pick] && "text-gray-500"
         ]}>
           <%= if @matchup.contestant_2, do: @matchup.contestant_2.seed, else: "" %>
         </span>
         <span class={[
           "text-xs truncate flex-1",
-          @matchup.winner_id == @matchup.contestant_2_id && "text-green-400 font-semibold",
-          @matchup.winner_id != @matchup.contestant_2_id && "text-gray-300"
+          @c2_pick_status == :correct && "text-green-400 font-semibold",
+          @c2_pick_status == :incorrect && "text-red-400",
+          @c2_pick_status in [:pending, :no_pick] && "text-gray-300"
         ]}>
           <%= if @matchup.contestant_2, do: @matchup.contestant_2.name, else: "TBD" %>
         </span>
-        <%= if @matchup.winner_id == @matchup.contestant_2_id do %>
-          <span class="text-green-400 text-xs">✓</span>
+        <%= cond do %>
+          <% @c2_pick_status == :correct -> %>
+            <span class="text-green-400 text-xs">✓</span>
+          <% @c2_pick_status == :incorrect -> %>
+            <span class="text-red-400 text-xs">✗</span>
+          <% true -> %>
         <% end %>
       </div>
     </div>
     """
+  end
+
+  # Convert matchup round/position to bracket position (1-63)
+  defp matchup_to_bracket_position(round, position) do
+    base = case round do
+      1 -> 0
+      2 -> 32
+      3 -> 48
+      4 -> 56
+      5 -> 60
+      6 -> 62
+    end
+    base + position
   end
 
   # Voting Tab
