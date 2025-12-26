@@ -441,7 +441,6 @@ defmodule BracketBattleWeb.TournamentLive do
           <div class="relative">
             <!-- No line on left - this connects to Final Four in center -->
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
       </div>
@@ -462,8 +461,6 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 160px;"></div>
             <% end %>
             <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <!-- Horizontal line from connector (from Round 2) -->
-            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
       </div>
@@ -484,8 +481,6 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 80px;"></div>
             <% end %>
             <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
-            <!-- Horizontal line from connector (from Round 1) -->
-            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         <% end %>
       </div>
