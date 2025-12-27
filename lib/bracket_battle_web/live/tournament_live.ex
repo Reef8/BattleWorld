@@ -76,7 +76,11 @@ defmodule BracketBattleWeb.TournamentLive do
        # Round completion reveal state
        show_round_reveal: false,
        round_completed: nil,
-       completed_round_name: nil
+       completed_round_name: nil,
+       # Tournament complete popup state
+       show_tournament_complete: false,
+       user_final_rank: nil,
+       user_final_score: nil
      )}
   end
 
@@ -101,6 +105,11 @@ defmodule BracketBattleWeb.TournamentLive do
     <!-- Round Completion Reveal Banner -->
     <%= if @show_round_reveal do %>
       <.round_reveal_banner round_name={@completed_round_name} />
+    <% end %>
+
+    <!-- Tournament Complete Popup -->
+    <%= if @show_tournament_complete do %>
+      <.tournament_complete_popup rank={@user_final_rank} score={@user_final_score} />
     <% end %>
 
     <div class="min-h-screen bg-gray-900">
@@ -1058,6 +1067,121 @@ defmodule BracketBattleWeb.TournamentLive do
     """
   end
 
+  defp tournament_complete_popup(assigns) do
+    # Determine border color and emoji based on placement
+    {border_color, emoji, headline} =
+      case assigns.rank do
+        1 -> {"border-yellow-500", "🥇", "Congratulations!"}
+        2 -> {"border-gray-400", "🥈", "Congratulations!"}
+        3 -> {"border-amber-600", "🥉", "Congratulations!"}
+        _ -> {"border-purple-500", "🎉", "Tournament Complete!"}
+      end
+
+    assigns =
+      assigns
+      |> assign(:border_color, border_color)
+      |> assign(:emoji, emoji)
+      |> assign(:headline, headline)
+
+    ~H"""
+    <!-- Confetti Animation -->
+    <div class="confetti-container">
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <!-- Modal Card -->
+      <div class={"bg-gray-800 rounded-2xl border-2 #{@border_color} shadow-2xl max-w-md w-full p-8 text-center relative animate-bounce-in"}>
+        <!-- Close Button -->
+        <button
+          phx-click="dismiss_tournament_complete"
+          class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <!-- Celebration Icon -->
+        <div class="text-6xl mb-4">
+          <%= @emoji %>
+        </div>
+
+        <!-- Headline -->
+        <h2 class="text-2xl font-bold text-white mb-2">
+          <%= @headline %>
+        </h2>
+
+        <!-- Placement -->
+        <p class="text-xl text-gray-300 mb-2">
+          <%= if @rank do %>
+            You finished in <span class="font-bold text-purple-400"><%= ordinal(@rank) %> place</span>!
+          <% else %>
+            Thanks for watching!
+          <% end %>
+        </p>
+
+        <!-- Score -->
+        <%= if @score do %>
+          <p class="text-gray-400 mb-4">
+            Final Score: <span class="text-white font-semibold"><%= @score %> points</span>
+          </p>
+        <% end %>
+
+        <!-- Thank you message -->
+        <p class="text-gray-300 mb-6">
+          Thank you for participating and we hope to see you at the next tournament!
+        </p>
+
+        <!-- CTA Button -->
+        <button
+          phx-click="dismiss_tournament_complete"
+          phx-value-tab="leaderboard"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
+        >
+          View Leaderboard
+          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    """
+  end
+
+  defp ordinal(1), do: "1st"
+  defp ordinal(2), do: "2nd"
+  defp ordinal(3), do: "3rd"
+  defp ordinal(n) when n >= 4 and n <= 20, do: "#{n}th"
+  defp ordinal(n) do
+    case rem(n, 10) do
+      1 -> "#{n}st"
+      2 -> "#{n}nd"
+      3 -> "#{n}rd"
+      _ -> "#{n}th"
+    end
+  end
+
   # Event Handlers
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
@@ -1133,6 +1257,18 @@ defmodule BracketBattleWeb.TournamentLive do
      |> assign(tab: "bracket")}
   end
 
+  # Dismiss tournament complete popup and navigate to leaderboard tab
+  def handle_event("dismiss_tournament_complete", %{"tab" => tab}, socket) do
+    {:noreply,
+     socket
+     |> assign(show_tournament_complete: false)
+     |> assign(tab: tab)}
+  end
+
+  def handle_event("dismiss_tournament_complete", _, socket) do
+    {:noreply, assign(socket, show_tournament_complete: false)}
+  end
+
   # PubSub Handlers
   @impl true
   def handle_info({:vote_cast, %{matchup_id: _, counts: _}}, socket) do
@@ -1156,7 +1292,25 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   def handle_info({:tournament_updated, tournament}, socket) do
-    {:noreply, assign(socket, tournament: tournament)}
+    socket = assign(socket, tournament: tournament)
+
+    # Show tournament complete popup when tournament ends
+    socket =
+      if tournament.status == "completed" and socket.assigns.current_user do
+        user_id = socket.assigns.current_user.id
+        rank = Brackets.get_user_rank(tournament.id, user_id)
+        bracket = Brackets.get_user_bracket(tournament.id, user_id)
+
+        assign(socket,
+          show_tournament_complete: true,
+          user_final_rank: rank,
+          user_final_score: bracket && bracket.total_score
+        )
+      else
+        socket
+      end
+
+    {:noreply, socket}
   end
 
   # Handle round completion event - show celebration banner
