@@ -151,9 +151,9 @@ defmodule BracketBattleWeb.TournamentLive do
                 class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "voting", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
               >
                 Vote
-                <%= if length(@active_matchups) > 0 do %>
+                <%= if length(@active_matchups) > 0 and map_size(@pending_votes) < length(@active_matchups) do %>
                   <span class="ml-1 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
-                    <%= length(@active_matchups) %>
+                    <%= length(@active_matchups) - map_size(@pending_votes) %>
                   </span>
                 <% end %>
               </button>

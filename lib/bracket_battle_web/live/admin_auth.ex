@@ -4,10 +4,24 @@ defmodule BracketBattleWeb.AdminAuth do
   Redirects to home page if not authenticated or not an admin.
   """
 
-  import Phoenix.Component
   import Phoenix.LiveView
+  import Plug.Conn
 
   alias BracketBattle.Accounts
+
+  @doc "Plug for regular controller routes requiring admin"
+  def require_admin(conn, _opts) do
+    user_id = get_session(conn, :user_id)
+    user = user_id && Accounts.get_user(user_id)
+
+    if admin?(user) do
+      Plug.Conn.assign(conn, :current_user, user)
+    else
+      conn
+      |> Phoenix.Controller.redirect(to: "/")
+      |> halt()
+    end
+  end
 
   def on_mount(:ensure_admin, _params, session, socket) do
     socket = assign_current_user(socket, session)
@@ -24,7 +38,7 @@ defmodule BracketBattleWeb.AdminAuth do
       Accounts.get_user(user_id)
     end
 
-    assign(socket, :current_user, user)
+    Phoenix.Component.assign(socket, :current_user, user)
   end
 
   defp admin?(%{is_admin: true}), do: true

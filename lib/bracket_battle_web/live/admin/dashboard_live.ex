@@ -130,6 +130,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                   <%= case @tournament.status do %>
                     <% "draft" -> %>
                       <button
+                        type="button"
                         phx-click="open_registration"
                         phx-value-id={@tournament.id}
                         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
@@ -142,6 +143,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                       </button>
                     <% "registration" -> %>
                       <button
+                        type="button"
                         phx-click="start_tournament"
                         phx-value-id={@tournament.id}
                         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"
@@ -149,13 +151,13 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                         Start Tournament
                       </button>
                     <% "active" -> %>
-                      <button
-                        phx-click="advance_round"
-                        phx-value-id={@tournament.id}
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+                      <.link
+                        href={"/admin/end-round/#{@tournament.id}"}
+                        method="post"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm cursor-pointer"
                       >
-                        Advance to Round <%= @tournament.current_round + 1 %>
-                      </button>
+                        End Round <%= @tournament.current_round %> & Start Next
+                      </.link>
                     <% "completed" -> %>
                       <span class="text-green-400 text-sm">Tournament Complete</span>
                   <% end %>
@@ -290,6 +292,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
     end
   end
 
+  @impl true
   def handle_event("start_tournament", %{"id" => id}, socket) do
     tournament = Tournaments.get_tournament!(id)
 
@@ -305,8 +308,11 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
     end
   end
 
+  @impl true
   def handle_event("advance_round", %{"id" => id}, socket) do
+    IO.inspect(id, label: "advance_round called with id")
     tournament = Tournaments.get_tournament!(id)
+    IO.inspect(tournament.status, label: "tournament status")
 
     case Tournaments.advance_round(tournament) do
       {:ok, updated} ->

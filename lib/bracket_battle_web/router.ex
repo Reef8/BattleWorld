@@ -1,6 +1,8 @@
 defmodule BracketBattleWeb.Router do
   use BracketBattleWeb, :router
 
+  import BracketBattleWeb.AdminAuth, only: [require_admin: 2]
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
@@ -39,6 +41,12 @@ defmodule BracketBattleWeb.Router do
   end
 
   # Admin routes - require admin user
+  scope "/admin", BracketBattleWeb.Admin do
+    pipe_through [:browser, :require_admin]
+
+    post "/end-round/:id", TournamentController, :end_round
+  end
+
   live_session :admin, on_mount: [{BracketBattleWeb.AdminAuth, :ensure_admin}] do
     scope "/admin", BracketBattleWeb.Admin do
       pipe_through :browser
