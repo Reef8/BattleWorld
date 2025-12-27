@@ -22,6 +22,17 @@ defmodule BracketBattle.Tournaments do
     |> Repo.preload([:contestants, :matchups, :created_by])
   end
 
+  @doc "Get the most recently completed tournament"
+  def get_latest_completed_tournament do
+    from(t in Tournament,
+      where: t.status == "completed",
+      order_by: [desc: t.completed_at],
+      limit: 1
+    )
+    |> Repo.one()
+    |> Repo.preload([:contestants, :matchups, :created_by])
+  end
+
   @doc "Get tournament by ID with preloads"
   def get_tournament!(id) do
     Tournament

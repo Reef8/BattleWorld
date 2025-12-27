@@ -2,6 +2,7 @@ defmodule BracketBattleWeb.HomeLive do
   use BracketBattleWeb, :live_view
 
   alias BracketBattle.Accounts
+  alias BracketBattle.Brackets
   alias BracketBattle.Tournaments
   alias BracketBattle.Voting
 
@@ -11,7 +12,8 @@ defmodule BracketBattleWeb.HomeLive do
       Accounts.get_user(user_id)
     end
 
-    tournament = Tournaments.get_active_tournament()
+    # Get active tournament, or fall back to most recently completed one
+    tournament = Tournaments.get_active_tournament() || Tournaments.get_latest_completed_tournament()
 
     has_voted = if user && tournament && tournament.status == "active" do
       Voting.has_voted_in_round?(tournament.id, user.id, tournament.current_round)
@@ -29,6 +31,20 @@ defmodule BracketBattleWeb.HomeLive do
     # Extract voting end time from first matchup (all matchups in a round share the same end time)
     voting_ends_at = if matchups != [], do: hd(matchups).voting_ends_at, else: nil
 
+    # Check if user participated in a completed tournament
+    {user_final_rank, user_final_score} =
+      if user && tournament && tournament.status == "completed" do
+        bracket = Brackets.get_user_bracket(tournament.id, user.id)
+        if bracket do
+          rank = Brackets.get_user_rank(tournament.id, user.id)
+          {rank, bracket.total_score}
+        else
+          {nil, nil}
+        end
+      else
+        {nil, nil}
+      end
+
     {:ok,
      assign(socket,
        current_user: user,
@@ -38,13 +54,23 @@ defmodule BracketBattleWeb.HomeLive do
        voting_ends_at: voting_ends_at,
        page_title: "BracketBattle",
        show_tournament_start: false,
-       show_mobile_menu: false
+       show_tournament_complete: false,
+       show_welcome_splash: false,
+       show_mobile_menu: false,
+       user_final_rank: user_final_rank,
+       user_final_score: user_final_score
      )}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
+    <!-- Welcome Splash for first-time visitors -->
+    <div id="welcome-splash-check" phx-hook="WelcomeSplash" class="hidden"></div>
+    <%= if @show_welcome_splash do %>
+      <.welcome_splash />
+    <% end %>
+
     <!-- Tournament Start Check (localStorage hook) -->
     <%= if @tournament && @tournament.status == "active" && @tournament.current_round == 1 do %>
       <div id="tournament-start-check"
@@ -57,6 +83,24 @@ defmodule BracketBattleWeb.HomeLive do
     <!-- Tournament Start Reveal Banner -->
     <%= if @show_tournament_start do %>
       <.tournament_start_banner tournament={@tournament} />
+    <% end %>
+
+    <!-- Tournament Complete Check (localStorage hook) -->
+    <%= if @tournament && @tournament.status == "completed" && @current_user && @user_final_rank do %>
+      <div id="tournament-complete-check"
+           phx-hook="TournamentCompleteReveal"
+           data-tournament-id={@tournament.id}
+           class="hidden">
+      </div>
+    <% end %>
+
+    <!-- Tournament Complete Popup -->
+    <%= if @show_tournament_complete do %>
+      <.tournament_complete_popup
+        tournament={@tournament}
+        rank={@user_final_rank}
+        score={@user_final_score}
+      />
     <% end %>
 
     <!-- Live Matchups Ticker - Full width at very top -->
@@ -420,6 +464,81 @@ defmodule BracketBattleWeb.HomeLive do
     """
   end
 
+  # Tournament Complete Popup - shows final ranking after tournament ends
+  defp tournament_complete_popup(assigns) do
+    {border_color, emoji, headline} =
+      case assigns.rank do
+        1 -> {"border-yellow-500", "🥇", "You Won!"}
+        2 -> {"border-gray-400", "🥈", "2nd Place!"}
+        3 -> {"border-amber-600", "🥉", "3rd Place!"}
+        _ -> {"border-purple-500", "🎉", "Tournament Complete!"}
+      end
+
+    assigns = assign(assigns, border_color: border_color, emoji: emoji, headline: headline)
+
+    ~H"""
+    <!-- Confetti -->
+    <div class="confetti-container">
+      <%= for i <- 1..40 do %>
+        <div class={"confetti confetti-#{i}"}></div>
+      <% end %>
+    </div>
+
+    <!-- Modal -->
+    <div class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+      <div class={"bg-gray-800 rounded-2xl #{@border_color} border-2 shadow-2xl max-w-md w-full p-8 text-center relative"}>
+        <!-- Close button -->
+        <button phx-click="dismiss_tournament_complete" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <div class="text-6xl mb-4"><%= @emoji %></div>
+        <h2 class="text-2xl font-bold text-white mb-2"><%= @headline %></h2>
+        <p class="text-gray-300 mb-4"><%= @tournament.name %> has ended</p>
+
+        <div class="bg-gray-700/50 rounded-xl p-4 mb-6">
+          <div class="text-4xl font-bold text-white mb-1">#<%= @rank %></div>
+          <div class="text-gray-400 text-sm">Final Placement</div>
+          <%= if @score do %>
+            <div class="text-purple-400 font-semibold mt-2"><%= @score %> points</div>
+          <% end %>
+        </div>
+
+        <a href={"/tournament/#{@tournament.id}?tab=leaderboard"}
+           phx-click="dismiss_tournament_complete"
+           class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+          View Leaderboard
+        </a>
+      </div>
+    </div>
+    """
+  end
+
+  # Welcome Splash - Epic Title Reveal for first-time visitors
+  defp welcome_splash(assigns) do
+    ~H"""
+    <div id="welcome-splash" class="welcome-splash" phx-click="dismiss_welcome_splash">
+      <!-- Animated Title -->
+      <div class="text-center">
+        <h1 class="splash-title">
+          <span class="text-purple-400">Bracket</span><span class="text-yellow-400">Battle</span>
+        </h1>
+        <p class="splash-tagline">Where opinions clash and champions emerge</p>
+        <div class="splash-cta">
+          <span class="text-gray-400 text-sm">Click anywhere to continue</span>
+        </div>
+      </div>
+
+      <!-- Skip text -->
+      <div class="splash-skip">
+        Press anywhere to skip
+      </div>
+    </div>
+    """
+  end
+
   # Event Handlers
 
   @impl true
@@ -444,5 +563,31 @@ defmodule BracketBattleWeb.HomeLive do
      socket
      |> assign(show_tournament_start: false)
      |> push_event("tournament_start_dismissed", %{tournament_id: socket.assigns.tournament.id})}
+  end
+
+  # Show welcome splash (triggered from JS hook if not seen before)
+  def handle_event("show_welcome_splash", _, socket) do
+    {:noreply, assign(socket, show_welcome_splash: true)}
+  end
+
+  # Dismiss welcome splash and save to localStorage via push_event
+  def handle_event("dismiss_welcome_splash", _, socket) do
+    {:noreply,
+     socket
+     |> assign(show_welcome_splash: false)
+     |> push_event("welcome_splash_dismissed", %{})}
+  end
+
+  # Show tournament complete popup (triggered from JS hook if not seen before)
+  def handle_event("show_tournament_complete", _, socket) do
+    {:noreply, assign(socket, show_tournament_complete: true)}
+  end
+
+  # Dismiss tournament complete popup and save to localStorage via push_event
+  def handle_event("dismiss_tournament_complete", _, socket) do
+    {:noreply,
+     socket
+     |> assign(show_tournament_complete: false)
+     |> push_event("tournament_complete_dismissed", %{tournament_id: socket.assigns.tournament.id})}
   end
 end

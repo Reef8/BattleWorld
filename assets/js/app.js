@@ -50,6 +50,78 @@ const Hooks = {
         localStorage.setItem(`tournament_started_seen_${tournament_id}`, "true")
       })
     }
+  },
+  WelcomeSplash: {
+    mounted() {
+      const hasSeenWelcome = localStorage.getItem("bracket_battle_welcome_seen")
+
+      if (!hasSeenWelcome) {
+        this.pushEvent("show_welcome_splash", {})
+
+        // Create particles after a short delay
+        setTimeout(() => this.createParticles(), 400)
+
+        // Auto-dismiss after animation completes (5 seconds)
+        this.autoDismissTimer = setTimeout(() => {
+          this.dismiss()
+        }, 5000)
+      }
+
+      this.handleEvent("welcome_splash_dismissed", () => {
+        localStorage.setItem("bracket_battle_welcome_seen", "true")
+      })
+    },
+
+    createParticles() {
+      const container = this.el
+      const colors = ['#9333ea', '#a855f7', '#fbbf24', '#f59e0b', '#c084fc']
+
+      // Create burst particles
+      for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div')
+        particle.className = 'splash-particle'
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)]
+        particle.style.left = '50%'
+        particle.style.top = '45%'
+        particle.style.animation = `particle-float ${1 + Math.random()}s ease-out ${Math.random() * 0.5}s forwards`
+        particle.style.transform = `rotate(${Math.random() * 360}deg) translateX(${50 + Math.random() * 150}px)`
+        container.appendChild(particle)
+      }
+
+      // Create shockwave rings
+      for (let i = 0; i < 3; i++) {
+        const ring = document.createElement('div')
+        ring.className = 'splash-shockwave'
+        ring.style.left = 'calc(50% - 100px)'
+        ring.style.top = 'calc(45% - 100px)'
+        ring.style.animationDelay = `${i * 0.3}s`
+        container.appendChild(ring)
+      }
+    },
+
+    dismiss() {
+      if (this.autoDismissTimer) {
+        clearTimeout(this.autoDismissTimer)
+      }
+      this.el.classList.add('splash-fade-out')
+      this.pushEvent("dismiss_welcome_splash", {})
+    }
+  },
+  TournamentCompleteReveal: {
+    mounted() {
+      const tournamentId = this.el.dataset.tournamentId
+      const key = `tournament_complete_seen_${tournamentId}`
+
+      // Check if user has already seen the tournament complete popup
+      if (!localStorage.getItem(key)) {
+        this.pushEvent("show_tournament_complete", {})
+      }
+
+      // Listen for dismiss event to save to localStorage
+      this.handleEvent("tournament_complete_dismissed", ({tournament_id}) => {
+        localStorage.setItem(`tournament_complete_seen_${tournament_id}`, "true")
+      })
+    }
   }
 }
 
