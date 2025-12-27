@@ -852,6 +852,9 @@ defmodule BracketBattleWeb.TournamentLive do
     # Use pending_vote for highlighting (local selection before submit)
     selected = assigns.pending_vote
 
+    # Check if user has already voted on this matchup (don't show percentages until they vote)
+    has_voted = assigns.matchup.user_vote != nil
+
     time_remaining = if assigns.matchup.voting_ends_at do
       diff = DateTime.diff(assigns.matchup.voting_ends_at, DateTime.utc_now())
       if diff > 0, do: format_countdown(diff), else: "Voting ended"
@@ -865,6 +868,7 @@ defmodule BracketBattleWeb.TournamentLive do
       |> assign(:c2_pct, c2_pct)
       |> assign(:total, total)
       |> assign(:selected, selected)
+      |> assign(:has_voted, has_voted)
       |> assign(:time_remaining, time_remaining)
 
     ~H"""
@@ -888,19 +892,14 @@ defmodule BracketBattleWeb.TournamentLive do
             !is_selected(@selected, @matchup.contestant_1_id) && "bg-gray-700 hover:bg-gray-600"
           ]}
         >
-          <div class="flex justify-between items-center mb-1">
+          <div class="flex justify-between items-center">
             <span class="text-white text-sm">
               <span class="text-gray-400"><%= @matchup.contestant_1.seed %>.</span>
               <%= @matchup.contestant_1.name %>
             </span>
             <%= if is_selected(@selected, @matchup.contestant_1_id) do %>
               <span class="text-white font-bold text-xs">SELECTED</span>
-            <% else %>
-              <span class="text-gray-400 text-sm"><%= @c1_pct %>%</span>
             <% end %>
-          </div>
-          <div class="w-full bg-gray-600 rounded-full h-1.5">
-            <div class="bg-purple-500 h-1.5 rounded-full transition-all" style={"width: #{@c1_pct}%"}></div>
           </div>
         </button>
 
@@ -915,26 +914,16 @@ defmodule BracketBattleWeb.TournamentLive do
             !is_selected(@selected, @matchup.contestant_2_id) && "bg-gray-700 hover:bg-gray-600"
           ]}
         >
-          <div class="flex justify-between items-center mb-1">
+          <div class="flex justify-between items-center">
             <span class="text-white text-sm">
               <span class="text-gray-400"><%= @matchup.contestant_2.seed %>.</span>
               <%= @matchup.contestant_2.name %>
             </span>
             <%= if is_selected(@selected, @matchup.contestant_2_id) do %>
               <span class="text-white font-bold text-xs">SELECTED</span>
-            <% else %>
-              <span class="text-gray-400 text-sm"><%= @c2_pct %>%</span>
             <% end %>
           </div>
-          <div class="w-full bg-gray-600 rounded-full h-1.5">
-            <div class="bg-purple-500 h-1.5 rounded-full transition-all" style={"width: #{@c2_pct}%"}></div>
-          </div>
         </button>
-      </div>
-
-      <!-- Footer -->
-      <div class="px-3 py-2 bg-gray-750 border-t border-gray-700 text-center">
-        <span class="text-gray-500 text-xs"><%= @total %> votes</span>
       </div>
     </div>
     """

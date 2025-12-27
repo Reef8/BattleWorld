@@ -71,7 +71,7 @@ defmodule BracketBattleWeb.HomeLive do
           <div class="ticker-track">
             <div class="ticker-content">
               <%= for matchup <- @matchups ++ @matchups do %>
-                <.ticker_matchup matchup={matchup} />
+                <.ticker_matchup matchup={matchup} has_voted={@has_voted} />
               <% end %>
             </div>
           </div>
@@ -351,12 +351,16 @@ defmodule BracketBattleWeb.HomeLive do
       <div class="ticker-contestants">
         <span class={["ticker-contestant", @matchup.winner_id == @matchup.contestant_1.id && "winner"]}>
           (<%= @matchup.contestant_1.seed %>) <%= @matchup.contestant_1.name %>
-          <span class="ticker-pct"><%= @matchup.c1_pct %>%</span>
+          <%= if @has_voted do %>
+            <span class="ticker-pct"><%= @matchup.c1_pct %>%</span>
+          <% end %>
         </span>
         <span class="ticker-vs">vs</span>
         <span class={["ticker-contestant", @matchup.winner_id == @matchup.contestant_2.id && "winner"]}>
           (<%= @matchup.contestant_2.seed %>) <%= @matchup.contestant_2.name %>
-          <span class="ticker-pct"><%= @matchup.c2_pct %>%</span>
+          <%= if @has_voted do %>
+            <span class="ticker-pct"><%= @matchup.c2_pct %>%</span>
+          <% end %>
         </span>
       </div>
     </div>
