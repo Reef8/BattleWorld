@@ -25,7 +25,8 @@ defmodule BracketBattleWeb.HomeLive do
        tournament: tournament,
        has_voted: has_voted,
        page_title: "BracketBattle",
-       show_tournament_start: false
+       show_tournament_start: false,
+       show_mobile_menu: false
      )}
   end
 
@@ -55,7 +56,8 @@ defmodule BracketBattleWeb.HomeLive do
               <h1 class="text-2xl font-bold text-white">BattleGrounds</h1>
             </div>
 
-            <nav class="flex items-center space-x-4">
+            <!-- Desktop nav -->
+            <nav class="hidden md:flex items-center space-x-4">
               <%= if @current_user do %>
                 <%= if @current_user.is_admin do %>
                   <a href="/admin" class="text-purple-400 hover:text-purple-300 text-sm">
@@ -74,37 +76,79 @@ defmodule BracketBattleWeb.HomeLive do
                 </a>
               <% end %>
             </nav>
+
+            <!-- Mobile hamburger button -->
+            <button
+              phx-click="toggle_mobile_menu"
+              class="md:hidden p-2 text-gray-400 hover:text-white"
+              aria-label="Toggle menu"
+            >
+              <%= if @show_mobile_menu do %>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              <% else %>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              <% end %>
+            </button>
           </div>
         </div>
+
+        <!-- Mobile menu -->
+        <%= if @show_mobile_menu do %>
+          <div class="md:hidden border-t border-gray-800 bg-gray-900">
+            <div class="px-4 py-3 space-y-2">
+              <%= if @current_user do %>
+                <%= if @current_user.is_admin do %>
+                  <a href="/admin" class="block py-2 text-purple-400 hover:text-purple-300">
+                    Admin
+                  </a>
+                <% end %>
+                <a href="/dashboard" class="block py-2 text-gray-400 hover:text-white">
+                  <%= @current_user.display_name || @current_user.email %>
+                </a>
+                <a href="/auth/signout" class="block py-2 text-gray-400 hover:text-white">
+                  Sign Out
+                </a>
+              <% else %>
+                <a href="/auth/signin" class="block py-2 text-purple-400 hover:text-purple-300">
+                  Sign In
+                </a>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
       </header>
 
       <!-- Main Content -->
-      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div class="text-center">
           <!-- Hero Section -->
-          <div class="mb-12">
-            <h2 class="text-5xl font-extrabold text-white mb-4">
+          <div class="mb-8 sm:mb-12">
+            <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-3 sm:mb-4">
               <span class="text-purple-400">BattleGrounds</span>
             </h2>
-            <p class="text-2xl text-gray-300 font-medium">
+            <p class="text-lg sm:text-xl md:text-2xl text-gray-300 font-medium mb-2">
               The best place to battle your friends on topics you love
             </p>
-            <p class="text-xl text-gray-400 max-w-2xl mx-auto">
+            <p class="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto px-2">
               Create brackets, vote on matchups, and compete on the leaderboard.
               From Marvel characters to movie villains - anything can be a tournament!
             </p>
           </div>
 
           <!-- Tournament Status Card -->
-          <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 max-w-lg mx-auto">
+          <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-6 md:p-8 max-w-lg mx-auto">
             <%= if @tournament do %>
-              <div class="text-gray-400 text-sm uppercase tracking-wide mb-2">
+              <div class="text-gray-400 text-xs sm:text-sm uppercase tracking-wide mb-2">
                 <%= status_label(@tournament.status) %>
               </div>
-              <div class="text-3xl font-bold text-white mb-4">
+              <div class="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">
                 <%= @tournament.name %>
               </div>
-              <p class="text-gray-500 mb-6">
+              <p class="text-gray-500 text-sm sm:text-base mb-4 sm:mb-6">
                 <%= @tournament.description || "64 contestants battle it out!" %>
               </p>
 
@@ -272,8 +316,12 @@ defmodule BracketBattleWeb.HomeLive do
 
   # Event Handlers
 
-  # Show tournament start banner (triggered from JS hook if not seen before)
   @impl true
+  def handle_event("toggle_mobile_menu", _, socket) do
+    {:noreply, assign(socket, show_mobile_menu: !socket.assigns.show_mobile_menu)}
+  end
+
+  # Show tournament start banner (triggered from JS hook if not seen before)
   def handle_event("show_tournament_start", _, socket) do
     if socket.assigns.tournament &&
        socket.assigns.tournament.status == "active" &&

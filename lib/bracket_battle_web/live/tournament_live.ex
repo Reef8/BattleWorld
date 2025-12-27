@@ -80,7 +80,9 @@ defmodule BracketBattleWeb.TournamentLive do
        # Tournament complete popup state
        show_tournament_complete: false,
        user_final_rank: nil,
-       user_final_score: nil
+       user_final_score: nil,
+       # Mobile menu
+       show_mobile_menu: false
      )}
   end
 
@@ -117,14 +119,16 @@ defmodule BracketBattleWeb.TournamentLive do
       <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
-            <div class="flex items-center space-x-4">
-              <a href="/" class="text-gray-400 hover:text-white text-sm">&larr; Home</a>
-              <h1 class="text-xl font-bold text-white"><%= @tournament.name %></h1>
-              <span class={"px-2 py-1 rounded text-xs font-medium #{status_color(@tournament.status)}"}>
+            <div class="flex items-center space-x-2 md:space-x-4 min-w-0">
+              <a href="/" class="text-gray-400 hover:text-white text-sm shrink-0">&larr; Home</a>
+              <h1 class="text-lg md:text-xl font-bold text-white truncate"><%= @tournament.name %></h1>
+              <span class={"hidden sm:inline-block px-2 py-1 rounded text-xs font-medium shrink-0 #{status_color(@tournament.status)}"}>
                 <%= status_label(@tournament.status) %>
               </span>
             </div>
-            <div class="flex items-center space-x-4">
+
+            <!-- Desktop nav -->
+            <div class="hidden md:flex items-center space-x-4">
               <%= if @current_user do %>
                 <%= if @tournament.status == "registration" do %>
                   <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
@@ -138,18 +142,63 @@ defmodule BracketBattleWeb.TournamentLive do
                 </a>
               <% end %>
             </div>
+
+            <!-- Mobile hamburger button -->
+            <button
+              phx-click="toggle_mobile_menu"
+              class="md:hidden p-2 text-gray-400 hover:text-white shrink-0"
+              aria-label="Toggle menu"
+            >
+              <%= if @show_mobile_menu do %>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              <% else %>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              <% end %>
+            </button>
           </div>
         </div>
+
+        <!-- Mobile menu -->
+        <%= if @show_mobile_menu do %>
+          <div class="md:hidden border-t border-gray-700 bg-gray-800">
+            <div class="px-4 py-3 space-y-2">
+              <%= if @current_user do %>
+                <%= if @tournament.status == "registration" do %>
+                  <a href={"/tournament/#{@tournament.id}/bracket"} class="block py-2 text-purple-400 hover:text-purple-300">
+                    <%= if @has_bracket, do: "View Bracket", else: "Fill Bracket" %>
+                  </a>
+                <% end %>
+                <div class="py-2 text-gray-400 text-sm">
+                  <%= @current_user.display_name || @current_user.email %>
+                </div>
+                <a href="/dashboard" class="block py-2 text-gray-400 hover:text-white">
+                  My Dashboard
+                </a>
+                <a href="/auth/signout" class="block py-2 text-gray-400 hover:text-white">
+                  Sign Out
+                </a>
+              <% else %>
+                <a href="/auth/signin" class="block py-2 text-purple-400 hover:text-purple-300">
+                  Sign In
+                </a>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
       </header>
 
       <!-- Tab Navigation -->
-      <div class="bg-gray-800 border-b border-gray-700">
+      <div class="bg-gray-800 border-b border-gray-700 overflow-x-auto">
         <div class="max-w-7xl mx-auto px-4">
-          <nav class="flex space-x-4">
+          <nav class="flex space-x-1 sm:space-x-4 min-w-max">
             <button
               phx-click="switch_tab"
               phx-value-tab="bracket"
-              class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "bracket", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "bracket", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
             >
               Bracket
             </button>
@@ -157,7 +206,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <button
                 phx-click="switch_tab"
                 phx-value-tab="voting"
-                class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "voting", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+                class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "voting", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
               >
                 Vote
                 <%= if length(@active_matchups) > 0 and map_size(@pending_votes) < length(@active_matchups) do %>
@@ -170,14 +219,14 @@ defmodule BracketBattleWeb.TournamentLive do
             <button
               phx-click="switch_tab"
               phx-value-tab="leaderboard"
-              class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "leaderboard", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "leaderboard", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
             >
               Leaderboard
             </button>
             <button
               phx-click="switch_tab"
               phx-value-tab="chat"
-              class={"px-4 py-3 text-sm font-medium border-b-2 transition-colors #{if @tab == "chat", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "chat", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
             >
               Chat
             </button>
@@ -890,29 +939,29 @@ defmodule BracketBattleWeb.TournamentLive do
           <p class="text-gray-400">No brackets submitted yet.</p>
         </div>
       <% else %>
-        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-          <table class="w-full">
+        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-x-auto">
+          <table class="w-full min-w-[320px]">
             <thead>
               <tr class="border-b border-gray-700 bg-gray-750">
-                <th class="text-left text-gray-400 text-sm font-medium px-4 py-3 w-16">Rank</th>
-                <th class="text-left text-gray-400 text-sm font-medium px-4 py-3">Player</th>
-                <th class="text-right text-gray-400 text-sm font-medium px-4 py-3">Points</th>
-                <th class="text-right text-gray-400 text-sm font-medium px-4 py-3">Correct</th>
+                <th class="text-left text-gray-400 text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 sm:py-3 w-12 sm:w-16">Rank</th>
+                <th class="text-left text-gray-400 text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 sm:py-3">Player</th>
+                <th class="text-right text-gray-400 text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 sm:py-3">Pts</th>
+                <th class="text-right text-gray-400 text-xs sm:text-sm font-medium px-2 sm:px-4 py-2 sm:py-3">Correct</th>
               </tr>
             </thead>
             <tbody>
               <%= for entry <- @leaderboard do %>
                 <tr class="border-b border-gray-700 last:border-0 hover:bg-gray-750">
-                  <td class="px-4 py-3">
-                    <span class={"font-bold #{rank_color(entry.rank)}"}><%= entry.rank %></span>
+                  <td class="px-2 sm:px-4 py-2 sm:py-3">
+                    <span class={"font-bold text-sm sm:text-base #{rank_color(entry.rank)}"}><%= entry.rank %></span>
                   </td>
-                  <td class="px-4 py-3 text-white">
+                  <td class="px-2 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
                     <%= entry.user.display_name || entry.user.email %>
                   </td>
-                  <td class="px-4 py-3 text-right text-purple-400 font-bold">
+                  <td class="px-2 sm:px-4 py-2 sm:py-3 text-right text-purple-400 font-bold text-sm sm:text-base">
                     <%= entry.total_score %>
                   </td>
-                  <td class="px-4 py-3 text-right text-gray-400">
+                  <td class="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-400 text-sm sm:text-base">
                     <%= entry.correct_picks %>/63
                   </td>
                 </tr>
@@ -1184,6 +1233,10 @@ defmodule BracketBattleWeb.TournamentLive do
 
   # Event Handlers
   @impl true
+  def handle_event("toggle_mobile_menu", _, socket) do
+    {:noreply, assign(socket, show_mobile_menu: !socket.assigns.show_mobile_menu)}
+  end
+
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
     {:noreply, assign(socket, tab: tab)}
   end

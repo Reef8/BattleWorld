@@ -49,7 +49,8 @@ defmodule BracketBattleWeb.DashboardLive do
        current_rank: current_rank,
        past_brackets: past_with_ranks,
        member_since: member_since,
-       editing_name: false
+       editing_name: false,
+       show_mobile_menu: false
      )}
   end
 
@@ -65,7 +66,9 @@ defmodule BracketBattleWeb.DashboardLive do
               <a href="/" class="text-gray-400 hover:text-white text-sm">&larr; Home</a>
               <h1 class="text-xl font-bold text-white">My Dashboard</h1>
             </div>
-            <nav class="flex items-center space-x-4">
+
+            <!-- Desktop nav -->
+            <nav class="hidden md:flex items-center space-x-4">
               <%= if @user.is_admin do %>
                 <a href="/admin" class="text-purple-400 hover:text-purple-300 text-sm">
                   Admin
@@ -75,8 +78,41 @@ defmodule BracketBattleWeb.DashboardLive do
                 Sign Out
               </a>
             </nav>
+
+            <!-- Mobile hamburger button -->
+            <button
+              phx-click="toggle_mobile_menu"
+              class="md:hidden p-2 text-gray-400 hover:text-white"
+              aria-label="Toggle menu"
+            >
+              <%= if @show_mobile_menu do %>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              <% else %>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              <% end %>
+            </button>
           </div>
         </div>
+
+        <!-- Mobile menu -->
+        <%= if @show_mobile_menu do %>
+          <div class="md:hidden border-t border-gray-700 bg-gray-800">
+            <div class="px-4 py-3 space-y-2">
+              <%= if @user.is_admin do %>
+                <a href="/admin" class="block py-2 text-purple-400 hover:text-purple-300">
+                  Admin
+                </a>
+              <% end %>
+              <a href="/auth/signout" class="block py-2 text-gray-400 hover:text-white">
+                Sign Out
+              </a>
+            </div>
+          </div>
+        <% end %>
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -167,24 +203,24 @@ defmodule BracketBattleWeb.DashboardLive do
                 </div>
 
                 <%= if @current_bracket do %>
-                  <div class="grid grid-cols-3 gap-4 mb-4">
-                    <div class="bg-gray-700 rounded-lg p-3 text-center">
-                      <div class="text-2xl font-bold text-white">
+                  <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
+                    <div class="bg-gray-700 rounded-lg p-2 sm:p-3 text-center">
+                      <div class="text-lg sm:text-2xl font-bold text-white">
                         <%= if @current_rank, do: "##{@current_rank}", else: "-" %>
                       </div>
-                      <div class="text-gray-400 text-sm">Rank</div>
+                      <div class="text-gray-400 text-xs sm:text-sm">Rank</div>
                     </div>
-                    <div class="bg-gray-700 rounded-lg p-3 text-center">
-                      <div class="text-2xl font-bold text-purple-400"><%= @current_bracket.total_score %></div>
-                      <div class="text-gray-400 text-sm">Points</div>
+                    <div class="bg-gray-700 rounded-lg p-2 sm:p-3 text-center">
+                      <div class="text-lg sm:text-2xl font-bold text-purple-400"><%= @current_bracket.total_score %></div>
+                      <div class="text-gray-400 text-xs sm:text-sm">Points</div>
                     </div>
-                    <div class="bg-gray-700 rounded-lg p-3 text-center">
-                      <div class="text-2xl font-bold text-green-400"><%= @current_bracket.correct_picks || 0 %></div>
-                      <div class="text-gray-400 text-sm">Correct</div>
+                    <div class="bg-gray-700 rounded-lg p-2 sm:p-3 text-center">
+                      <div class="text-lg sm:text-2xl font-bold text-green-400"><%= @current_bracket.correct_picks || 0 %></div>
+                      <div class="text-gray-400 text-xs sm:text-sm">Correct</div>
                     </div>
                   </div>
 
-                  <div class="flex space-x-3">
+                  <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <a href={"/tournament/#{@active_tournament.id}"} class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors">
                       View Tournament
                     </a>
@@ -223,36 +259,36 @@ defmodule BracketBattleWeb.DashboardLive do
             </div>
           <% else %>
             <div class="overflow-x-auto">
-              <table class="w-full">
+              <table class="w-full min-w-[400px]">
                 <thead>
-                  <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
-                    <th class="pb-3 font-medium">Tournament</th>
-                    <th class="pb-3 font-medium text-center">Final Rank</th>
-                    <th class="pb-3 font-medium text-center">Score</th>
-                    <th class="pb-3 font-medium text-center">Correct Picks</th>
-                    <th class="pb-3 font-medium text-right">Date</th>
+                  <tr class="text-left text-gray-400 text-xs sm:text-sm border-b border-gray-700">
+                    <th class="pb-2 sm:pb-3 pr-2 font-medium">Tournament</th>
+                    <th class="pb-2 sm:pb-3 px-2 font-medium text-center">Rank</th>
+                    <th class="pb-2 sm:pb-3 px-2 font-medium text-center">Score</th>
+                    <th class="pb-2 sm:pb-3 px-2 font-medium text-center hidden sm:table-cell">Correct</th>
+                    <th class="pb-2 sm:pb-3 pl-2 font-medium text-right">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   <%= for bracket <- @past_brackets do %>
                     <tr class="border-b border-gray-700/50 hover:bg-gray-750">
-                      <td class="py-3">
-                        <a href={"/tournament/#{bracket.tournament_id}"} class="text-white hover:text-purple-400">
+                      <td class="py-2 sm:py-3 pr-2">
+                        <a href={"/tournament/#{bracket.tournament_id}"} class="text-white hover:text-purple-400 text-sm sm:text-base">
                           <%= bracket.tournament.name %>
                         </a>
                       </td>
-                      <td class="py-3 text-center">
-                        <span class={"font-bold #{rank_color(bracket.final_rank)}"}>
+                      <td class="py-2 sm:py-3 px-2 text-center">
+                        <span class={"font-bold text-sm sm:text-base #{rank_color(bracket.final_rank)}"}>
                           #<%= bracket.final_rank %>
                         </span>
                       </td>
-                      <td class="py-3 text-center text-purple-400 font-medium">
-                        <%= bracket.total_score %> pts
+                      <td class="py-2 sm:py-3 px-2 text-center text-purple-400 font-medium text-sm sm:text-base">
+                        <%= bracket.total_score %>
                       </td>
-                      <td class="py-3 text-center text-gray-300">
+                      <td class="py-2 sm:py-3 px-2 text-center text-gray-300 text-sm sm:text-base hidden sm:table-cell">
                         <%= bracket.correct_picks || 0 %>
                       </td>
-                      <td class="py-3 text-right text-gray-400 text-sm">
+                      <td class="py-2 sm:py-3 pl-2 text-right text-gray-400 text-xs sm:text-sm">
                         <%= Calendar.strftime(bracket.tournament.completed_at || bracket.submitted_at, "%b %d, %Y") %>
                       </td>
                     </tr>
@@ -270,6 +306,10 @@ defmodule BracketBattleWeb.DashboardLive do
   # Event Handlers
 
   @impl true
+  def handle_event("toggle_mobile_menu", _, socket) do
+    {:noreply, assign(socket, show_mobile_menu: !socket.assigns.show_mobile_menu)}
+  end
+
   def handle_event("edit_name", _, socket) do
     {:noreply, assign(socket, editing_name: true, display_name_input: socket.assigns.user.display_name || "")}
   end
