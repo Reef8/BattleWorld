@@ -103,3 +103,66 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* This file is for your main application CSS */
+
+/* Confetti animation for round completion celebrations */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes confetti-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  animation: confetti-fall 4s ease-in-out forwards, confetti-shake 0.5s ease-in-out infinite;
+}
+
+.confetti:nth-child(1) { left: 5%; animation-delay: 0s; background: #9333ea; }
+.confetti:nth-child(2) { left: 15%; animation-delay: 0.2s; background: #fbbf24; width: 8px; height: 16px; }
+.confetti:nth-child(3) { left: 25%; animation-delay: 0.4s; background: #a855f7; }
+.confetti:nth-child(4) { left: 35%; animation-delay: 0.1s; background: #eab308; width: 12px; height: 6px; }
+.confetti:nth-child(5) { left: 45%; animation-delay: 0.3s; background: #7c3aed; }
+.confetti:nth-child(6) { left: 55%; animation-delay: 0.5s; background: #fcd34d; width: 6px; height: 12px; }
+.confetti:nth-child(7) { left: 65%; animation-delay: 0.15s; background: #c084fc; }
+.confetti:nth-child(8) { left: 75%; animation-delay: 0.35s; background: #f59e0b; width: 14px; height: 7px; }
+.confetti:nth-child(9) { left: 85%; animation-delay: 0.25s; background: #8b5cf6; }
+.confetti:nth-child(10) { left: 95%; animation-delay: 0.45s; background: #fde047; width: 9px; height: 9px; }
+.confetti:nth-child(11) { left: 10%; animation-delay: 0.6s; background: #d946ef; }
+.confetti:nth-child(12) { left: 20%; animation-delay: 0.7s; background: #facc15; width: 11px; height: 5px; }
+.confetti:nth-child(13) { left: 30%; animation-delay: 0.55s; background: #a78bfa; }
+.confetti:nth-child(14) { left: 40%; animation-delay: 0.8s; background: #f97316; width: 7px; height: 14px; }
+.confetti:nth-child(15) { left: 50%; animation-delay: 0.65s; background: #6366f1; }
+.confetti:nth-child(16) { left: 60%; animation-delay: 0.9s; background: #fde68a; width: 13px; height: 8px; }
+.confetti:nth-child(17) { left: 70%; animation-delay: 0.75s; background: #e879f9; }
+.confetti:nth-child(18) { left: 80%; animation-delay: 1s; background: #fca5a5; width: 8px; height: 12px; }
+.confetti:nth-child(19) { left: 90%; animation-delay: 0.85s; background: #818cf8; }
+.confetti:nth-child(20) { left: 2%; animation-delay: 1.1s; background: #fef08a; width: 10px; height: 10px; }

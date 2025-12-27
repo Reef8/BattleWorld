@@ -152,7 +152,7 @@ defmodule BracketBattle.Tournaments do
       if next_round > total_rounds do
         complete_tournament(tournament)
       else
-        Repo.transaction(fn ->
+        result = Repo.transaction(fn ->
           # Populate next round matchups with winners
           populate_next_round(tournament, next_round)
 
@@ -164,6 +164,16 @@ defmodule BracketBattle.Tournaments do
           |> Repo.update!()
         end)
         |> broadcast_tournament_update()
+
+        # Broadcast round completion event for celebration banner
+        case result do
+          {:ok, updated_tournament} ->
+            completed_round_name = get_round_name(tournament, round)
+            broadcast_round_completed(updated_tournament, round, completed_round_name)
+          _ -> :ok
+        end
+
+        result
       end
     else
       {:error, :matchups_pending}
@@ -495,4 +505,12 @@ defmodule BracketBattle.Tournaments do
     result
   end
   defp broadcast_matchup_update(error), do: error
+
+  defp broadcast_round_completed(tournament, completed_round, round_name) do
+    Phoenix.PubSub.broadcast(
+      BracketBattle.PubSub,
+      "tournament:#{tournament.id}",
+      {:round_completed, %{round: completed_round, round_name: round_name}}
+    )
+  end
 end

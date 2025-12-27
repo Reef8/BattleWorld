@@ -3,15 +3,19 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
   alias BracketBattle.Accounts
   alias BracketBattle.Tournaments
+  alias BracketBattle.Tournaments.Tournament
   alias BracketBattle.Brackets
 
-  # Position mapping for bracket
-  # Round 1: positions 1-32 (8 per region: East 1-8, West 9-16, South 17-24, Midwest 25-32)
+  # Position mapping for bracket (dynamically calculated based on bracket_size)
+  # For 64-contestant bracket with 4 regions:
+  # Round 1: positions 1-32 (8 per region)
   # Round 2: positions 33-48 (4 per region)
   # Sweet 16: positions 49-56 (2 per region)
   # Elite 8: positions 57-60 (1 per region)
   # Final Four: positions 61-62
   # Championship: position 63
+  #
+  # Position bases are calculated dynamically in calculate_round_bases/1
 
   @impl true
   def mount(%{"id" => tournament_id}, session, socket) do
@@ -34,8 +38,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
       # Group contestants by region for Round 1
       by_region = Enum.group_by(contestants, & &1.region)
 
-      # Build region data with seed lookups
-      regions_data = build_regions_data(by_region)
+      # Build region data with seed lookups using tournament config
+      regions_data = build_regions_data(by_region, tournament)
+
+      # Calculate round position bases for dynamic bracket handling
+      bracket_config = calculate_round_bases(tournament)
 
       {:ok,
        assign(socket,
@@ -47,19 +54,60 @@ defmodule BracketBattleWeb.BracketEditorLive do
          contestants_map: contestants_map,
          regions_data: regions_data,
          is_submitted: not is_nil(bracket.submitted_at),
-         picks_count: count_picks(bracket.picks || %{})
+         picks_count: count_picks(bracket.picks || %{}),
+         bracket_config: bracket_config,
+         total_matchups: (tournament.bracket_size || 64) - 1
        )}
     end
   end
 
-  defp build_regions_data(by_region) do
-    seed_pairs = [{1, 16}, {8, 9}, {5, 12}, {4, 13}, {6, 11}, {3, 14}, {7, 10}, {2, 15}]
+  defp build_regions_data(by_region, tournament) do
+    # Use tournament's configured regions and seeding
+    region_names = tournament.region_names || ["East", "West", "South", "Midwest"]
+    contestants_per_region = Tournament.contestants_per_region(tournament)
+    seed_pairs = Tournaments.seeding_pattern(contestants_per_region)
+    matchups_per_region = div(contestants_per_region, 2)
+
+    # Build data for each region with correct offsets
+    region_names
+    |> Enum.with_index()
+    |> Enum.map(fn {region_name, idx} ->
+      offset = idx * matchups_per_region
+      {region_name, build_region_data(Map.get(by_region, region_name, []), seed_pairs, offset)}
+    end)
+    |> Map.new()
+  end
+
+  # Calculate position bases for each round dynamically based on tournament config
+  defp calculate_round_bases(tournament) do
+    bracket_size = tournament.bracket_size || 64
+    region_count = tournament.region_count || 4
+    contestants_per_region = div(bracket_size, region_count)
+    total_rounds = Tournament.total_rounds(tournament)
+    regional_rounds = trunc(:math.log2(contestants_per_region))
+
+    # Calculate cumulative positions for each round
+    # Round 1 base = 0 (positions start at 1)
+    # Round N base = sum of all matchups in rounds 1 to N-1
+    round_bases = Enum.reduce(1..total_rounds, %{1 => 0}, fn round, acc ->
+      if round == 1 do
+        acc
+      else
+        # Previous round's base + matchups in previous round
+        prev_base = Map.get(acc, round - 1, 0)
+        prev_matchups = div(bracket_size, trunc(:math.pow(2, round - 1)))
+        Map.put(acc, round, prev_base + prev_matchups)
+      end
+    end)
 
     %{
-      "East" => build_region_data(Map.get(by_region, "East", []), seed_pairs, 0),
-      "West" => build_region_data(Map.get(by_region, "West", []), seed_pairs, 8),
-      "South" => build_region_data(Map.get(by_region, "South", []), seed_pairs, 16),
-      "Midwest" => build_region_data(Map.get(by_region, "Midwest", []), seed_pairs, 24)
+      round_bases: round_bases,
+      bracket_size: bracket_size,
+      region_count: region_count,
+      contestants_per_region: contestants_per_region,
+      total_rounds: total_rounds,
+      regional_rounds: regional_rounds,
+      matchups_per_region_r1: div(contestants_per_region, 2)
     }
   end
 
@@ -94,7 +142,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
             </div>
             <div class="flex items-center space-x-4">
               <div class="text-gray-400 text-sm">
-                <span class="text-white font-medium"><%= @picks_count %></span>/63 picks
+                <span class="text-white font-medium"><%= @picks_count %></span>/<%= @total_matchups %> picks
               </div>
               <%= if @is_submitted do %>
                 <span class="bg-green-600 text-white px-3 py-1 rounded text-sm">
@@ -103,8 +151,8 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <% else %>
                 <button
                   phx-click="submit_bracket"
-                  disabled={@picks_count != 63}
-                  class={"px-4 py-2 rounded text-sm font-medium transition-colors #{if @picks_count == 63, do: "bg-green-600 hover:bg-green-700 text-white", else: "bg-gray-700 text-gray-500 cursor-not-allowed"}"}
+                  disabled={@picks_count != @total_matchups}
+                  class={"px-4 py-2 rounded text-sm font-medium transition-colors #{if @picks_count == @total_matchups, do: "bg-green-600 hover:bg-green-700 text-white", else: "bg-gray-700 text-gray-500 cursor-not-allowed"}"}
                 >
                   Submit Bracket
                 </button>
@@ -140,50 +188,66 @@ defmodule BracketBattleWeb.BracketEditorLive do
         </div>
 
         <!-- ESPN-Style Bracket Layout -->
+        <% region_names = @tournament.region_names || ["East", "West", "South", "Midwest"] %>
+        <% region_count = length(region_names) %>
+
+        <!-- Calculate Elite 8 base position dynamically for Final Four connections -->
+        <% bracket_size = @tournament.bracket_size || 64 %>
+        <% r1_matchups = div(bracket_size, 2) %>
+        <% r2_matchups = div(bracket_size, 4) %>
+        <% r3_matchups = div(bracket_size, 8) %>
+        <% elite_8_base = r1_matchups + r2_matchups + r3_matchups %>
+
         <div class="overflow-x-auto pb-4">
           <div class="min-w-[1400px]">
-            <!-- Top Half: East (left) and West (right) -->
+            <!-- Top Half: First region (left) and Second region (right) -->
             <div class="flex">
-              <!-- EAST REGION - flows left to right -->
+              <!-- FIRST REGION - flows left to right -->
               <div class="flex-1">
                 <div class="text-center mb-3">
-                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">East</span>
+                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 0) %></span>
                 </div>
                 <.region_bracket_left
-                  region_data={@regions_data["East"]}
+                  region_data={@regions_data[Enum.at(region_names, 0)]}
                   picks={@picks}
                   contestants_map={@contestants_map}
                   is_submitted={@is_submitted}
-                  region="East"
+                  region={Enum.at(region_names, 0)}
+                  tournament={@tournament}
                 />
               </div>
 
               <!-- CENTER COLUMN - Final Four Top + Championship -->
+              <!-- Final Four Top: receives winners from Region 0 and Region 1 -->
+              <% ff1_pos = elite_8_base + 5 %>
+              <% r4_pos_1 = elite_8_base + 1 %>
+              <% r4_pos_2 = elite_8_base + 2 %>
               <div class="w-80 flex flex-col items-center justify-end px-4">
                 <.final_four_slot
-                  position={61}
-                  label="Final Four"
-                  source_a={57}
-                  source_b={58}
-                  placeholder_a="East Winner"
-                  placeholder_b="West Winner"
+                  position={ff1_pos}
+                  label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
+                  source_a={r4_pos_1}
+                  source_b={r4_pos_2}
+                  placeholder_a={"#{Enum.at(region_names, 0)} Winner"}
+                  placeholder_b={"#{Enum.at(region_names, 1)} Winner"}
                   picks={@picks}
                   contestants_map={@contestants_map}
                   is_submitted={@is_submitted}
                 />
               </div>
 
-              <!-- WEST REGION - flows right to left -->
+              <!-- SECOND REGION - flows right to left -->
               <div class="flex-1">
                 <div class="text-center mb-3">
-                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">West</span>
+                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 1) %></span>
                 </div>
                 <.region_bracket_right
-                  region_data={@regions_data["West"]}
+                  region_data={@regions_data[Enum.at(region_names, 1)]}
                   picks={@picks}
                   contestants_map={@contestants_map}
                   is_submitted={@is_submitted}
-                  region="West"
+                  region={Enum.at(region_names, 1)}
+                  tournament={@tournament}
                 />
               </div>
             </div>
@@ -194,54 +258,63 @@ defmodule BracketBattleWeb.BracketEditorLive do
                 picks={@picks}
                 contestants_map={@contestants_map}
                 is_submitted={@is_submitted}
+                tournament={@tournament}
               />
             </div>
 
-            <!-- Bottom Half: South (left) and Midwest (right) -->
-            <div class="flex">
-              <!-- SOUTH REGION - flows left to right -->
-              <div class="flex-1">
-                <div class="text-center mb-3">
-                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">South</span>
+            <%= if region_count >= 4 do %>
+              <!-- Bottom Half: Third region (left) and Fourth region (right) -->
+              <!-- Final Four Bottom: receives winners from Region 2 and Region 3 -->
+              <% ff2_pos = elite_8_base + 6 %>
+              <% r4_pos_3 = elite_8_base + 3 %>
+              <% r4_pos_4 = elite_8_base + 4 %>
+              <div class="flex">
+                <!-- THIRD REGION - flows left to right -->
+                <div class="flex-1">
+                  <div class="text-center mb-3">
+                    <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 2) %></span>
+                  </div>
+                  <.region_bracket_left
+                    region_data={@regions_data[Enum.at(region_names, 2)]}
+                    picks={@picks}
+                    contestants_map={@contestants_map}
+                    is_submitted={@is_submitted}
+                    region={Enum.at(region_names, 2)}
+                    tournament={@tournament}
+                  />
                 </div>
-                <.region_bracket_left
-                  region_data={@regions_data["South"]}
-                  picks={@picks}
-                  contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
-                  region="South"
-                />
-              </div>
 
-              <!-- CENTER COLUMN - Final Four Bottom -->
-              <div class="w-80 flex flex-col items-center justify-start px-4">
-                <.final_four_slot
-                  position={62}
-                  label="Final Four"
-                  source_a={59}
-                  source_b={60}
-                  placeholder_a="South Winner"
-                  placeholder_b="Midwest Winner"
-                  picks={@picks}
-                  contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
-                />
-              </div>
-
-              <!-- MIDWEST REGION - flows right to left -->
-              <div class="flex-1">
-                <div class="text-center mb-3">
-                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">Midwest</span>
+                <!-- CENTER COLUMN - Final Four Bottom -->
+                <div class="w-80 flex flex-col items-center justify-start px-4">
+                  <.final_four_slot
+                    position={ff2_pos}
+                    label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
+                    source_a={r4_pos_3}
+                    source_b={r4_pos_4}
+                    placeholder_a={"#{Enum.at(region_names, 2)} Winner"}
+                    placeholder_b={"#{Enum.at(region_names, 3)} Winner"}
+                    picks={@picks}
+                    contestants_map={@contestants_map}
+                    is_submitted={@is_submitted}
+                  />
                 </div>
-                <.region_bracket_right
-                  region_data={@regions_data["Midwest"]}
-                  picks={@picks}
-                  contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
-                  region="Midwest"
-                />
+
+                <!-- FOURTH REGION - flows right to left -->
+                <div class="flex-1">
+                  <div class="text-center mb-3">
+                    <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 3) %></span>
+                  </div>
+                  <.region_bracket_right
+                    region_data={@regions_data[Enum.at(region_names, 3)]}
+                    picks={@picks}
+                    contestants_map={@contestants_map}
+                    is_submitted={@is_submitted}
+                    region={Enum.at(region_names, 3)}
+                    tournament={@tournament}
+                  />
+                </div>
               </div>
-            </div>
+            <% end %>
           </div>
         </div>
       </main>
@@ -252,21 +325,52 @@ defmodule BracketBattleWeb.BracketEditorLive do
   # Left-side region bracket (East, South) - flows left to right
   defp region_bracket_left(assigns) do
     offset = assigns.region_data.offset
+    tournament = assigns.tournament
 
-    # Calculate positions for later rounds
-    r2_base = 32 + div(offset, 2)
-    r3_base = 48 + div(offset, 4)
-    r4_pos = 56 + div(offset, 8) + 1
+    # Get tournament configuration
+    bracket_size = tournament.bracket_size || 64
+    region_count = tournament.region_count || 4
+    contestants_per_region = div(bracket_size, region_count)
+    matchups_per_region_r1 = div(contestants_per_region, 2)
+    regional_rounds = trunc(:math.log2(contestants_per_region))
+
+    # Calculate base positions for each round dynamically
+    # Round 1: positions 1 to (bracket_size/2)
+    # Round 2: positions (bracket_size/2 + 1) to (bracket_size/2 + bracket_size/4)
+    # etc.
+    r1_total = div(bracket_size, 2)
+    r2_total = div(bracket_size, 4)
+    r3_total = div(bracket_size, 8)
+
+    # Round bases (0-indexed for calculation, positions are 1-indexed)
+    r2_base_global = r1_total
+    r3_base_global = r1_total + r2_total
+    r4_base_global = r1_total + r2_total + r3_total
+
+    # Region-specific offsets within each round
+    # Region 0 offset = 0, Region 1 offset = matchups_per_region_in_round, etc.
+    region_index = div(offset, matchups_per_region_r1)
+
+    r2_matchups_per_region = div(matchups_per_region_r1, 2)
+    r3_matchups_per_region = div(r2_matchups_per_region, 2)
+    r4_matchups_per_region = div(r3_matchups_per_region, 2)
+
+    r2_base = r2_base_global + region_index * r2_matchups_per_region
+    r3_base = r3_base_global + region_index * r3_matchups_per_region
+    r4_pos = r4_base_global + region_index * max(r4_matchups_per_region, 1) + 1
 
     assigns = assigns
       |> assign(:r2_base, r2_base)
       |> assign(:r3_base, r3_base)
       |> assign(:r4_pos, r4_pos)
       |> assign(:offset, offset)
+      |> assign(:r2_matchups_per_region, r2_matchups_per_region)
+      |> assign(:r3_matchups_per_region, r3_matchups_per_region)
+      |> assign(:regional_rounds, regional_rounds)
 
     ~H"""
     <div class="flex items-center">
-      <!-- Round 1 (8 matchups) -->
+      <!-- Round 1 matchups -->
       <div class="flex flex-col justify-around" style="min-height: 640px;">
         <%= for matchup <- @region_data.matchups do %>
           <div class="relative">
@@ -283,64 +387,70 @@ defmodule BracketBattleWeb.BracketEditorLive do
         <% end %>
       </div>
 
-      <!-- Round 2 (4 matchups) -->
-      <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
-        <%= for idx <- 0..3 do %>
-          <% position = @r2_base + idx + 1 %>
-          <% source_a = @offset + idx * 2 + 1 %>
-          <% source_b = @offset + idx * 2 + 2 %>
-          <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.pick_matchup_box_from_picks
-              position={position}
-              source_a={source_a}
-              source_b={source_b}
-              picks={@picks}
-              contestants_map={@contestants_map}
-              is_submitted={@is_submitted}
-              size="small"
-            />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
-          </div>
-        <% end %>
-      </div>
-
-      <!-- Sweet 16 (2 matchups) -->
-      <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
-        <%= for idx <- 0..1 do %>
-          <% position = @r3_base + idx + 1 %>
-          <% source_a = @r2_base + idx * 2 + 1 %>
-          <% source_b = @r2_base + idx * 2 + 2 %>
-          <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.pick_matchup_box_from_picks
-              position={position}
-              source_a={source_a}
-              source_b={source_b}
-              picks={@picks}
-              contestants_map={@contestants_map}
-              is_submitted={@is_submitted}
-            />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
-          </div>
-        <% end %>
-      </div>
-
-      <!-- Elite 8 (1 matchup) -->
-      <div class="flex flex-col justify-center ml-3" style="min-height: 640px;">
-        <div class="relative">
-          <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-          <.pick_matchup_box_from_picks
-            position={@r4_pos}
-            source_a={@r3_base + 1}
-            source_b={@r3_base + 2}
-            picks={@picks}
-            contestants_map={@contestants_map}
-            is_submitted={@is_submitted}
-          />
-          <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+      <!-- Round 2 matchups (dynamic count) -->
+      <%= if @r2_matchups_per_region > 0 do %>
+        <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
+          <%= for idx <- 0..(@r2_matchups_per_region - 1) do %>
+            <% position = @r2_base + idx + 1 %>
+            <% source_a = @offset + idx * 2 + 1 %>
+            <% source_b = @offset + idx * 2 + 2 %>
+            <div class="relative">
+              <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+              <.pick_matchup_box_from_picks
+                position={position}
+                source_a={source_a}
+                source_b={source_b}
+                picks={@picks}
+                contestants_map={@contestants_map}
+                is_submitted={@is_submitted}
+                size="small"
+              />
+              <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            </div>
+          <% end %>
         </div>
-      </div>
+      <% end %>
+
+      <!-- Round 3 matchups (dynamic count) -->
+      <%= if @r3_matchups_per_region > 0 do %>
+        <div class="flex flex-col justify-around ml-3" style="min-height: 640px;">
+          <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>
+            <% position = @r3_base + idx + 1 %>
+            <% source_a = @r2_base + idx * 2 + 1 %>
+            <% source_b = @r2_base + idx * 2 + 2 %>
+            <div class="relative">
+              <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+              <.pick_matchup_box_from_picks
+                position={position}
+                source_a={source_a}
+                source_b={source_b}
+                picks={@picks}
+                contestants_map={@contestants_map}
+                is_submitted={@is_submitted}
+              />
+              <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <!-- Elite 8 (region winner matchup) -->
+      <%= if @regional_rounds >= 4 do %>
+        <div class="flex flex-col justify-center ml-3" style="min-height: 640px;">
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.pick_matchup_box_from_picks
+              position={@r4_pos}
+              source_a={@r3_base + 1}
+              source_b={@r3_base + 2}
+              picks={@picks}
+              contestants_map={@contestants_map}
+              is_submitted={@is_submitted}
+            />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end
@@ -348,80 +458,113 @@ defmodule BracketBattleWeb.BracketEditorLive do
   # Right-side region bracket (West, Midwest) - flows right to left
   defp region_bracket_right(assigns) do
     offset = assigns.region_data.offset
+    tournament = assigns.tournament
 
-    # Calculate positions for later rounds
-    r2_base = 32 + div(offset, 2)
-    r3_base = 48 + div(offset, 4)
-    r4_pos = 56 + div(offset, 8) + 1
+    # Get tournament configuration
+    bracket_size = tournament.bracket_size || 64
+    region_count = tournament.region_count || 4
+    contestants_per_region = div(bracket_size, region_count)
+    matchups_per_region_r1 = div(contestants_per_region, 2)
+    regional_rounds = trunc(:math.log2(contestants_per_region))
+
+    # Calculate base positions for each round dynamically
+    r1_total = div(bracket_size, 2)
+    r2_total = div(bracket_size, 4)
+    r3_total = div(bracket_size, 8)
+
+    # Round bases (0-indexed for calculation, positions are 1-indexed)
+    r2_base_global = r1_total
+    r3_base_global = r1_total + r2_total
+    r4_base_global = r1_total + r2_total + r3_total
+
+    # Region-specific offsets within each round
+    region_index = div(offset, matchups_per_region_r1)
+
+    r2_matchups_per_region = div(matchups_per_region_r1, 2)
+    r3_matchups_per_region = div(r2_matchups_per_region, 2)
+    r4_matchups_per_region = div(r3_matchups_per_region, 2)
+
+    r2_base = r2_base_global + region_index * r2_matchups_per_region
+    r3_base = r3_base_global + region_index * r3_matchups_per_region
+    r4_pos = r4_base_global + region_index * max(r4_matchups_per_region, 1) + 1
 
     assigns = assigns
       |> assign(:r2_base, r2_base)
       |> assign(:r3_base, r3_base)
       |> assign(:r4_pos, r4_pos)
       |> assign(:offset, offset)
+      |> assign(:r2_matchups_per_region, r2_matchups_per_region)
+      |> assign(:r3_matchups_per_region, r3_matchups_per_region)
+      |> assign(:regional_rounds, regional_rounds)
 
     ~H"""
     <div class="flex items-center justify-end">
-      <!-- Elite 8 (1 matchup) -->
-      <div class="flex flex-col justify-center mr-3" style="min-height: 640px;">
-        <div class="relative">
-          <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-          <.pick_matchup_box_from_picks
-            position={@r4_pos}
-            source_a={@r3_base + 1}
-            source_b={@r3_base + 2}
-            picks={@picks}
-            contestants_map={@contestants_map}
-            is_submitted={@is_submitted}
-          />
-          <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+      <!-- Elite 8 (region winner matchup) -->
+      <%= if @regional_rounds >= 4 do %>
+        <div class="flex flex-col justify-center mr-3" style="min-height: 640px;">
+          <div class="relative">
+            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+            <.pick_matchup_box_from_picks
+              position={@r4_pos}
+              source_a={@r3_base + 1}
+              source_b={@r3_base + 2}
+              picks={@picks}
+              contestants_map={@contestants_map}
+              is_submitted={@is_submitted}
+            />
+            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+          </div>
         </div>
-      </div>
+      <% end %>
 
-      <!-- Sweet 16 (2 matchups) -->
-      <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
-        <%= for idx <- 0..1 do %>
-          <% position = @r3_base + idx + 1 %>
-          <% source_a = @r2_base + idx * 2 + 1 %>
-          <% source_b = @r2_base + idx * 2 + 2 %>
-          <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.pick_matchup_box_from_picks
-              position={position}
-              source_a={source_a}
-              source_b={source_b}
-              picks={@picks}
-              contestants_map={@contestants_map}
-              is_submitted={@is_submitted}
-            />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
-          </div>
-        <% end %>
-      </div>
+      <!-- Round 3 matchups (dynamic count) -->
+      <%= if @r3_matchups_per_region > 0 do %>
+        <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
+          <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>
+            <% position = @r3_base + idx + 1 %>
+            <% source_a = @r2_base + idx * 2 + 1 %>
+            <% source_b = @r2_base + idx * 2 + 2 %>
+            <div class="relative">
+              <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+              <.pick_matchup_box_from_picks
+                position={position}
+                source_a={source_a}
+                source_b={source_b}
+                picks={@picks}
+                contestants_map={@contestants_map}
+                is_submitted={@is_submitted}
+              />
+              <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
 
-      <!-- Round 2 (4 matchups) -->
-      <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
-        <%= for idx <- 0..3 do %>
-          <% position = @r2_base + idx + 1 %>
-          <% source_a = @offset + idx * 2 + 1 %>
-          <% source_b = @offset + idx * 2 + 2 %>
-          <div class="relative">
-            <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
-            <.pick_matchup_box_from_picks
-              position={position}
-              source_a={source_a}
-              source_b={source_b}
-              picks={@picks}
-              contestants_map={@contestants_map}
-              is_submitted={@is_submitted}
-              size="small"
-            />
-            <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
-          </div>
-        <% end %>
-      </div>
+      <!-- Round 2 matchups (dynamic count) -->
+      <%= if @r2_matchups_per_region > 0 do %>
+        <div class="flex flex-col justify-around mr-3" style="min-height: 640px;">
+          <%= for idx <- 0..(@r2_matchups_per_region - 1) do %>
+            <% position = @r2_base + idx + 1 %>
+            <% source_a = @offset + idx * 2 + 1 %>
+            <% source_b = @offset + idx * 2 + 2 %>
+            <div class="relative">
+              <div class="absolute left-0 top-1/2 w-3 h-px bg-gray-600 -translate-x-full"></div>
+              <.pick_matchup_box_from_picks
+                position={position}
+                source_a={source_a}
+                source_b={source_b}
+                picks={@picks}
+                contestants_map={@contestants_map}
+                is_submitted={@is_submitted}
+                size="small"
+              />
+              <div class="absolute right-0 top-1/2 w-3 h-px bg-gray-600 translate-x-full"></div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
 
-      <!-- Round 1 (8 matchups) -->
+      <!-- Round 1 matchups -->
       <div class="flex flex-col justify-around" style="min-height: 640px;">
         <%= for matchup <- @region_data.matchups do %>
           <div class="relative">
@@ -641,14 +784,30 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
   # Championship slot
   defp championship_slot(assigns) do
+    # Calculate positions dynamically based on tournament config
+    tournament = assigns.tournament
+    bracket_size = tournament.bracket_size || 64
+
+    # Calculate Elite 8 base (same formula as render template)
+    r1_matchups = div(bracket_size, 2)
+    r2_matchups = div(bracket_size, 4)
+    r3_matchups = div(bracket_size, 8)
+    elite_8_base = r1_matchups + r2_matchups + r3_matchups
+
+    # Final Four positions are elite_8_base + 5 and elite_8_base + 6
+    ff1_pos = elite_8_base + 5
+    ff2_pos = elite_8_base + 6
+    # Championship is elite_8_base + 7
+    championship_pos = elite_8_base + 7
+
     # Championship contestants come from Final Four picks
-    pick_a = Map.get(assigns.picks, "61")
-    pick_b = Map.get(assigns.picks, "62")
+    pick_a = Map.get(assigns.picks, to_string(ff1_pos))
+    pick_b = Map.get(assigns.picks, to_string(ff2_pos))
 
     contestant_a = if pick_a, do: Map.get(assigns.contestants_map, pick_a)
     contestant_b = if pick_b, do: Map.get(assigns.contestants_map, pick_b)
 
-    current_pick = Map.get(assigns.picks, "63")
+    current_pick = Map.get(assigns.picks, to_string(championship_pos))
     champion = if current_pick, do: Map.get(assigns.contestants_map, current_pick)
 
     assigns = assigns
@@ -656,6 +815,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
       |> assign(:contestant_b, contestant_b)
       |> assign(:current_pick, current_pick)
       |> assign(:champion, champion)
+      |> assign(:championship_pos, championship_pos)
 
     ~H"""
     <div class="text-center">
@@ -668,7 +828,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
         <%= if @contestant_a do %>
           <button
             phx-click="pick"
-            phx-value-position={63}
+            phx-value-position={@championship_pos}
             phx-value-contestant={@contestant_a.id}
             disabled={@is_submitted}
             class={[
@@ -692,7 +852,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
         <%= if @contestant_b do %>
           <button
             phx-click="pick"
-            phx-value-position={63}
+            phx-value-position={@championship_pos}
             phx-value-contestant={@contestant_b.id}
             disabled={@is_submitted}
             class={[
@@ -732,9 +892,10 @@ defmodule BracketBattleWeb.BracketEditorLive do
     else
       position = String.to_integer(position)
       picks = socket.assigns.picks
+      bracket_config = socket.assigns.bracket_config
 
       # Clear downstream picks when changing an earlier round pick
-      picks = clear_downstream_picks(picks, position, contestant_id)
+      picks = clear_downstream_picks(picks, position, contestant_id, bracket_config)
 
       # Set the new pick
       picks = Map.put(picks, to_string(position), contestant_id)
@@ -752,7 +913,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
   end
 
   def handle_event("submit_bracket", _, socket) do
-    if socket.assigns.is_submitted or socket.assigns.picks_count != 63 do
+    required_picks = socket.assigns.total_matchups
+
+    if socket.assigns.is_submitted or socket.assigns.picks_count != required_picks do
       {:noreply, socket}
     else
       case Brackets.submit_bracket(socket.assigns.bracket) do
@@ -766,13 +929,13 @@ defmodule BracketBattleWeb.BracketEditorLive do
           {:noreply, put_flash(socket, :error, "Registration has closed")}
 
         {:error, :incomplete_bracket} ->
-          {:noreply, put_flash(socket, :error, "Please complete all 63 picks")}
+          {:noreply, put_flash(socket, :error, "Please complete all #{required_picks} picks")}
       end
     end
   end
 
   # Clear picks that depend on a changed pick
-  defp clear_downstream_picks(picks, changed_position, new_contestant_id) do
+  defp clear_downstream_picks(picks, changed_position, new_contestant_id, bracket_config) do
     old_contestant_id = Map.get(picks, to_string(changed_position))
 
     # If pick didn't change, no need to clear
@@ -780,12 +943,12 @@ defmodule BracketBattleWeb.BracketEditorLive do
       picks
     else
       # Find all positions that feed from this position and clear them if they had the old contestant
-      downstream_positions = get_downstream_positions(changed_position)
+      downstream_positions = get_downstream_positions(changed_position, bracket_config)
 
       Enum.reduce(downstream_positions, picks, fn pos, acc ->
         if Map.get(acc, to_string(pos)) == old_contestant_id do
           # This downstream pick had the contestant we're removing, clear it
-          clear_downstream_picks(Map.delete(acc, to_string(pos)), pos, nil)
+          clear_downstream_picks(Map.delete(acc, to_string(pos)), pos, nil, bracket_config)
         else
           acc
         end
@@ -793,39 +956,72 @@ defmodule BracketBattleWeb.BracketEditorLive do
     end
   end
 
-  # Get positions that are fed by a given position
-  defp get_downstream_positions(position) when position >= 1 and position <= 32 do
-    # Round 1 feeds Round 2
-    r2_pos = 32 + div(position - 1, 2) + 1
-    [r2_pos | get_downstream_positions(r2_pos)]
+  # Get positions that are fed by a given position (dynamic based on bracket config)
+  defp get_downstream_positions(position, bracket_config) do
+    bracket_size = bracket_config.bracket_size
+    total_matchups = bracket_size - 1
+
+    # Calculate round boundaries dynamically
+    round_boundaries = calculate_round_boundaries(bracket_size)
+
+    # Find which round this position belongs to
+    current_round = find_round_for_position(position, round_boundaries)
+
+    if current_round == nil do
+      []
+    else
+      # Get the next round's base position
+      next_round = current_round + 1
+      next_round_base = Map.get(round_boundaries, next_round)
+
+      if next_round_base == nil do
+        # This is the last round (championship), no downstream
+        []
+      else
+        current_round_base = Map.get(round_boundaries, current_round)
+        # Position within current round (0-indexed)
+        pos_in_round = position - current_round_base - 1
+        # Each pair of matchups feeds one matchup in next round
+        next_pos = next_round_base + div(pos_in_round, 2) + 1
+
+        if next_pos <= total_matchups do
+          [next_pos | get_downstream_positions(next_pos, bracket_config)]
+        else
+          []
+        end
+      end
+    end
   end
 
-  defp get_downstream_positions(position) when position >= 33 and position <= 48 do
-    # Round 2 feeds Sweet 16
-    r3_pos = 48 + div(position - 33, 2) + 1
-    [r3_pos | get_downstream_positions(r3_pos)]
+  # Calculate round boundary positions (round number -> base position)
+  defp calculate_round_boundaries(bracket_size) do
+    total_rounds = trunc(:math.log2(bracket_size))
+
+    Enum.reduce(1..total_rounds, {%{}, 0}, fn round, {acc, cumulative} ->
+      matchups_in_round = div(bracket_size, trunc(:math.pow(2, round)))
+      {Map.put(acc, round, cumulative), cumulative + matchups_in_round}
+    end)
+    |> elem(0)
   end
 
-  defp get_downstream_positions(position) when position >= 49 and position <= 56 do
-    # Sweet 16 feeds Elite 8
-    r4_pos = 56 + div(position - 49, 2) + 1
-    [r4_pos | get_downstream_positions(r4_pos)]
-  end
+  # Find which round a position belongs to
+  defp find_round_for_position(position, round_boundaries) do
+    # Sort rounds and find which range the position falls into
+    sorted_rounds = round_boundaries |> Map.to_list() |> Enum.sort_by(&elem(&1, 0))
 
-  defp get_downstream_positions(position) when position >= 57 and position <= 60 do
-    # Elite 8 feeds Final Four
-    # 57 (East) + 58 (West) -> 61
-    # 59 (South) + 60 (Midwest) -> 62
-    ff_pos = if position <= 58, do: 61, else: 62
-    [ff_pos | get_downstream_positions(ff_pos)]
-  end
+    Enum.find_value(Enum.with_index(sorted_rounds), fn {{round, base}, idx} ->
+      next_base = case Enum.at(sorted_rounds, idx + 1) do
+        {_, next_b} -> next_b
+        nil -> :infinity
+      end
 
-  defp get_downstream_positions(position) when position in [61, 62] do
-    # Final Four feeds Championship
-    [63]
+      if position > base and position <= next_base do
+        round
+      else
+        nil
+      end
+    end)
   end
-
-  defp get_downstream_positions(_), do: []
 
   defp count_picks(picks) do
     picks

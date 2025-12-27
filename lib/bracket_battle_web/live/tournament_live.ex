@@ -67,7 +67,11 @@ defmodule BracketBattleWeb.TournamentLive do
        message_input: "",
        tab: "bracket",
        pending_votes: pending_votes,
-       submitted: false
+       submitted: false,
+       # Round completion reveal state
+       show_round_reveal: false,
+       round_completed: nil,
+       completed_round_name: nil
      )}
   end
 
@@ -89,6 +93,11 @@ defmodule BracketBattleWeb.TournamentLive do
   @impl true
   def render(assigns) do
     ~H"""
+    <!-- Round Completion Reveal Banner -->
+    <%= if @show_round_reveal do %>
+      <.round_reveal_banner round_name={@completed_round_name} />
+    <% end %>
+
     <div class="min-h-screen bg-gray-900">
       <!-- Header -->
       <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
@@ -967,6 +976,82 @@ defmodule BracketBattleWeb.TournamentLive do
     """
   end
 
+  # Round Completion Reveal Banner with Confetti
+  defp round_reveal_banner(assigns) do
+    ~H"""
+    <!-- Confetti Animation -->
+    <div class="confetti-container">
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+      <div class="confetti"></div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <!-- Modal Card -->
+      <div class="bg-gray-800 rounded-2xl border border-purple-500 shadow-2xl shadow-purple-500/20 max-w-md w-full p-8 text-center relative animate-bounce-in">
+        <!-- Close Button -->
+        <button
+          phx-click="dismiss_reveal"
+          class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <!-- Celebration Icon -->
+        <div class="text-6xl mb-4">
+          🎉
+        </div>
+
+        <!-- Headline -->
+        <h2 class="text-2xl font-bold text-white mb-2">
+          <%= @round_name %> is Complete!
+        </h2>
+
+        <!-- Subtext -->
+        <p class="text-gray-300 mb-2">
+          View the updated results in the bracket
+        </p>
+
+        <!-- Voting Reminder -->
+        <p class="text-purple-400 font-medium mb-6">
+          Don't forget to vote in the next round!
+        </p>
+
+        <!-- CTA Button -->
+        <button
+          phx-click="dismiss_reveal"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
+        >
+          View Bracket
+          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </button>
+      </div>
+    </div>
+    """
+  end
+
   # Event Handlers
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
@@ -1034,6 +1119,14 @@ defmodule BracketBattleWeb.TournamentLive do
     end
   end
 
+  # Dismiss round reveal banner and navigate to bracket tab
+  def handle_event("dismiss_reveal", _, socket) do
+    {:noreply,
+     socket
+     |> assign(show_round_reveal: false)
+     |> assign(tab: "bracket")}
+  end
+
   # PubSub Handlers
   @impl true
   def handle_info({:vote_cast, %{matchup_id: _, counts: _}}, socket) do
@@ -1058,6 +1151,24 @@ defmodule BracketBattleWeb.TournamentLive do
 
   def handle_info({:tournament_updated, tournament}, socket) do
     {:noreply, assign(socket, tournament: tournament)}
+  end
+
+  # Handle round completion event - show celebration banner
+  def handle_info({:round_completed, %{round: round, round_name: round_name}}, socket) do
+    # Also reload matchups since the bracket has changed
+    all_matchups = Tournaments.get_all_matchups(socket.assigns.tournament.id)
+    active_matchups =
+      Tournaments.get_active_matchups(socket.assigns.tournament.id)
+      |> load_vote_counts()
+      |> load_user_votes(socket.assigns.current_user)
+
+    {:noreply,
+     socket
+     |> assign(show_round_reveal: true)
+     |> assign(round_completed: round)
+     |> assign(completed_round_name: round_name)
+     |> assign(all_matchups: all_matchups)
+     |> assign(active_matchups: active_matchups)}
   end
 
   def handle_info({:new_message, message}, socket) do
