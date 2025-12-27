@@ -200,8 +200,16 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
         <div class="overflow-x-auto pb-4">
           <div class="min-w-[1400px]">
+            <!-- Calculate Final Four positions -->
+            <% ff1_pos = elite_8_base + 5 %>
+            <% ff2_pos = elite_8_base + 6 %>
+            <% r4_pos_1 = elite_8_base + 1 %>
+            <% r4_pos_2 = elite_8_base + 2 %>
+            <% r4_pos_3 = elite_8_base + 3 %>
+            <% r4_pos_4 = elite_8_base + 4 %>
+
             <!-- Top Half: First region (left) and Second region (right) -->
-            <div class="flex">
+            <div class="flex justify-between">
               <!-- FIRST REGION - flows left to right -->
               <div class="flex-1">
                 <div class="text-center mb-3">
@@ -214,25 +222,6 @@ defmodule BracketBattleWeb.BracketEditorLive do
                   is_submitted={@is_submitted}
                   region={Enum.at(region_names, 0)}
                   tournament={@tournament}
-                />
-              </div>
-
-              <!-- CENTER COLUMN - Final Four Top + Championship -->
-              <!-- Final Four Top: receives winners from Region 0 and Region 1 -->
-              <% ff1_pos = elite_8_base + 5 %>
-              <% r4_pos_1 = elite_8_base + 1 %>
-              <% r4_pos_2 = elite_8_base + 2 %>
-              <div class="w-80 flex flex-col items-center justify-end px-4">
-                <.final_four_slot
-                  position={ff1_pos}
-                  label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
-                  source_a={r4_pos_1}
-                  source_b={r4_pos_2}
-                  placeholder_a={"#{Enum.at(region_names, 0)} Winner"}
-                  placeholder_b={"#{Enum.at(region_names, 1)} Winner"}
-                  picks={@picks}
-                  contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
                 />
               </div>
 
@@ -252,23 +241,54 @@ defmodule BracketBattleWeb.BracketEditorLive do
               </div>
             </div>
 
-            <!-- Championship in Center -->
-            <div class="flex justify-center my-6">
+            <!-- Center Section: Final Four + Championship (horizontal) -->
+            <div class="flex justify-center items-start my-6">
+              <!-- Final Four 1 (from top regions) -->
+              <div class="w-48">
+              <.final_four_slot
+                position={ff1_pos}
+                label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
+                source_a={r4_pos_1}
+                source_b={r4_pos_2}
+                placeholder_a={"#{Enum.at(region_names, 0)} Winner"}
+                placeholder_b={"#{Enum.at(region_names, 1)} Winner"}
+                picks={@picks}
+                contestants_map={@contestants_map}
+                is_submitted={@is_submitted}
+              />
+              </div>
+
+              <!-- Championship (center) -->
+              <div class="w-56 mx-4">
               <.championship_slot
                 picks={@picks}
                 contestants_map={@contestants_map}
                 is_submitted={@is_submitted}
                 tournament={@tournament}
               />
+              </div>
+
+              <!-- Final Four 2 (from bottom regions) -->
+              <%= if region_count >= 4 do %>
+                <div class="w-48">
+                <.final_four_slot
+                  position={ff2_pos}
+                  label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
+                  source_a={r4_pos_3}
+                  source_b={r4_pos_4}
+                  placeholder_a={"#{Enum.at(region_names, 2)} Winner"}
+                  placeholder_b={"#{Enum.at(region_names, 3)} Winner"}
+                  picks={@picks}
+                  contestants_map={@contestants_map}
+                  is_submitted={@is_submitted}
+                />
+                </div>
+              <% end %>
             </div>
 
             <%= if region_count >= 4 do %>
               <!-- Bottom Half: Third region (left) and Fourth region (right) -->
-              <!-- Final Four Bottom: receives winners from Region 2 and Region 3 -->
-              <% ff2_pos = elite_8_base + 6 %>
-              <% r4_pos_3 = elite_8_base + 3 %>
-              <% r4_pos_4 = elite_8_base + 4 %>
-              <div class="flex">
+              <div class="flex justify-between">
                 <!-- THIRD REGION - flows left to right -->
                 <div class="flex-1">
                   <div class="text-center mb-3">
@@ -281,21 +301,6 @@ defmodule BracketBattleWeb.BracketEditorLive do
                     is_submitted={@is_submitted}
                     region={Enum.at(region_names, 2)}
                     tournament={@tournament}
-                  />
-                </div>
-
-                <!-- CENTER COLUMN - Final Four Bottom -->
-                <div class="w-80 flex flex-col items-center justify-start px-4">
-                  <.final_four_slot
-                    position={ff2_pos}
-                    label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
-                    source_a={r4_pos_3}
-                    source_b={r4_pos_4}
-                    placeholder_a={"#{Enum.at(region_names, 2)} Winner"}
-                    placeholder_b={"#{Enum.at(region_names, 3)} Winner"}
-                    picks={@picks}
-                    contestants_map={@contestants_map}
-                    is_submitted={@is_submitted}
                   />
                 </div>
 
@@ -726,7 +731,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
     <div class="text-center">
       <div class="text-xs text-gray-500 mb-1"><%= @label %></div>
       <div class={[
-        "bg-gray-800 border rounded overflow-hidden w-44",
+        "bg-gray-800 border rounded overflow-hidden w-full",
         @current_pick && "border-purple-500",
         !@current_pick && "border-gray-700"
       ]}>
@@ -821,7 +826,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
     <div class="text-center">
       <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
       <div class={[
-        "bg-gray-800 border rounded overflow-hidden w-48",
+        "bg-gray-800 border rounded overflow-hidden w-full",
         @current_pick && "border-yellow-500 ring-1 ring-yellow-500/50",
         !@current_pick && "border-gray-700"
       ]}>
