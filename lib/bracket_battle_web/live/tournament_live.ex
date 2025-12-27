@@ -280,7 +280,7 @@ defmodule BracketBattleWeb.TournamentLive do
     ~H"""
     <div class="space-y-4">
       <div class="text-center mb-4">
-        <h2 class="text-2xl font-bold text-white">Tournament Bracket</h2>
+        <h2 class="text-xl md:text-2xl font-bold text-white">Tournament Bracket</h2>
         <p class="text-gray-400 text-sm">
           <%= if @tournament.status == "active" do %>
             Round <%= @tournament.current_round %> in progress
@@ -290,7 +290,7 @@ defmodule BracketBattleWeb.TournamentLive do
         </p>
       </div>
 
-      <!-- ESPN-Style Bracket Layout -->
+      <!-- ESPN-Style Bracket Layout - Horizontal scroll on all devices -->
       <div class="overflow-x-auto pb-4">
         <div class="min-w-[1400px]">
           <!-- Top Half: Region 1 (left) and Region 2 (right) -->

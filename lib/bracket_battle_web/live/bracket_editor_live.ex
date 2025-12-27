@@ -187,7 +187,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
           </p>
         </div>
 
-        <!-- ESPN-Style Bracket Layout -->
+        <!-- Bracket Layout -->
         <% region_names = @tournament.region_names || ["East", "West", "South", "Midwest"] %>
         <% region_count = length(region_names) %>
 
@@ -198,6 +198,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
         <% r3_matchups = div(bracket_size, 8) %>
         <% elite_8_base = r1_matchups + r2_matchups + r3_matchups %>
 
+        <!-- ESPN-Style Bracket Layout - Horizontal scroll on all devices -->
         <div class="overflow-x-auto pb-4">
           <div class="min-w-[1400px]">
             <!-- Calculate Final Four positions -->
