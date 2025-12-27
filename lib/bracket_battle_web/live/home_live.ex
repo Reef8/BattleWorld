@@ -52,7 +52,7 @@ defmodule BracketBattleWeb.HomeLive do
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center">
-              <h1 class="text-2xl font-bold text-white">BracketBattle</h1>
+              <h1 class="text-2xl font-bold text-white">BattleGrounds</h1>
             </div>
 
             <nav class="flex items-center space-x-4">
@@ -62,9 +62,9 @@ defmodule BracketBattleWeb.HomeLive do
                     Admin
                   </a>
                 <% end %>
-                <span class="text-gray-400 text-sm">
+                <a href="/dashboard" class="text-gray-400 hover:text-white text-sm">
                   <%= @current_user.display_name || @current_user.email %>
-                </span>
+                </a>
                 <a href="/auth/signout" class="text-gray-400 hover:text-white text-sm">
                   Sign Out
                 </a>
@@ -84,9 +84,11 @@ defmodule BracketBattleWeb.HomeLive do
           <!-- Hero Section -->
           <div class="mb-12">
             <h2 class="text-5xl font-extrabold text-white mb-4">
-              March Madness-Style
-              <span class="text-purple-400">Bracket Battles</span>
+              <span class="text-purple-400">BattleGrounds</span>
             </h2>
+            <p class="text-2xl text-gray-300 font-medium">
+              The best place to battle your friends on topics you love
+            </p>
             <p class="text-xl text-gray-400 max-w-2xl mx-auto">
               Create brackets, vote on matchups, and compete on the leaderboard.
               From Marvel characters to movie villains - anything can be a tournament!

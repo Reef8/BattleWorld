@@ -133,6 +133,16 @@ defmodule BracketBattle.Brackets do
     |> Repo.all()
   end
 
+  @doc "Get all brackets for a user across tournaments"
+  def get_user_brackets(user_id) do
+    from(b in UserBracket,
+      where: b.user_id == ^user_id,
+      order_by: [desc: b.inserted_at],
+      preload: [:tournament]
+    )
+    |> Repo.all()
+  end
+
   defp broadcast_bracket_update({:ok, bracket} = result) do
     Phoenix.PubSub.broadcast(
       BracketBattle.PubSub,

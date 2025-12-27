@@ -146,4 +146,19 @@ defmodule BracketBattle.Accounts do
     |> Ecto.Changeset.change(is_admin: true)
     |> Repo.update!()
   end
+
+  @doc """
+  Get the date when user first submitted a bracket ("member since").
+  Returns nil if user has never submitted a bracket.
+  """
+  def get_first_bracket_date(user_id) do
+    import Ecto.Query
+    alias BracketBattle.Brackets.UserBracket
+
+    from(b in UserBracket,
+      where: b.user_id == ^user_id and not is_nil(b.submitted_at),
+      select: min(b.submitted_at)
+    )
+    |> Repo.one()
+  end
 end

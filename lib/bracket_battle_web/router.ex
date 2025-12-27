@@ -29,6 +29,15 @@ defmodule BracketBattleWeb.Router do
     live "/tournament/:id/bracket", BracketEditorLive, :index
   end
 
+  # User dashboard - requires logged in user
+  live_session :user, on_mount: [{BracketBattleWeb.UserAuth, :ensure_user}] do
+    scope "/", BracketBattleWeb do
+      pipe_through :browser
+
+      live "/dashboard", DashboardLive, :index
+    end
+  end
+
   # Admin routes - require admin user
   live_session :admin, on_mount: [{BracketBattleWeb.AdminAuth, :ensure_admin}] do
     scope "/admin", BracketBattleWeb.Admin do
