@@ -123,14 +123,18 @@ defmodule BracketBattle.Scoring do
 
   defp matchup_to_position(%{round: round, position: pos}, tournament) do
     # Convert round/position to bracket position (1 to total_matchups)
+    # Positions are 1-indexed: Round 1 = 1-32, Round 2 = 33-48, etc.
     bracket_size = tournament.bracket_size || 64
     base = calculate_base_position(bracket_size, round)
-    base + pos - 1
+    base + pos
   end
 
   # Calculate base position for a round (sum of matchups in all previous rounds)
+  # Returns 0 for round 1, 32 for round 2, 48 for round 3, etc. (for 64-bracket)
+  # This way base + position gives 1-indexed bracket positions
+  defp calculate_base_position(_bracket_size, 1), do: 0
   defp calculate_base_position(bracket_size, round) do
-    Enum.reduce(1..(round - 1), 1, fn r, acc ->
+    Enum.reduce(1..(round - 1), 0, fn r, acc ->
       acc + div(bracket_size, trunc(:math.pow(2, r)))
     end)
   end
@@ -138,7 +142,8 @@ defmodule BracketBattle.Scoring do
   defp get_positions_for_round(%Tournament{bracket_size: bracket_size}, round) do
     base = calculate_base_position(bracket_size || 64, round)
     matchups = div(bracket_size || 64, trunc(:math.pow(2, round)))
-    Enum.to_list(base..(base + matchups - 1))
+    # Positions are 1-indexed, so we need (base + 1) to (base + matchups)
+    Enum.to_list((base + 1)..(base + matchups))
   end
 
   defp calculate_possible_score(%Tournament{} = tournament, picks, official_results) do
