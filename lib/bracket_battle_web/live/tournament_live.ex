@@ -783,6 +783,21 @@ defmodule BracketBattleWeb.TournamentLive do
             <p class="text-gray-400 text-sm">Click on the contestant you think should win</p>
           </div>
 
+          <!-- Round deadline banner -->
+          <%= if hd(@matchups).voting_ends_at do %>
+            <% voting_ends_at = hd(@matchups).voting_ends_at %>
+            <% diff = DateTime.diff(voting_ends_at, DateTime.utc_now()) %>
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-3 mb-4 text-center">
+              <span class="text-gray-400 text-sm">Voting closes at </span>
+              <span class="text-white font-medium"><%= Calendar.strftime(voting_ends_at, "%b %d at %I:%M %p") %></span>
+              <%= if diff > 0 do %>
+                <span class="text-gray-500 text-sm ml-2">(<%= format_countdown(diff) %> remaining)</span>
+              <% else %>
+                <span class="text-red-400 text-sm ml-2">(Voting ended)</span>
+              <% end %>
+            </div>
+          <% end %>
+
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <%= for matchup <- @matchups do %>
               <.voting_card matchup={matchup} current_user={@current_user} pending_vote={Map.get(@pending_votes, to_string(matchup.id))} />

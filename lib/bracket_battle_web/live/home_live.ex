@@ -26,12 +26,16 @@ defmodule BracketBattleWeb.HomeLive do
       []
     end
 
+    # Extract voting end time from first matchup (all matchups in a round share the same end time)
+    voting_ends_at = if matchups != [], do: hd(matchups).voting_ends_at, else: nil
+
     {:ok,
      assign(socket,
        current_user: user,
        tournament: tournament,
        has_voted: has_voted,
        matchups: matchups,
+       voting_ends_at: voting_ends_at,
        page_title: "BracketBattle",
        show_tournament_start: false,
        show_mobile_menu: false
@@ -213,6 +217,9 @@ defmodule BracketBattleWeb.HomeLive do
                   <% "active" -> %>
                     <div class="space-y-2">
                       <div class="text-green-400 text-sm">Round <%= @tournament.current_round %> voting is open!</div>
+                      <%= if @voting_ends_at do %>
+                        <div class="text-gray-400 text-xs">Round ends at <%= format_time(@voting_ends_at) %></div>
+                      <% end %>
                       <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                         <%= if @has_voted, do: "View Bracket", else: "Vote Now" %>
                       </a>
@@ -306,6 +313,10 @@ defmodule BracketBattleWeb.HomeLive do
   defp status_label("completed"), do: "Tournament Complete"
   defp status_label(_), do: "Current Tournament"
 
+  defp format_time(datetime) do
+    Calendar.strftime(datetime, "%b %d at %I:%M %p")
+  end
+
   defp load_ticker_matchups(tournament) do
     tournament.id
     |> Tournaments.get_matchups_by_round(tournament.current_round)
@@ -326,7 +337,8 @@ defmodule BracketBattleWeb.HomeLive do
         region: m.region || "Final Four",
         round: m.round,
         status: m.status,
-        winner_id: m.winner_id
+        winner_id: m.winner_id,
+        voting_ends_at: m.voting_ends_at
       }
     end)
   end
