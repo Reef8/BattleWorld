@@ -156,7 +156,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                         method="post"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm cursor-pointer"
                       >
-                        End Round <%= @tournament.current_round %> & Start Next
+                        Advance to Round <%= @tournament.current_round + 1 %>
                       </.link>
                     <% "completed" -> %>
                       <span class="text-green-400 text-sm">Tournament Complete</span>
