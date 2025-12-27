@@ -34,6 +34,22 @@ const Hooks = {
     updated() {
       this.el.scrollTop = this.el.scrollHeight
     }
+  },
+  TournamentStartReveal: {
+    mounted() {
+      const tournamentId = this.el.dataset.tournamentId
+      const key = `tournament_started_seen_${tournamentId}`
+
+      // Check if user has already seen the tournament start banner
+      if (!localStorage.getItem(key)) {
+        this.pushEvent("show_tournament_start", {})
+      }
+
+      // Listen for dismiss event to save to localStorage
+      this.handleEvent("tournament_start_dismissed", ({tournament_id}) => {
+        localStorage.setItem(`tournament_started_seen_${tournament_id}`, "true")
+      })
+    }
   }
 }
 

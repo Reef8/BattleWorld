@@ -102,6 +102,14 @@ defmodule BracketBattle.Tournaments do
     |> broadcast_tournament_update()
   end
 
+  @doc "Generate matchups for a tournament that's missing them (repair function)"
+  def generate_matchups_for_tournament(%Tournament{} = tournament) do
+    Repo.transaction(fn ->
+      generate_all_matchups(tournament)
+      activate_round(tournament, 1)
+    end)
+  end
+
   @doc "End current round early - tally votes and decide winners"
   def end_round_early(%Tournament{status: "active", current_round: round} = tournament) do
     alias BracketBattle.Voting

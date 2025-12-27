@@ -24,13 +24,28 @@ defmodule BracketBattleWeb.HomeLive do
        current_user: user,
        tournament: tournament,
        has_voted: has_voted,
-       page_title: "BracketBattle"
+       page_title: "BracketBattle",
+       show_tournament_start: false
      )}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
+    <!-- Tournament Start Check (localStorage hook) -->
+    <%= if @tournament && @tournament.status == "active" && @tournament.current_round == 1 do %>
+      <div id="tournament-start-check"
+           phx-hook="TournamentStartReveal"
+           data-tournament-id={@tournament.id}
+           class="hidden">
+      </div>
+    <% end %>
+
+    <!-- Tournament Start Reveal Banner -->
+    <%= if @show_tournament_start do %>
+      <.tournament_start_banner tournament={@tournament} />
+    <% end %>
+
     <div class="min-h-screen bg-gradient-to-br from-purple-900 via-gray-900 to-gray-900">
       <!-- Header -->
       <header class="border-b border-gray-800">
@@ -199,4 +214,79 @@ defmodule BracketBattleWeb.HomeLive do
   defp status_label("active"), do: "Tournament In Progress"
   defp status_label("completed"), do: "Tournament Complete"
   defp status_label(_), do: "Current Tournament"
+
+  # Tournament Start Reveal Banner (no confetti)
+  defp tournament_start_banner(assigns) do
+    ~H"""
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+      <!-- Modal Card -->
+      <div class="bg-gray-800 rounded-2xl border border-yellow-500 shadow-2xl shadow-yellow-500/20 max-w-md w-full p-8 text-center relative">
+        <!-- Close Button -->
+        <button
+          phx-click="dismiss_tournament_start"
+          class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <!-- Trophy Icon -->
+        <div class="text-6xl mb-4">
+          🏆
+        </div>
+
+        <!-- Headline -->
+        <h2 class="text-2xl font-bold text-white mb-2">
+          <%= @tournament.name %> Has Begun!
+        </h2>
+
+        <!-- Subtext -->
+        <p class="text-gray-300 mb-2">
+          Round 1 voting is now open
+        </p>
+
+        <!-- Call to action -->
+        <p class="text-yellow-400 font-medium mb-6">
+          Cast your votes to help decide the winners!
+        </p>
+
+        <!-- CTA Button - Navigate to tournament -->
+        <a
+          href={"/tournament/#{@tournament.id}"}
+          phx-click="dismiss_tournament_start"
+          class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center justify-center"
+        >
+          Go to Tournament
+          <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+      </div>
+    </div>
+    """
+  end
+
+  # Event Handlers
+
+  # Show tournament start banner (triggered from JS hook if not seen before)
+  @impl true
+  def handle_event("show_tournament_start", _, socket) do
+    if socket.assigns.tournament &&
+       socket.assigns.tournament.status == "active" &&
+       socket.assigns.tournament.current_round == 1 do
+      {:noreply, assign(socket, show_tournament_start: true)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  # Dismiss tournament start banner and save to localStorage via push_event
+  def handle_event("dismiss_tournament_start", _, socket) do
+    {:noreply,
+     socket
+     |> assign(show_tournament_start: false)
+     |> push_event("tournament_start_dismissed", %{tournament_id: socket.assigns.tournament.id})}
+  end
 end

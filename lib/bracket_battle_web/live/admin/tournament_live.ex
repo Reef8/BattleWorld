@@ -213,11 +213,11 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
               options={[
                 {"Draft", "draft"},
                 {"Registration Open", "registration"},
-                {"Active", "active"},
                 {"Completed", "completed"}
               ]}
               class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500"
             />
+            <p class="text-gray-500 text-sm mt-1">Use "Start Tournament" button to begin voting</p>
           </div>
         <% end %>
 
@@ -335,7 +335,33 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
 
       <%= if @tournament.id do %>
         <div class="mt-8 pt-8 border-t border-gray-700">
-          <h3 class="text-lg font-semibold text-white mb-4">Quick Links</h3>
+          <h3 class="text-lg font-semibold text-white mb-4">Tournament Actions</h3>
+
+          <%= if @tournament.status == "registration" do %>
+            <div class="mb-6 p-4 bg-green-900/20 border border-green-700 rounded-lg">
+              <p class="text-green-400 text-sm mb-3">
+                Ready to start the tournament? This will generate all matchups and open Round 1 voting.
+              </p>
+              <button
+                type="button"
+                phx-click="start_tournament"
+                phx-value-id={@tournament.id}
+                class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
+              >
+                🚀 Start Tournament
+              </button>
+            </div>
+          <% end %>
+
+          <%= if @tournament.status == "active" do %>
+            <div class="mb-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
+              <p class="text-blue-400 text-sm">
+                Tournament is live! Round <%= @tournament.current_round %> voting is in progress.
+              </p>
+            </div>
+          <% end %>
+
+          <h4 class="text-sm font-medium text-gray-400 mb-3">Quick Links</h4>
           <div class="flex space-x-4">
             <.link
               navigate={"/admin/tournaments/#{@tournament.id}/contestants"}
@@ -421,6 +447,23 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to delete tournament")}
+    end
+  end
+
+  def handle_event("start_tournament", %{"id" => id}, socket) do
+    tournament = Tournaments.get_tournament!(id)
+
+    case Tournaments.start_tournament(tournament) do
+      {:ok, updated_tournament} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Tournament started! Round 1 voting is now open.")
+         |> assign(:tournament, updated_tournament)
+         |> assign(:form, to_form(Tournament.changeset(updated_tournament, %{})))}
+
+      {:error, reason} ->
+        message = if is_binary(reason), do: reason, else: "Failed to start tournament"
+        {:noreply, put_flash(socket, :error, message)}
     end
   end
 

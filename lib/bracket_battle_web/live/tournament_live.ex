@@ -22,6 +22,7 @@ defmodule BracketBattleWeb.TournamentLive do
       Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}")
       Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}:votes")
       Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}:chat")
+      Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}:leaderboard")
 
       # Start countdown timer
       if tournament.status == "active" do
@@ -48,6 +49,9 @@ defmodule BracketBattleWeb.TournamentLive do
     # Get recent chat messages
     messages = Chat.get_messages(tournament_id, limit: 50)
 
+    # Get leaderboard
+    leaderboard = Brackets.get_leaderboard(tournament_id, limit: 50)
+
     # Build pending_votes from existing user votes (using string keys for consistency)
     pending_votes = active_matchups
       |> Enum.filter(fn m -> m.user_vote end)
@@ -64,6 +68,7 @@ defmodule BracketBattleWeb.TournamentLive do
        active_matchups: active_matchups,
        all_matchups: all_matchups,
        messages: messages,
+       leaderboard: leaderboard,
        message_input: "",
        tab: "bracket",
        pending_votes: pending_votes,
@@ -185,7 +190,7 @@ defmodule BracketBattleWeb.TournamentLive do
               submitted={@submitted}
             />
           <% "leaderboard" -> %>
-            <.leaderboard_tab tournament={@tournament} />
+            <.leaderboard_tab tournament={@tournament} leaderboard={@leaderboard} />
           <% "chat" -> %>
             <.chat_tab
               messages={@messages}
@@ -236,11 +241,15 @@ defmodule BracketBattleWeb.TournamentLive do
     # Group matchups by round and region
     by_round = Enum.group_by(assigns.matchups, & &1.round)
 
+    # Get region names from tournament (default to standard names)
+    region_names = assigns.tournament.region_names || ["East", "West", "South", "Midwest"]
+    [region_1, region_2, region_3, region_4] = Enum.take(region_names, 4)
+
     # Separate matchups by region for rounds 1-4
-    east_matchups = get_region_matchups(assigns.matchups, "East")
-    west_matchups = get_region_matchups(assigns.matchups, "West")
-    south_matchups = get_region_matchups(assigns.matchups, "South")
-    midwest_matchups = get_region_matchups(assigns.matchups, "Midwest")
+    region_1_matchups = get_region_matchups(assigns.matchups, region_1)
+    region_2_matchups = get_region_matchups(assigns.matchups, region_2)
+    region_3_matchups = get_region_matchups(assigns.matchups, region_3)
+    region_4_matchups = get_region_matchups(assigns.matchups, region_4)
 
     # Final Four and Championship (rounds 5-6)
     final_four = Map.get(by_round, 5, []) |> Enum.sort_by(& &1.position)
@@ -250,10 +259,11 @@ defmodule BracketBattleWeb.TournamentLive do
     user_picks = Map.get(assigns, :user_picks, %{})
 
     assigns = assigns
-      |> assign(:east_matchups, east_matchups)
-      |> assign(:west_matchups, west_matchups)
-      |> assign(:south_matchups, south_matchups)
-      |> assign(:midwest_matchups, midwest_matchups)
+      |> assign(:region_names, region_names)
+      |> assign(:region_1_matchups, region_1_matchups)
+      |> assign(:region_2_matchups, region_2_matchups)
+      |> assign(:region_3_matchups, region_3_matchups)
+      |> assign(:region_4_matchups, region_4_matchups)
       |> assign(:final_four, final_four)
       |> assign(:championship, championship)
       |> assign(:user_picks, user_picks)
@@ -274,19 +284,19 @@ defmodule BracketBattleWeb.TournamentLive do
       <!-- ESPN-Style Bracket Layout -->
       <div class="overflow-x-auto pb-4">
         <div class="min-w-[1400px]">
-          <!-- Top Half: East (left) and West (right) -->
+          <!-- Top Half: Region 1 (left) and Region 2 (right) -->
           <div class="flex">
-            <!-- EAST REGION - flows left to right -->
+            <!-- REGION 1 - flows left to right -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">East</span>
+                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 0) %></span>
               </div>
-              <.region_bracket_left matchups={@east_matchups} user_picks={@user_picks} />
+              <.region_bracket_left matchups={@region_1_matchups} user_picks={@user_picks} />
             </div>
 
             <!-- CENTER COLUMN - Final Four Top + Championship -->
             <div class="w-72 flex flex-col items-center justify-end px-4">
-              <!-- Final Four Game 1 (East vs West winners) -->
+              <!-- Final Four Game 1 (Region 1 vs Region 2 winners) -->
               <%= if length(@final_four) > 0 do %>
                 <div class="mb-2">
                   <div class="text-center text-xs text-gray-500 mb-1">Final Four</div>
@@ -295,12 +305,12 @@ defmodule BracketBattleWeb.TournamentLive do
               <% end %>
             </div>
 
-            <!-- WEST REGION - flows right to left -->
+            <!-- REGION 2 - flows right to left -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">West</span>
+                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 1) %></span>
               </div>
-              <.region_bracket_right matchups={@west_matchups} user_picks={@user_picks} />
+              <.region_bracket_right matchups={@region_2_matchups} user_picks={@user_picks} />
             </div>
           </div>
 
@@ -318,19 +328,19 @@ defmodule BracketBattleWeb.TournamentLive do
             </div>
           </div>
 
-          <!-- Bottom Half: South (left) and Midwest (right) -->
+          <!-- Bottom Half: Region 3 (left) and Region 4 (right) -->
           <div class="flex">
-            <!-- SOUTH REGION - flows left to right -->
+            <!-- REGION 3 - flows left to right -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">South</span>
+                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 2) %></span>
               </div>
-              <.region_bracket_left matchups={@south_matchups} user_picks={@user_picks} />
+              <.region_bracket_left matchups={@region_3_matchups} user_picks={@user_picks} />
             </div>
 
             <!-- CENTER COLUMN - Final Four Bottom -->
             <div class="w-72 flex flex-col items-center justify-start px-4">
-              <!-- Final Four Game 2 (South vs Midwest winners) -->
+              <!-- Final Four Game 2 (Region 3 vs Region 4 winners) -->
               <%= if length(@final_four) > 1 do %>
                 <div class="mt-2">
                   <div class="text-center text-xs text-gray-500 mb-1">Final Four</div>
@@ -339,12 +349,12 @@ defmodule BracketBattleWeb.TournamentLive do
               <% end %>
             </div>
 
-            <!-- MIDWEST REGION - flows right to left -->
+            <!-- REGION 4 - flows right to left -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider">Midwest</span>
+                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 3) %></span>
               </div>
-              <.region_bracket_right matchups={@midwest_matchups} user_picks={@user_picks} />
+              <.region_bracket_right matchups={@region_4_matchups} user_picks={@user_picks} />
             </div>
           </div>
         </div>
@@ -859,10 +869,6 @@ defmodule BracketBattleWeb.TournamentLive do
 
   # Leaderboard Tab
   defp leaderboard_tab(assigns) do
-    leaderboard = Brackets.get_leaderboard(assigns.tournament.id, limit: 50)
-
-    assigns = assign(assigns, :leaderboard, leaderboard)
-
     ~H"""
     <div class="space-y-4">
       <div class="text-center mb-4">
@@ -1179,6 +1185,11 @@ defmodule BracketBattleWeb.TournamentLive do
   def handle_info(:tick, socket) do
     # Force re-render for countdown timers
     {:noreply, socket}
+  end
+
+  def handle_info({:leaderboard_updated, _tournament_id}, socket) do
+    leaderboard = Brackets.get_leaderboard(socket.assigns.tournament.id, limit: 50)
+    {:noreply, assign(socket, leaderboard: leaderboard)}
   end
 
   def handle_info(_, socket), do: {:noreply, socket}
