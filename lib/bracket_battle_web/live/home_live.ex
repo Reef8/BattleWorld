@@ -19,11 +19,19 @@ defmodule BracketBattleWeb.HomeLive do
       false
     end
 
+    # Load matchups for ticker when tournament is active
+    matchups = if tournament && tournament.status == "active" do
+      load_ticker_matchups(tournament)
+    else
+      []
+    end
+
     {:ok,
      assign(socket,
        current_user: user,
        tournament: tournament,
        has_voted: has_voted,
+       matchups: matchups,
        page_title: "BracketBattle",
        show_tournament_start: false,
        show_mobile_menu: false
@@ -45,6 +53,43 @@ defmodule BracketBattleWeb.HomeLive do
     <!-- Tournament Start Reveal Banner -->
     <%= if @show_tournament_start do %>
       <.tournament_start_banner tournament={@tournament} />
+    <% end %>
+
+    <!-- Live Matchups Ticker - Full width at very top -->
+    <%= if @tournament do %>
+      <div class="ticker-container">
+        <%= if @tournament.status == "active" && length(@matchups) > 0 do %>
+          <!-- Active tournament: show matchups -->
+          <div class="ticker-label">
+            <span class="live-dot"></span>
+            ROUND <%= @tournament.current_round %> LIVE
+          </div>
+          <div class="ticker-track">
+            <div class="ticker-content">
+              <%= for matchup <- @matchups ++ @matchups do %>
+                <.ticker_matchup matchup={matchup} />
+              <% end %>
+            </div>
+          </div>
+        <% else %>
+          <%= if @tournament.status == "registration" do %>
+            <!-- Registration: show countdown message -->
+            <div class="ticker-label">
+              <span class="countdown-icon">⏱</span>
+              COMING SOON
+            </div>
+            <div class="ticker-track">
+              <div class="ticker-content">
+                <%= for _ <- 1..3 do %>
+                  <div class="ticker-countdown-msg">
+                    🏆 <%= @tournament.name %> • Voting starts soon • Fill out your bracket now!
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
     <% end %>
 
     <div class="min-h-screen bg-gradient-to-br from-purple-900 via-gray-900 to-gray-900">
@@ -260,6 +305,51 @@ defmodule BracketBattleWeb.HomeLive do
   defp status_label("active"), do: "Tournament In Progress"
   defp status_label("completed"), do: "Tournament Complete"
   defp status_label(_), do: "Current Tournament"
+
+  defp load_ticker_matchups(tournament) do
+    tournament.id
+    |> Tournaments.get_matchups_by_round(tournament.current_round)
+    |> Enum.map(fn m ->
+      counts = Voting.get_vote_counts(m.id)
+      c1_votes = Map.get(counts, m.contestant_1_id, 0)
+      c2_votes = Map.get(counts, m.contestant_2_id, 0)
+      total = c1_votes + c2_votes
+
+      %{
+        id: m.id,
+        contestant_1: m.contestant_1,
+        contestant_2: m.contestant_2,
+        c1_votes: c1_votes,
+        c2_votes: c2_votes,
+        c1_pct: if(total > 0, do: round(c1_votes / total * 100), else: 50),
+        c2_pct: if(total > 0, do: round(c2_votes / total * 100), else: 50),
+        region: m.region || "Final Four",
+        round: m.round,
+        status: m.status,
+        winner_id: m.winner_id
+      }
+    end)
+  end
+
+  # Ticker matchup component
+  defp ticker_matchup(assigns) do
+    ~H"""
+    <div class="ticker-matchup">
+      <span class="ticker-region"><%= @matchup.region %></span>
+      <div class="ticker-contestants">
+        <span class={["ticker-contestant", @matchup.winner_id == @matchup.contestant_1.id && "winner"]}>
+          (<%= @matchup.contestant_1.seed %>) <%= @matchup.contestant_1.name %>
+          <span class="ticker-pct"><%= @matchup.c1_pct %>%</span>
+        </span>
+        <span class="ticker-vs">vs</span>
+        <span class={["ticker-contestant", @matchup.winner_id == @matchup.contestant_2.id && "winner"]}>
+          (<%= @matchup.contestant_2.seed %>) <%= @matchup.contestant_2.name %>
+          <span class="ticker-pct"><%= @matchup.c2_pct %>%</span>
+        </span>
+      </div>
+    </div>
+    """
+  end
 
   # Tournament Start Reveal Banner (no confetti)
   defp tournament_start_banner(assigns) do
