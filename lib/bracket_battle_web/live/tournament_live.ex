@@ -358,7 +358,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <h2 class="text-xl md:text-2xl font-bold text-white">Tournament Bracket</h2>
         <p class="text-gray-400 text-sm">
           <%= if @tournament.status == "active" do %>
-            Round <%= @tournament.current_round %> in progress
+            Voting: <%= Tournaments.get_current_voting_phase_name(@tournament) %>
           <% else %>
             <%= status_label(@tournament.status) %>
           <% end %>
@@ -749,7 +749,9 @@ defmodule BracketBattleWeb.TournamentLive do
           <% end %>
 
           <div class="text-center mb-4">
-            <h2 class="text-xl font-bold text-white">Vote on Round <%= @tournament.current_round %></h2>
+            <h2 class="text-xl font-bold text-white">
+              Vote: <%= Tournaments.get_current_voting_phase_name(@tournament) %>
+            </h2>
             <p class="text-gray-400 text-sm">Click on the contestant you think should win</p>
           </div>
 
@@ -1357,6 +1359,32 @@ defmodule BracketBattleWeb.TournamentLive do
      |> assign(completed_round_name: round_name)
      |> assign(all_matchups: all_matchups)
      |> assign(active_matchups: active_matchups)}
+  end
+
+  def handle_info({:phase_completed, %{phase_name: phase_name, new_region: _new_region, new_round: _new_round}}, socket) do
+    # Reload tournament to get updated region/round state
+    tournament = Tournaments.get_tournament!(socket.assigns.tournament.id)
+    all_matchups = Tournaments.get_all_matchups(tournament.id)
+    active_matchups =
+      Tournaments.get_active_matchups(tournament.id)
+      |> load_vote_counts()
+      |> load_user_votes(socket.assigns.current_user)
+
+    # Reset pending votes for new phase
+    pending_votes = active_matchups
+      |> Enum.filter(fn m -> Map.get(m, :user_vote) end)
+      |> Enum.map(fn m -> {to_string(m.id), to_string(m.user_vote.contestant_id)} end)
+      |> Enum.into(%{})
+
+    {:noreply,
+     socket
+     |> assign(tournament: tournament)
+     |> assign(show_round_reveal: true)
+     |> assign(completed_round_name: phase_name)
+     |> assign(all_matchups: all_matchups)
+     |> assign(active_matchups: active_matchups)
+     |> assign(pending_votes: pending_votes)
+     |> assign(submitted: false)}
   end
 
   def handle_info({:new_message, message}, socket) do

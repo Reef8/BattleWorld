@@ -70,36 +70,70 @@ defmodule BracketBattle.Workers.CloseVotingWorker do
 
     # Only check active tournaments
     if tournament.status == "active" do
-      # Check if all matchups in current round are decided
-      matchups = Tournaments.get_matchups_by_round(tournament_id, tournament.current_round)
+      region = tournament.current_voting_region
+      round = tournament.current_voting_round
+
+      # Get matchups for current region/round only
+      matchups = get_region_matchups(tournament, region, round)
 
       all_decided = Enum.all?(matchups, fn m -> m.status == "decided" end)
       any_ties = Enum.any?(matchups, fn m ->
         m.status == "voting" and voting_ended?(m)
       end)
 
+      phase_name = if region, do: "#{region} Round #{round}", else: "Round #{round}"
+
       cond do
         all_decided ->
-          # All matchups decided - can auto-advance to next round
-          Logger.info("Round #{tournament.current_round} complete for tournament #{tournament_id}")
+          # All matchups in current region/round decided - advance to next phase
+          Logger.info("#{phase_name} complete for tournament #{tournament_id}")
 
-          case Tournaments.advance_round(tournament) do
+          case Tournaments.advance_region(tournament) do
             {:ok, updated} ->
-              Logger.info("Advanced to round #{updated.current_round}")
+              next_phase = if updated.current_voting_region do
+                "#{updated.current_voting_region} Round #{updated.current_voting_round}"
+              else
+                "Round #{updated.current_voting_round}"
+              end
+              Logger.info("Advanced to #{next_phase}")
 
             {:error, reason} ->
-              Logger.error("Failed to advance round: #{inspect(reason)}")
+              Logger.error("Failed to advance region: #{inspect(reason)}")
           end
 
         any_ties ->
           # Some ties exist - admin needs to decide
-          Logger.info("Round #{tournament.current_round} has ties awaiting admin decision")
+          Logger.info("#{phase_name} has ties awaiting admin decision")
 
         true ->
           # Still waiting for voting to end
           :ok
       end
     end
+  end
+
+  defp get_region_matchups(tournament, region, round) do
+    import Ecto.Query
+    alias BracketBattle.Repo
+    alias BracketBattle.Tournaments.Matchup
+
+    query = if region do
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id
+          and m.round == ^round
+          and m.region == ^region,
+        preload: [:contestant_1, :contestant_2, :winner]
+      )
+    else
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id
+          and m.round == ^round
+          and is_nil(m.region),
+        preload: [:contestant_1, :contestant_2, :winner]
+      )
+    end
+
+    Repo.all(query)
   end
 
   defp voting_ended?(matchup) do

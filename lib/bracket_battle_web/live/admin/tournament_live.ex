@@ -278,6 +278,20 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
               </div>
             </div>
 
+            <!-- Voting Duration -->
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Voting Duration (hours per phase)</label>
+              <input
+                type="number"
+                name="tournament[default_voting_duration_hours]"
+                value={@tournament.default_voting_duration_hours || 24}
+                min="1"
+                max="168"
+                class="w-32 bg-gray-800 border-gray-600 text-white rounded px-3 py-2"
+              />
+              <p class="text-gray-500 text-sm mt-1">How long each voting phase stays open (default: 24 hours)</p>
+            </div>
+
             <!-- Custom Round Names (Collapsible) -->
             <div class="mb-4">
               <button

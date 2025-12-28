@@ -92,7 +92,7 @@ defmodule BracketBattle.Tournaments do
     end
   end
 
-  @doc "Transition: registration -> active (starts round 1)"
+  @doc "Transition: registration -> active (starts first region's round 1)"
   def start_tournament(%Tournament{status: "registration"} = tournament) do
     Repo.transaction(fn ->
       # Clean up any existing matchups from previous failed start attempts
@@ -102,15 +102,20 @@ defmodule BracketBattle.Tournaments do
       # Generate all matchups for the bracket size
       generate_all_matchups(tournament)
 
-      # Activate round 1 voting
-      activate_round(tournament, 1)
+      # Get first region for region-based voting
+      first_region = hd(tournament.region_names || ["East"])
 
-      # Update tournament status
+      # Activate only first region's Round 1
+      activate_region_round(tournament, first_region, 1)
+
+      # Update tournament status with region-based tracking
       tournament
       |> Tournament.changeset(%{
         status: "active",
         started_at: DateTime.utc_now(),
-        current_round: 1
+        current_round: 1,
+        current_voting_region: first_region,
+        current_voting_round: 1
       })
       |> Repo.update!()
     end)
@@ -282,13 +287,44 @@ defmodule BracketBattle.Tournaments do
     |> Repo.all()
   end
 
-  @doc "Get currently voting matchups"
+  @doc "Get currently voting matchups (for current region/round only)"
   def get_active_matchups(tournament_id) do
-    from(m in Matchup,
-      where: m.tournament_id == ^tournament_id and m.status == "voting",
-      preload: [:contestant_1, :contestant_2]
-    )
-    |> Repo.all()
+    tournament = get_tournament!(tournament_id)
+    region = tournament.current_voting_region
+    round = tournament.current_voting_round
+
+    query = if region do
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament_id
+          and m.status == "voting"
+          and m.region == ^region
+          and m.round == ^round,
+        preload: [:contestant_1, :contestant_2]
+      )
+    else
+      # Final Four/Championship (no region)
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament_id
+          and m.status == "voting"
+          and is_nil(m.region)
+          and m.round == ^round,
+        preload: [:contestant_1, :contestant_2]
+      )
+    end
+
+    Repo.all(query)
+  end
+
+  @doc "Get display name for current voting phase"
+  def get_current_voting_phase_name(%Tournament{} = tournament) do
+    region = tournament.current_voting_region
+    round = tournament.current_voting_round
+
+    if region do
+      "#{region} - #{get_round_name(tournament, round)}"
+    else
+      get_round_name(tournament, round)
+    end
   end
 
   @doc "Get matchup by ID"
@@ -487,6 +523,210 @@ defmodule BracketBattle.Tournaments do
       voting_starts_at: now,
       voting_ends_at: voting_end
     ])
+  end
+
+  @doc "Activate voting for a specific region and round"
+  def activate_region_round(tournament, region, round) do
+    now = DateTime.utc_now()
+    duration_hours = Tournament.get_voting_duration(tournament, region, round)
+    voting_end = DateTime.add(now, duration_hours, :hour)
+
+    query = if region do
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id
+          and m.round == ^round
+          and m.region == ^region
+      )
+    else
+      # Final Four/Championship (no region)
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id
+          and m.round == ^round
+          and is_nil(m.region)
+      )
+    end
+
+    Repo.update_all(query, set: [
+      status: "voting",
+      voting_starts_at: now,
+      voting_ends_at: voting_end
+    ])
+  end
+
+  @doc "Advance to next region/round after current voting period ends"
+  def advance_region(%Tournament{status: "active"} = tournament) do
+    current_region = tournament.current_voting_region
+    current_round = tournament.current_voting_round
+
+    if all_region_matchups_decided?(tournament, current_region, current_round) do
+      case Tournament.next_voting_phase(tournament, current_region, current_round) do
+        nil ->
+          # No more phases - complete tournament
+          complete_tournament(tournament)
+
+        {next_region, next_round} ->
+          advance_to_phase(tournament, current_region, current_round, next_region, next_round)
+      end
+    else
+      {:error, :matchups_pending}
+    end
+  end
+
+  defp all_region_matchups_decided?(tournament, region, round) do
+    query = if region do
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id
+          and m.round == ^round
+          and m.region == ^region
+          and m.status != "decided",
+        select: count()
+      )
+    else
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id
+          and m.round == ^round
+          and is_nil(m.region)
+          and m.status != "decided",
+        select: count()
+      )
+    end
+
+    Repo.one(query) == 0
+  end
+
+  defp advance_to_phase(tournament, old_region, old_round, next_region, next_round) do
+    result = Repo.transaction(fn ->
+      # Populate winners into next matchups if needed
+      populate_next_phase(tournament, old_region, old_round, next_region, next_round)
+
+      # Activate voting for the new phase
+      activate_region_round(tournament, next_region, next_round)
+
+      # Update tournament state
+      tournament
+      |> Tournament.changeset(%{
+        current_voting_region: next_region,
+        current_voting_round: next_round,
+        current_round: next_round
+      })
+      |> Repo.update!()
+    end)
+    |> broadcast_tournament_update()
+
+    # Broadcast phase completion
+    case result do
+      {:ok, updated_tournament} ->
+        phase_name = if old_region, do: "#{old_region} Round #{old_round}", else: get_round_name(tournament, old_round)
+        broadcast_phase_completed(updated_tournament, old_region, old_round, phase_name)
+      _ -> :ok
+    end
+
+    result
+  end
+
+  defp populate_next_phase(tournament, old_region, old_round, next_region, next_round) do
+    cond do
+      # Same region, next round - populate winners within region
+      old_region == next_region && next_round == old_round + 1 ->
+        populate_next_round_for_region(tournament, old_region, next_round)
+
+      # Moving to Final Four - gather all regional winners
+      next_region == nil && next_round == Tournament.regional_rounds(tournament) + 1 ->
+        populate_final_four(tournament)
+
+      # Moving to Championship from Final Four
+      next_region == nil && next_round > Tournament.regional_rounds(tournament) + 1 ->
+        populate_next_round(tournament, next_round)
+
+      # New region starting (no population needed for round 1)
+      next_round == 1 ->
+        :ok
+
+      true ->
+        :ok
+    end
+  end
+
+  defp populate_next_round_for_region(tournament, region, round) do
+    previous_round = round - 1
+
+    previous_matchups =
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id
+          and m.round == ^previous_round
+          and m.region == ^region,
+        order_by: [asc: m.position],
+        preload: [:winner]
+      )
+      |> Repo.all()
+
+    next_matchups =
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id
+          and m.round == ^round
+          and m.region == ^region,
+        order_by: [asc: m.position]
+      )
+      |> Repo.all()
+
+    winners = Enum.map(previous_matchups, & &1.winner_id)
+    winner_pairs = Enum.chunk_every(winners, 2)
+
+    Enum.zip(winner_pairs, next_matchups)
+    |> Enum.each(fn {[w1, w2], matchup} ->
+      matchup
+      |> Matchup.changeset(%{contestant_1_id: w1, contestant_2_id: w2})
+      |> Repo.update!()
+    end)
+  end
+
+  defp populate_final_four(tournament) do
+    regional_rounds = Tournament.regional_rounds(tournament)
+    final_four_round = regional_rounds + 1
+
+    # Get regional final winners in region order
+    regional_winners =
+      for region <- tournament.region_names do
+        from(m in Matchup,
+          where: m.tournament_id == ^tournament.id
+            and m.round == ^regional_rounds
+            and m.region == ^region,
+          select: m.winner_id
+        )
+        |> Repo.one()
+      end
+
+    # Get Final Four matchups
+    final_four_matchups =
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament.id and m.round == ^final_four_round,
+        order_by: [asc: m.position]
+      )
+      |> Repo.all()
+
+    # Pair: [Region1 vs Region2, Region3 vs Region4]
+    winner_pairs = Enum.chunk_every(regional_winners, 2)
+
+    Enum.zip(winner_pairs, final_four_matchups)
+    |> Enum.each(fn {[w1, w2], matchup} ->
+      matchup
+      |> Matchup.changeset(%{contestant_1_id: w1, contestant_2_id: w2})
+      |> Repo.update!()
+    end)
+  end
+
+  defp broadcast_phase_completed(tournament, region, round, phase_name) do
+    Phoenix.PubSub.broadcast(
+      BracketBattle.PubSub,
+      "tournament:#{tournament.id}",
+      {:phase_completed, %{
+        completed_region: region,
+        completed_round: round,
+        phase_name: phase_name,
+        new_region: tournament.current_voting_region,
+        new_round: tournament.current_voting_round
+      }}
+    )
   end
 
   defp populate_next_round(tournament, round) do

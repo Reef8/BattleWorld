@@ -25,6 +25,12 @@ defmodule BracketBattle.Tournaments.Tournament do
     field :round_names, :map, default: %{}
     field :scoring_config, :map, default: %{}
 
+    # Region-based voting fields
+    field :current_voting_region, :string
+    field :current_voting_round, :integer
+    field :voting_durations, :map, default: %{}
+    field :default_voting_duration_hours, :integer, default: 24
+
     belongs_to :created_by, BracketBattle.Accounts.User
     has_many :contestants, BracketBattle.Tournaments.Contestant
     has_many :matchups, BracketBattle.Tournaments.Matchup
@@ -38,7 +44,9 @@ defmodule BracketBattle.Tournaments.Tournament do
     tournament
     |> cast(attrs, [:name, :description, :status, :registration_deadline,
                     :started_at, :completed_at, :current_round, :created_by_id,
-                    :bracket_size, :region_count, :region_names, :round_names, :scoring_config])
+                    :bracket_size, :region_count, :region_names, :round_names, :scoring_config,
+                    :current_voting_region, :current_voting_round, :voting_durations,
+                    :default_voting_duration_hours])
     |> validate_required([:name])
     |> validate_inclusion(:status, @statuses)
     |> validate_bracket_config()
@@ -98,4 +106,59 @@ defmodule BracketBattle.Tournaments.Tournament do
   def statuses, do: @statuses
   def valid_bracket_sizes, do: @valid_bracket_sizes
   def default_regions, do: @default_regions
+
+  @doc "Calculate total regional rounds (before Final Four)"
+  def regional_rounds(%__MODULE__{bracket_size: size, region_count: regions})
+      when is_integer(size) and is_integer(regions) do
+    contestants_per_region = div(size, regions)
+    trunc(:math.log2(contestants_per_region))
+  end
+  def regional_rounds(_), do: 4
+
+  @doc "Get voting duration for a specific region and round (in hours)"
+  def get_voting_duration(%__MODULE__{} = tournament, region, round) do
+    durations = tournament.voting_durations || %{}
+    region_key = region || "Final"
+    round_key = to_string(round)
+
+    region_durations = Map.get(durations, region_key, %{})
+
+    cond do
+      Map.has_key?(region_durations, round) -> Map.get(region_durations, round)
+      Map.has_key?(region_durations, round_key) -> Map.get(region_durations, round_key)
+      true -> tournament.default_voting_duration_hours || 24
+    end
+  end
+
+  @doc "Get ordered list of region voting sequence"
+  def voting_sequence(%__MODULE__{region_names: names} = tournament) do
+    reg_rounds = regional_rounds(tournament)
+    tot_rounds = total_rounds(tournament)
+
+    # Build sequence: East R1, East R2, East R3, South R1, South R2, ...
+    region_sequence = for region <- names, round <- 1..reg_rounds do
+      {region, round}
+    end
+
+    # Add Final Four and Championship (no region)
+    final_sequence = for round <- (reg_rounds + 1)..tot_rounds do
+      {nil, round}
+    end
+
+    region_sequence ++ final_sequence
+  end
+
+  @doc "Get the next voting phase after the current one"
+  def next_voting_phase(%__MODULE__{} = tournament, current_region, current_round) do
+    sequence = voting_sequence(tournament)
+    current_index = Enum.find_index(sequence, fn {r, rd} ->
+      r == current_region && rd == current_round
+    end)
+
+    if current_index && current_index + 1 < length(sequence) do
+      Enum.at(sequence, current_index + 1)
+    else
+      nil
+    end
+  end
 end

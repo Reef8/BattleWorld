@@ -266,21 +266,23 @@ defmodule BracketBattleWeb.BracketEditorLive do
               </div>
             </div>
 
-            <!-- Center Section: Final Four + Championship (horizontal) -->
-            <div class="flex flex-row justify-center items-start my-6">
-              <!-- Final Four 1 (from top regions) -->
-              <div class="w-48">
-              <.final_four_slot
-                position={ff1_pos}
-                label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
-                source_a={regional_winner_1}
-                source_b={regional_winner_2}
-                placeholder_a={"#{Enum.at(region_names, 0)} Winner"}
-                placeholder_b={"#{Enum.at(region_names, 1)} Winner"}
-                picks={@picks}
-                contestants_map={@contestants_map}
-                is_submitted={@is_submitted}
-              />
+            <!-- Center Section: Final Four + Championship (horizontal) - matches region layout -->
+            <div class="flex justify-between items-start my-6">
+              <!-- Left spacer with Final Four 1 -->
+              <div class="flex-1 flex justify-end">
+                <div class="w-48">
+                <.final_four_slot
+                  position={ff1_pos}
+                  label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
+                  source_a={regional_winner_1}
+                  source_b={regional_winner_2}
+                  placeholder_a={"#{Enum.at(region_names, 0)} Winner"}
+                  placeholder_b={"#{Enum.at(region_names, 1)} Winner"}
+                  picks={@picks}
+                  contestants_map={@contestants_map}
+                  is_submitted={@is_submitted}
+                />
+                </div>
               </div>
 
               <!-- Championship (center) -->
@@ -293,22 +295,24 @@ defmodule BracketBattleWeb.BracketEditorLive do
               />
               </div>
 
-              <!-- Final Four 2 (from bottom regions) -->
-              <%= if region_count >= 4 do %>
-                <div class="w-48">
-                <.final_four_slot
-                  position={ff2_pos}
-                  label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
-                  source_a={regional_winner_3}
-                  source_b={regional_winner_4}
-                  placeholder_a={"#{Enum.at(region_names, 2)} Winner"}
-                  placeholder_b={"#{Enum.at(region_names, 3)} Winner"}
-                  picks={@picks}
-                  contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
-                />
-                </div>
-              <% end %>
+              <!-- Right spacer with Final Four 2 -->
+              <div class="flex-1 flex justify-start">
+                <%= if region_count >= 4 do %>
+                  <div class="w-48">
+                  <.final_four_slot
+                    position={ff2_pos}
+                    label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
+                    source_a={regional_winner_3}
+                    source_b={regional_winner_4}
+                    placeholder_a={"#{Enum.at(region_names, 2)} Winner"}
+                    placeholder_b={"#{Enum.at(region_names, 3)} Winner"}
+                    picks={@picks}
+                    contestants_map={@contestants_map}
+                    is_submitted={@is_submitted}
+                  />
+                  </div>
+                <% end %>
+              </div>
             </div>
 
             <%= if region_count >= 4 do %>
