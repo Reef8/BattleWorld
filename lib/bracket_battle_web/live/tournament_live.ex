@@ -53,8 +53,9 @@ defmodule BracketBattleWeb.TournamentLive do
     leaderboard = Brackets.get_leaderboard(tournament_id, limit: 50)
 
     # Build pending_votes from existing user votes (using string keys for consistency)
+    # Use Map.get to safely handle anonymous users where user_vote key doesn't exist
     pending_votes = active_matchups
-      |> Enum.filter(fn m -> m.user_vote end)
+      |> Enum.filter(fn m -> Map.get(m, :user_vote) end)
       |> Enum.map(fn m -> {to_string(m.id), to_string(m.user_vote.contestant_id)} end)
       |> Enum.into(%{})
 
@@ -811,7 +812,8 @@ defmodule BracketBattleWeb.TournamentLive do
     selected = assigns.pending_vote
 
     # Check if user has already voted on this matchup (don't show percentages until they vote)
-    has_voted = assigns.matchup.user_vote != nil
+    # Use Map.get to safely handle anonymous users where user_vote key doesn't exist
+    has_voted = Map.get(assigns.matchup, :user_vote) != nil
 
     time_remaining = if assigns.matchup.voting_ends_at do
       diff = DateTime.diff(assigns.matchup.voting_ends_at, DateTime.utc_now())
