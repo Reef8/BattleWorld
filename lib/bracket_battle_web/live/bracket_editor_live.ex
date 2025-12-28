@@ -189,25 +189,47 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
         <!-- Bracket Layout -->
         <% region_names = @tournament.region_names || ["East", "West", "South", "Midwest"] %>
-        <% region_count = length(region_names) %>
 
-        <!-- Calculate Elite 8 base position dynamically for Final Four connections -->
+        <!-- Calculate regional winner positions dynamically for Final Four connections -->
         <% bracket_size = @tournament.bracket_size || 64 %>
-        <% r1_matchups = div(bracket_size, 2) %>
-        <% r2_matchups = div(bracket_size, 4) %>
-        <% r3_matchups = div(bracket_size, 8) %>
-        <% elite_8_base = r1_matchups + r2_matchups + r3_matchups %>
+        <% region_count = @tournament.region_count || 4 %>
+        <% contestants_per_region = div(bracket_size, region_count) %>
+        <% regional_rounds = trunc(:math.log2(contestants_per_region)) %>
+
+        <!-- Calculate where regional winners are (last round before Final Four) -->
+        <%
+          # For 64-bracket: regional_rounds=4, winner is in round 4 (Elite 8)
+          # For 32-bracket: regional_rounds=3, winner is in round 3
+          # Each round halves the matchups, so we sum them up
+
+          # Calculate base position for the regional winner round
+          r1_matchups = div(bracket_size, 2)
+          r2_matchups = div(bracket_size, 4)
+          r3_matchups = div(bracket_size, 8)
+
+          # For 32-bracket: regional winner is at R3 (positions 25-28)
+          # For 64-bracket: regional winner is at R4/Elite 8 (positions 57-60)
+          regional_winner_base = case regional_rounds do
+            3 -> r1_matchups + r2_matchups  # 32-bracket: R3 winners
+            4 -> r1_matchups + r2_matchups + r3_matchups  # 64-bracket: R4 winners
+            _ -> r1_matchups + r2_matchups + r3_matchups  # Default to 64-bracket logic
+          end
+
+          # Regional winner positions (1 per region)
+          regional_winner_1 = regional_winner_base + 1
+          regional_winner_2 = regional_winner_base + 2
+          regional_winner_3 = regional_winner_base + 3
+          regional_winner_4 = regional_winner_base + 4
+
+          # Final Four positions come right after regional winners
+          ff_base = regional_winner_base + region_count
+          ff1_pos = ff_base + 1
+          ff2_pos = ff_base + 2
+        %>
 
         <!-- ESPN-Style Bracket Layout - Horizontal scroll on all devices -->
         <div class="overflow-x-auto pb-4">
           <div class="min-w-[1400px]">
-            <!-- Calculate Final Four positions -->
-            <% ff1_pos = elite_8_base + 5 %>
-            <% ff2_pos = elite_8_base + 6 %>
-            <% r4_pos_1 = elite_8_base + 1 %>
-            <% r4_pos_2 = elite_8_base + 2 %>
-            <% r4_pos_3 = elite_8_base + 3 %>
-            <% r4_pos_4 = elite_8_base + 4 %>
 
             <!-- Top Half: First region (left) and Second region (right) -->
             <div class="flex justify-between">
@@ -251,8 +273,8 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <.final_four_slot
                 position={ff1_pos}
                 label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
-                source_a={r4_pos_1}
-                source_b={r4_pos_2}
+                source_a={regional_winner_1}
+                source_b={regional_winner_2}
                 placeholder_a={"#{Enum.at(region_names, 0)} Winner"}
                 placeholder_b={"#{Enum.at(region_names, 1)} Winner"}
                 picks={@picks}
@@ -277,8 +299,8 @@ defmodule BracketBattleWeb.BracketEditorLive do
                 <.final_four_slot
                   position={ff2_pos}
                   label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
-                  source_a={r4_pos_3}
-                  source_b={r4_pos_4}
+                  source_a={regional_winner_3}
+                  source_b={regional_winner_4}
                   placeholder_a={"#{Enum.at(region_names, 2)} Winner"}
                   placeholder_b={"#{Enum.at(region_names, 3)} Winner"}
                   picks={@picks}
@@ -890,18 +912,27 @@ defmodule BracketBattleWeb.BracketEditorLive do
     # Calculate positions dynamically based on tournament config
     tournament = assigns.tournament
     bracket_size = tournament.bracket_size || 64
+    region_count = tournament.region_count || 4
+    contestants_per_region = div(bracket_size, region_count)
+    regional_rounds = trunc(:math.log2(contestants_per_region))
 
-    # Calculate Elite 8 base (same formula as render template)
+    # Calculate regional winner base (same logic as render template)
     r1_matchups = div(bracket_size, 2)
     r2_matchups = div(bracket_size, 4)
     r3_matchups = div(bracket_size, 8)
-    elite_8_base = r1_matchups + r2_matchups + r3_matchups
 
-    # Final Four positions are elite_8_base + 5 and elite_8_base + 6
-    ff1_pos = elite_8_base + 5
-    ff2_pos = elite_8_base + 6
-    # Championship is elite_8_base + 7
-    championship_pos = elite_8_base + 7
+    regional_winner_base = case regional_rounds do
+      3 -> r1_matchups + r2_matchups  # 32-bracket: R3 winners at 25-28
+      4 -> r1_matchups + r2_matchups + r3_matchups  # 64-bracket: R4 winners at 57-60
+      _ -> r1_matchups + r2_matchups + r3_matchups
+    end
+
+    # Final Four positions come right after regional winners
+    ff_base = regional_winner_base + region_count
+    ff1_pos = ff_base + 1
+    ff2_pos = ff_base + 2
+    # Championship is after Final Four
+    championship_pos = ff_base + 3
 
     # Championship contestants come from Final Four picks
     pick_a = Map.get(assigns.picks, to_string(ff1_pos))
