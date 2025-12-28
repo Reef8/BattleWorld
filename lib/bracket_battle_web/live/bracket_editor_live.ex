@@ -521,8 +521,6 @@ defmodule BracketBattleWeb.BracketEditorLive do
       <%= if @regional_rounds >= 4 do %>
         <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
           <div class="relative">
-            <!-- Horizontal connector line from Sweet 16 (left side) -->
-            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <.pick_matchup_box_from_picks
               position={@r4_pos}
               source_a={@r3_base + 1}
@@ -603,8 +601,6 @@ defmodule BracketBattleWeb.BracketEditorLive do
               contestants_map={@contestants_map}
               is_submitted={@is_submitted}
             />
-            <!-- Horizontal connector line to Sweet 16 (right side) -->
-            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         </div>
 
