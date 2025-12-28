@@ -335,7 +335,7 @@ defmodule BracketBattleWeb.TournamentLive do
     # 32-bracket: 3 rounds * 2 sides * 180px + 288px = 1368px (use 1100px for tighter fit)
     min_bracket_width = case region_rounds do
       4 -> 1400  # 64-bracket
-      3 -> 1100  # 32-bracket
+      3 -> 1200  # 32-bracket (increased for better layout)
       2 -> 900   # 16-bracket
       _ -> 1400  # default
     end
@@ -378,16 +378,8 @@ defmodule BracketBattleWeb.TournamentLive do
               <.region_bracket_left matchups={@region_1_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
 
-            <!-- CENTER COLUMN - Final Four Top + Championship -->
-            <div class="w-72 flex flex-col items-center justify-end px-4">
-              <!-- Final Four Game 1 (Region 1 vs Region 2 winners) -->
-              <%= if length(@final_four) > 0 do %>
-                <div class="mb-2">
-                  <div class="text-center text-xs text-gray-500 mb-1">Final Four</div>
-                  <.bracket_matchup_box matchup={Enum.at(@final_four, 0)} user_picks={@user_picks} />
-                </div>
-              <% end %>
-            </div>
+            <!-- Empty center column for top regions -->
+            <div class="w-72 flex-shrink-0"></div>
 
             <!-- REGION 2 - flows right to left -->
             <div class="flex-1">
@@ -398,17 +390,36 @@ defmodule BracketBattleWeb.TournamentLive do
             </div>
           </div>
 
-          <!-- Championship in Center - uses relative/absolute positioning to align with Final Four -->
-          <div class="relative my-6" style="height: 80px;">
-            <div class="absolute left-[56.5%] -translate-x-1/2">
-              <div class="w-72 flex items-center justify-center px-4">
+          <!-- CENTER ROW: Final Four 1 | Championship | Final Four 2 -->
+          <div class="flex flex-row justify-center items-center my-6 gap-8">
+            <!-- Final Four Game 1 (Region 1 vs Region 2 winners) -->
+            <div class="flex-shrink-0">
+              <%= if length(@final_four) > 0 do %>
                 <div class="text-center">
-                  <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
-                  <%= if length(@championship) > 0 do %>
-                    <.bracket_matchup_box matchup={Enum.at(@championship, 0)} highlight={true} user_picks={@user_picks} />
-                  <% end %>
+                  <div class="text-xs text-gray-500 mb-1">Final Four</div>
+                  <.bracket_matchup_box matchup={Enum.at(@final_four, 0)} user_picks={@user_picks} />
                 </div>
+              <% end %>
+            </div>
+
+            <!-- Championship -->
+            <div class="flex-shrink-0">
+              <div class="text-center">
+                <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
+                <%= if length(@championship) > 0 do %>
+                  <.bracket_matchup_box matchup={Enum.at(@championship, 0)} highlight={true} user_picks={@user_picks} />
+                <% end %>
               </div>
+            </div>
+
+            <!-- Final Four Game 2 (Region 3 vs Region 4 winners) -->
+            <div class="flex-shrink-0">
+              <%= if length(@final_four) > 1 do %>
+                <div class="text-center">
+                  <div class="text-xs text-gray-500 mb-1">Final Four</div>
+                  <.bracket_matchup_box matchup={Enum.at(@final_four, 1)} user_picks={@user_picks} />
+                </div>
+              <% end %>
             </div>
           </div>
 
@@ -422,16 +433,8 @@ defmodule BracketBattleWeb.TournamentLive do
               <.region_bracket_left matchups={@region_3_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
 
-            <!-- CENTER COLUMN - Final Four Bottom -->
-            <div class="w-72 flex flex-col items-center justify-start px-4">
-              <!-- Final Four Game 2 (Region 3 vs Region 4 winners) -->
-              <%= if length(@final_four) > 1 do %>
-                <div class="mt-2">
-                  <div class="text-center text-xs text-gray-500 mb-1">Final Four</div>
-                  <.bracket_matchup_box matchup={Enum.at(@final_four, 1)} user_picks={@user_picks} />
-                </div>
-              <% end %>
-            </div>
+            <!-- Empty center column for bottom regions -->
+            <div class="w-72 flex-shrink-0"></div>
 
             <!-- REGION 4 - flows right to left -->
             <div class="flex-1">

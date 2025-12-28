@@ -267,7 +267,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
             </div>
 
             <!-- Center Section: Final Four + Championship (horizontal) -->
-            <div class="flex justify-center items-start my-6">
+            <div class="flex flex-row justify-center items-start my-6">
               <!-- Final Four 1 (from top regions) -->
               <div class="w-48">
               <.final_four_slot
