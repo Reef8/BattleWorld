@@ -182,7 +182,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
               <% end %>
             </div>
 
-            <form phx-submit="bulk_import">
+            <.form for={%{}} phx-submit="bulk_import" class="space-y-4">
               <textarea
                 name="names"
                 rows={@contestants_per_region}
@@ -198,7 +198,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
                   Cancel
                 </button>
               </div>
-            </form>
+            </.form>
           </div>
         <% end %>
 

@@ -303,18 +303,41 @@ defmodule BracketBattleWeb.TournamentLive do
     region_names = assigns.tournament.region_names || ["East", "West", "South", "Midwest"]
     [region_1, region_2, region_3, region_4] = Enum.take(region_names, 4)
 
-    # Separate matchups by region for rounds 1-4
+    # Separate matchups by region
     region_1_matchups = get_region_matchups(assigns.matchups, region_1)
     region_2_matchups = get_region_matchups(assigns.matchups, region_2)
     region_3_matchups = get_region_matchups(assigns.matchups, region_3)
     region_4_matchups = get_region_matchups(assigns.matchups, region_4)
 
-    # Final Four and Championship (rounds 5-6)
-    final_four = Map.get(by_round, 5, []) |> Enum.sort_by(& &1.position)
-    championship = Map.get(by_round, 6, []) |> Enum.sort_by(& &1.position)
+    # Calculate total rounds for this bracket size
+    total_rounds = BracketBattle.Tournaments.Tournament.total_rounds(assigns.tournament)
+
+    # Calculate regional rounds (total rounds - 2 for Final Four and Championship)
+    # For 64-bracket: 6 total rounds, 4 regional rounds
+    # For 32-bracket: 5 total rounds, 3 regional rounds
+    # For 16-bracket: 4 total rounds, 2 regional rounds
+    region_rounds = total_rounds - 2
+
+    # Final Four is second-to-last round, Championship is last round
+    final_four_round = total_rounds - 1
+    championship_round = total_rounds
+
+    final_four = Map.get(by_round, final_four_round, []) |> Enum.sort_by(& &1.position)
+    championship = Map.get(by_round, championship_round, []) |> Enum.sort_by(& &1.position)
 
     # Get user picks (already set by bracket_tab)
     user_picks = Map.get(assigns, :user_picks, %{})
+
+    # Calculate minimum width based on bracket size
+    # Each round column is about 180px, plus center column (288px)
+    # 64-bracket: 4 rounds * 2 sides * 180px + 288px = 1728px (use 1400px for tighter fit)
+    # 32-bracket: 3 rounds * 2 sides * 180px + 288px = 1368px (use 1100px for tighter fit)
+    min_bracket_width = case region_rounds do
+      4 -> 1400  # 64-bracket
+      3 -> 1100  # 32-bracket
+      2 -> 900   # 16-bracket
+      _ -> 1400  # default
+    end
 
     assigns = assigns
       |> assign(:region_names, region_names)
@@ -325,6 +348,8 @@ defmodule BracketBattleWeb.TournamentLive do
       |> assign(:final_four, final_four)
       |> assign(:championship, championship)
       |> assign(:user_picks, user_picks)
+      |> assign(:region_rounds, region_rounds)
+      |> assign(:min_bracket_width, min_bracket_width)
 
     ~H"""
     <div class="space-y-4">
@@ -341,7 +366,7 @@ defmodule BracketBattleWeb.TournamentLive do
 
       <!-- ESPN-Style Bracket Layout - Horizontal scroll on all devices -->
       <div class="overflow-x-auto pb-4">
-        <div class="min-w-[1400px]">
+        <div style={"min-width: #{@min_bracket_width}px;"}>
           <!-- Top Half: Region 1 (left) and Region 2 (right) -->
           <div class="flex">
             <!-- REGION 1 - flows left to right -->
@@ -349,7 +374,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center mb-3">
                 <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 0) %></span>
               </div>
-              <.region_bracket_left matchups={@region_1_matchups} user_picks={@user_picks} />
+              <.region_bracket_left matchups={@region_1_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
 
             <!-- CENTER COLUMN - Final Four Top + Championship -->
@@ -368,7 +393,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center mb-3">
                 <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 1) %></span>
               </div>
-              <.region_bracket_right matchups={@region_2_matchups} user_picks={@user_picks} />
+              <.region_bracket_right matchups={@region_2_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
           </div>
 
@@ -393,7 +418,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center mb-3">
                 <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 2) %></span>
               </div>
-              <.region_bracket_left matchups={@region_3_matchups} user_picks={@user_picks} />
+              <.region_bracket_left matchups={@region_3_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
 
             <!-- CENTER COLUMN - Final Four Bottom -->
@@ -412,7 +437,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center mb-3">
                 <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 3) %></span>
               </div>
-              <.region_bracket_right matchups={@region_4_matchups} user_picks={@user_picks} />
+              <.region_bracket_right matchups={@region_4_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
           </div>
         </div>
@@ -431,158 +456,91 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   # Left-side region bracket (East, South) - flows left to right
+  # Dynamically renders based on region_rounds (3 for 32-bracket, 4 for 64-bracket)
   defp region_bracket_left(assigns) do
+    # Calculate container height based on number of first-round matchups
+    # For 32-bracket: 4 matchups * 80px = 320px
+    # For 64-bracket: 8 matchups * 80px = 640px
+    first_round_count = length(Map.get(assigns.matchups, 1, []))
+    container_height = max(first_round_count * 80, 320)
+
+    assigns = assigns
+      |> Map.put(:container_height, container_height)
+
     ~H"""
     <div class="flex items-center">
-      <!-- Round 1 (8 matchups) -->
-      <div class="flex flex-col justify-around" style="min-height: 640px;">
-        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 1, [])) do %>
-          <div class="relative">
-            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
-            <!-- Horizontal line to connector -->
-            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
-            <!-- Vertical connector: pairs connect (0-1, 2-3, 4-5, 6-7) -->
-            <%= if rem(idx, 2) == 0 do %>
-              <!-- Top of pair - line goes down -->
-              <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 40px;"></div>
-            <% else %>
-              <!-- Bottom of pair - line goes up -->
-              <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 40px;"></div>
-            <% end %>
-          </div>
+      <%= for round <- 1..@region_rounds do %>
+        <%= if round > 1 do %>
+          <!-- Connector column between rounds -->
+          <div class="w-4"></div>
         <% end %>
-      </div>
 
-      <!-- Connector column R1->R2 -->
-      <div class="w-4"></div>
+        <div class={if round == @region_rounds, do: "flex flex-col justify-center", else: "flex flex-col justify-around"} style={"min-height: #{@container_height}px;"}>
+          <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, round, [])) do %>
+            <div class="relative">
+              <.bracket_matchup_box matchup={matchup} size={if round < @region_rounds - 1, do: "small", else: "normal"} user_picks={@user_picks} />
 
-      <!-- Round 2 (4 matchups) -->
-      <div class="flex flex-col justify-around" style="min-height: 640px;">
-        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 2, [])) do %>
-          <div class="relative">
-            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
-            <!-- Horizontal line to next connector -->
-            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
-            <!-- Vertical connector for pairs -->
-            <%= if rem(idx, 2) == 0 do %>
-              <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 80px;"></div>
-            <% else %>
-              <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 80px;"></div>
-            <% end %>
-          </div>
-        <% end %>
-      </div>
-
-      <!-- Connector column R2->R3 -->
-      <div class="w-4"></div>
-
-      <!-- Sweet 16 (2 matchups) -->
-      <div class="flex flex-col justify-around" style="min-height: 640px;">
-        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 3, [])) do %>
-          <div class="relative">
-            <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
-            <!-- Vertical connector for pair -->
-            <%= if rem(idx, 2) == 0 do %>
-              <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 160px;"></div>
-            <% else %>
-              <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 160px;"></div>
-            <% end %>
-          </div>
-        <% end %>
-      </div>
-
-      <!-- Connector column R3->R4 -->
-      <div class="w-4"></div>
-
-      <!-- Elite 8 (1 matchup) -->
-      <div class="flex flex-col justify-center" style="min-height: 640px;">
-        <%= for matchup <- Map.get(@matchups, 4, []) do %>
-          <div class="relative">
-            <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-            <!-- No line on right - this connects to Final Four in center -->
-          </div>
-        <% end %>
-      </div>
+              <%= if round < @region_rounds do %>
+                <!-- Horizontal line to connector -->
+                <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
+                <!-- Vertical connector: pairs connect -->
+                <% matchups_in_round = length(Map.get(@matchups, round, []))
+                   connector_height = div(@container_height, matchups_in_round * 2) %>
+                <%= if rem(idx, 2) == 0 do %>
+                  <!-- Top of pair - line goes down -->
+                  <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style={"height: #{connector_height}px;"}></div>
+                <% else %>
+                  <!-- Bottom of pair - line goes up -->
+                  <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style={"height: #{connector_height}px;"}></div>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     </div>
     """
   end
 
   # Right-side region bracket (West, Midwest) - flows right to left
+  # Dynamically renders based on region_rounds (3 for 32-bracket, 4 for 64-bracket)
   defp region_bracket_right(assigns) do
+    # Calculate container height based on number of first-round matchups
+    first_round_count = length(Map.get(assigns.matchups, 1, []))
+    container_height = max(first_round_count * 80, 320)
+
+    assigns = assigns
+      |> Map.put(:container_height, container_height)
+
     ~H"""
     <div class="flex items-center justify-end">
-      <!-- Elite 8 (1 matchup) -->
-      <div class="flex flex-col justify-center" style="min-height: 640px;">
-        <%= for matchup <- Map.get(@matchups, 4, []) do %>
-          <div class="relative">
-            <!-- No line on left - this connects to Final Four in center -->
-            <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-          </div>
+      <%= for round <- @region_rounds..1 do %>
+        <%= if round < @region_rounds do %>
+          <!-- Connector column between rounds -->
+          <div class="w-4"></div>
         <% end %>
-      </div>
 
-      <!-- Connector column R4<-R3 -->
-      <div class="w-4"></div>
+        <div class={if round == @region_rounds, do: "flex flex-col justify-center", else: "flex flex-col justify-around"} style={"min-height: #{@container_height}px;"}>
+          <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, round, [])) do %>
+            <div class="relative">
+              <%= if round < @region_rounds do %>
+                <!-- Horizontal line to connector (toward next round) -->
+                <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
+                <!-- Vertical connector for pairs -->
+                <% matchups_in_round = length(Map.get(@matchups, round, []))
+                   connector_height = div(@container_height, matchups_in_round * 2) %>
+                <%= if rem(idx, 2) == 0 do %>
+                  <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{connector_height}px;"}></div>
+                <% else %>
+                  <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{connector_height}px;"}></div>
+                <% end %>
+              <% end %>
 
-      <!-- Sweet 16 (2 matchups) -->
-      <div class="flex flex-col justify-around" style="min-height: 640px;">
-        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 3, [])) do %>
-          <div class="relative">
-            <!-- Horizontal line to next connector (toward Elite 8) -->
-            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
-            <!-- Vertical connector for pair -->
-            <%= if rem(idx, 2) == 0 do %>
-              <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 160px;"></div>
-            <% else %>
-              <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 160px;"></div>
-            <% end %>
-            <.bracket_matchup_box matchup={matchup} user_picks={@user_picks} />
-          </div>
-        <% end %>
-      </div>
-
-      <!-- Connector column R3<-R2 -->
-      <div class="w-4"></div>
-
-      <!-- Round 2 (4 matchups) -->
-      <div class="flex flex-col justify-around" style="min-height: 640px;">
-        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 2, [])) do %>
-          <div class="relative">
-            <!-- Horizontal line to next connector (toward Sweet 16) -->
-            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
-            <!-- Vertical connector for pairs -->
-            <%= if rem(idx, 2) == 0 do %>
-              <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 80px;"></div>
-            <% else %>
-              <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 80px;"></div>
-            <% end %>
-            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
-          </div>
-        <% end %>
-      </div>
-
-      <!-- Connector column R2<-R1 -->
-      <div class="w-4"></div>
-
-      <!-- Round 1 (8 matchups) -->
-      <div class="flex flex-col justify-around" style="min-height: 640px;">
-        <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, 1, [])) do %>
-          <div class="relative">
-            <.bracket_matchup_box matchup={matchup} size="small" user_picks={@user_picks} />
-            <!-- Horizontal line to connector (toward Round 2) -->
-            <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
-            <!-- Vertical connector: pairs connect (0-1, 2-3, 4-5, 6-7) -->
-            <%= if rem(idx, 2) == 0 do %>
-              <!-- Top of pair - line goes down -->
-              <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 40px;"></div>
-            <% else %>
-              <!-- Bottom of pair - line goes up -->
-              <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 40px;"></div>
-            <% end %>
-          </div>
-        <% end %>
-      </div>
+              <.bracket_matchup_box matchup={matchup} size={if round < @region_rounds - 1, do: "small", else: "normal"} user_picks={@user_picks} />
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     </div>
     """
   end

@@ -35,7 +35,10 @@ defmodule BracketBattle.Brackets do
 
   @doc "Update picks (saves progress)"
   def update_picks(%UserBracket{} = bracket, picks) do
-    is_complete = map_size(picks) == 63 and Enum.all?(picks, fn {_, v} -> v != nil end)
+    tournament = Tournaments.get_tournament!(bracket.tournament_id)
+    expected_picks = tournament.bracket_size - 1  # Total matchups = bracket_size - 1
+
+    is_complete = map_size(picks) == expected_picks and Enum.all?(picks, fn {_, v} -> v != nil end)
 
     bracket
     |> UserBracket.changeset(%{

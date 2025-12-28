@@ -365,6 +365,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
     r3_base = r3_base_global + region_index * r3_matchups_per_region
     r4_pos = r4_base_global + region_index * max(r4_matchups_per_region, 1) + 1
 
+    # Calculate container height based on matchups in round 1
+    # 32-bracket: 4 matchups * 80px = 320px
+    # 64-bracket: 8 matchups * 80px = 640px
+    container_height = matchups_per_region_r1 * 80
+
     assigns = assigns
       |> assign(:r2_base, r2_base)
       |> assign(:r3_base, r3_base)
@@ -373,11 +378,13 @@ defmodule BracketBattleWeb.BracketEditorLive do
       |> assign(:r2_matchups_per_region, r2_matchups_per_region)
       |> assign(:r3_matchups_per_region, r3_matchups_per_region)
       |> assign(:regional_rounds, regional_rounds)
+      |> assign(:container_height, container_height)
+      |> assign(:matchups_per_region_r1, matchups_per_region_r1)
 
     ~H"""
     <div class="flex items-center">
       <!-- Round 1 matchups -->
-      <div class="flex flex-col justify-around" style="min-height: 640px;">
+      <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
         <%= for {matchup, idx} <- Enum.with_index(@region_data.matchups) do %>
           <div class="relative">
             <.pick_matchup_box
@@ -391,10 +398,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
             <!-- Horizontal line to connector -->
             <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
             <!-- Vertical connector: pairs connect (0-1, 2-3, etc.) -->
+            <% r1_connector = div(@container_height, @matchups_per_region_r1 * 2) %>
             <%= if rem(idx, 2) == 0 do %>
-              <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 40px;"></div>
+              <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style={"height: #{r1_connector}px;"}></div>
             <% else %>
-              <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 40px;"></div>
+              <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style={"height: #{r1_connector}px;"}></div>
             <% end %>
           </div>
         <% end %>
@@ -405,7 +413,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
       <!-- Round 2 matchups (dynamic count) -->
       <%= if @r2_matchups_per_region > 0 do %>
-        <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r2_matchups_per_region - 1) do %>
             <% position = @r2_base + idx + 1 %>
             <% source_a = @offset + idx * 2 + 1 %>
@@ -423,10 +431,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <!-- Horizontal line to next connector -->
               <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
               <!-- Vertical connector for pairs -->
+              <% r2_connector = div(@container_height, @r2_matchups_per_region * 2) %>
               <%= if rem(idx, 2) == 0 do %>
-                <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 80px;"></div>
+                <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style={"height: #{r2_connector}px;"}></div>
               <% else %>
-                <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 80px;"></div>
+                <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style={"height: #{r2_connector}px;"}></div>
               <% end %>
             </div>
           <% end %>
@@ -438,7 +447,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
       <!-- Round 3 matchups (dynamic count) -->
       <%= if @r3_matchups_per_region > 0 do %>
-        <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>
             <% position = @r3_base + idx + 1 %>
             <% source_a = @r2_base + idx * 2 + 1 %>
@@ -455,10 +464,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <!-- Horizontal line to next connector -->
               <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
               <!-- Vertical connector for pair -->
+              <% r3_connector = div(@container_height, @r3_matchups_per_region * 2) %>
               <%= if rem(idx, 2) == 0 do %>
-                <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 160px;"></div>
+                <div class="absolute right-0 top-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style={"height: #{r3_connector}px;"}></div>
               <% else %>
-                <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style="height: 160px;"></div>
+                <div class="absolute right-0 bottom-1/2 w-px bg-gray-600 translate-x-[calc(100%+16px)]" style={"height: #{r3_connector}px;"}></div>
               <% end %>
             </div>
           <% end %>
@@ -470,7 +480,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
       <!-- Elite 8 (region winner matchup) -->
       <%= if @regional_rounds >= 4 do %>
-        <div class="flex flex-col justify-center" style="min-height: 640px;">
+        <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
           <div class="relative">
             <.pick_matchup_box_from_picks
               position={@r4_pos}
@@ -521,6 +531,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
     r3_base = r3_base_global + region_index * r3_matchups_per_region
     r4_pos = r4_base_global + region_index * max(r4_matchups_per_region, 1) + 1
 
+    # Calculate container height based on matchups in round 1
+    container_height = matchups_per_region_r1 * 80
+
     assigns = assigns
       |> assign(:r2_base, r2_base)
       |> assign(:r3_base, r3_base)
@@ -529,12 +542,14 @@ defmodule BracketBattleWeb.BracketEditorLive do
       |> assign(:r2_matchups_per_region, r2_matchups_per_region)
       |> assign(:r3_matchups_per_region, r3_matchups_per_region)
       |> assign(:regional_rounds, regional_rounds)
+      |> assign(:container_height, container_height)
+      |> assign(:matchups_per_region_r1, matchups_per_region_r1)
 
     ~H"""
     <div class="flex items-center justify-end">
       <!-- Elite 8 (region winner matchup) -->
       <%= if @regional_rounds >= 4 do %>
-        <div class="flex flex-col justify-center" style="min-height: 640px;">
+        <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
           <div class="relative">
             <!-- No connector on left - feeds from Final Four in center -->
             <.pick_matchup_box_from_picks
@@ -554,7 +569,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
       <!-- Round 3 matchups (dynamic count) -->
       <%= if @r3_matchups_per_region > 0 do %>
-        <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>
             <% position = @r3_base + idx + 1 %>
             <% source_a = @r2_base + idx * 2 + 1 %>
@@ -563,10 +578,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <!-- Horizontal line to next connector (toward Elite 8) -->
               <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
               <!-- Vertical connector for pair -->
+              <% r3_connector = div(@container_height, @r3_matchups_per_region * 2) %>
               <%= if rem(idx, 2) == 0 do %>
-                <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 160px;"></div>
+                <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{r3_connector}px;"}></div>
               <% else %>
-                <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 160px;"></div>
+                <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{r3_connector}px;"}></div>
               <% end %>
               <.pick_matchup_box_from_picks
                 position={position}
@@ -586,7 +602,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
       <!-- Round 2 matchups (dynamic count) -->
       <%= if @r2_matchups_per_region > 0 do %>
-        <div class="flex flex-col justify-around" style="min-height: 640px;">
+        <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r2_matchups_per_region - 1) do %>
             <% position = @r2_base + idx + 1 %>
             <% source_a = @offset + idx * 2 + 1 %>
@@ -595,10 +611,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <!-- Horizontal line to next connector (toward Sweet 16) -->
               <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
               <!-- Vertical connector for pairs -->
+              <% r2_connector = div(@container_height, @r2_matchups_per_region * 2) %>
               <%= if rem(idx, 2) == 0 do %>
-                <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 80px;"></div>
+                <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{r2_connector}px;"}></div>
               <% else %>
-                <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 80px;"></div>
+                <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{r2_connector}px;"}></div>
               <% end %>
               <.pick_matchup_box_from_picks
                 position={position}
@@ -618,16 +635,17 @@ defmodule BracketBattleWeb.BracketEditorLive do
       <% end %>
 
       <!-- Round 1 matchups -->
-      <div class="flex flex-col justify-around" style="min-height: 640px;">
+      <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
         <%= for {matchup, idx} <- Enum.with_index(@region_data.matchups) do %>
           <div class="relative">
             <!-- Horizontal line to connector (toward Round 2) -->
             <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
             <!-- Vertical connector: pairs connect (0-1, 2-3, etc.) -->
+            <% r1_connector = div(@container_height, @matchups_per_region_r1 * 2) %>
             <%= if rem(idx, 2) == 0 do %>
-              <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 40px;"></div>
+              <div class="absolute left-0 top-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{r1_connector}px;"}></div>
             <% else %>
-              <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style="height: 40px;"></div>
+              <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{r1_connector}px;"}></div>
             <% end %>
             <.pick_matchup_box
               position={matchup.position}
