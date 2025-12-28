@@ -407,7 +407,15 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="text-center">
                 <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
                 <%= if length(@championship) > 0 do %>
-                  <.bracket_matchup_box matchup={Enum.at(@championship, 0)} highlight={true} user_picks={@user_picks} />
+                  <% champ_matchup = Enum.at(@championship, 0) %>
+                  <!-- Show Champion section if winner exists -->
+                  <%= if champ_matchup.winner do %>
+                    <div class="mb-3 bg-yellow-900/40 border border-yellow-600 rounded-lg p-3">
+                      <div class="text-yellow-400 text-lg font-bold">🏆 <%= champ_matchup.winner.name %></div>
+                      <div class="text-yellow-500/70 text-xs">Champion</div>
+                    </div>
+                  <% end %>
+                  <.bracket_matchup_box matchup={champ_matchup} highlight={true} user_picks={@user_picks} />
                 <% end %>
               </div>
             </div>
