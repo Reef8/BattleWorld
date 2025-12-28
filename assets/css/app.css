@@ -339,26 +339,98 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  /* Screen shake on title impact - slower for heavier feel */
+  animation: screen-shake 0.7s cubic-bezier(.36,.07,.19,.97) 0.35s;
 }
 
-/* Title animation - SLAM DOWN with bounce */
-@keyframes title-reveal {
+/* Title animation - HEAVY SLAM with screen shake on impact */
+@keyframes title-slam {
   0% {
     opacity: 0;
-    transform: translateY(-100vh) scale(1.2);
+    transform: translateY(-100vh) scale(1.5);
   }
-  60% {
+  40% {
     opacity: 1;
-    transform: translateY(20px) scale(1);
+    transform: translateY(0) scale(1);
   }
-  75% {
-    transform: translateY(-10px) scale(1);
+  /* Impact shake sequence - aggressive, no bounce */
+  43% {
+    transform: translateY(0) scale(1.03) translateX(-10px);
   }
-  90% {
-    transform: translateY(5px) scale(1);
+  46% {
+    transform: translateY(-2px) scale(0.97) translateX(10px);
+  }
+  49% {
+    transform: translateY(2px) scale(1.02) translateX(-7px);
+  }
+  52% {
+    transform: translateY(-1px) scale(0.99) translateX(7px);
+  }
+  55% {
+    transform: translateY(1px) translateX(-4px);
+  }
+  58% {
+    transform: translateY(0) translateX(4px);
+  }
+  61% {
+    transform: translateY(0) translateX(-2px);
+  }
+  64% {
+    transform: translateY(0) translateX(1px);
+  }
+  70% {
+    transform: translateY(0) translateX(0) scale(1);
   }
   100% {
     transform: translateY(0) scale(1);
+  }
+}
+
+/* Screen shake for the whole splash container on impact */
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-8px, -4px) rotate(-0.5deg); }
+  20% { transform: translate(8px, 4px) rotate(0.5deg); }
+  30% { transform: translate(-6px, 2px) rotate(-0.3deg); }
+  40% { transform: translate(6px, -2px) rotate(0.3deg); }
+  50% { transform: translate(-4px, 1px) rotate(-0.2deg); }
+  60% { transform: translate(4px, -1px) rotate(0.2deg); }
+  70% { transform: translate(-2px, 0) rotate(-0.1deg); }
+  80% { transform: translate(2px, 0) rotate(0.1deg); }
+  90% { transform: translate(-1px, 0) rotate(0deg); }
+}
+
+/* Impact debris particles flying outward - 16 particles */
+@keyframes debris-fly-1 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-120px, -80px) scale(0); } }
+@keyframes debris-fly-2 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(100px, -90px) scale(0); } }
+@keyframes debris-fly-3 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-80px, -60px) scale(0); } }
+@keyframes debris-fly-4 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(130px, -70px) scale(0); } }
+@keyframes debris-fly-5 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-60px, -100px) scale(0); } }
+@keyframes debris-fly-6 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(90px, -50px) scale(0); } }
+@keyframes debris-fly-7 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-100px, -40px) scale(0); } }
+@keyframes debris-fly-8 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(70px, -110px) scale(0); } }
+@keyframes debris-fly-9 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-150px, -30px) scale(0); } }
+@keyframes debris-fly-10 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(140px, -45px) scale(0); } }
+@keyframes debris-fly-11 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-40px, -120px) scale(0); } }
+@keyframes debris-fly-12 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(50px, -130px) scale(0); } }
+@keyframes debris-fly-13 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-110px, -95px) scale(0); } }
+@keyframes debris-fly-14 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(115px, -85px) scale(0); } }
+@keyframes debris-fly-15 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-70px, -140px) scale(0); } }
+@keyframes debris-fly-16 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(85px, -125px) scale(0); } }
+
+/* Ground crack lines */
+@keyframes crack-grow {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  20% {
+    opacity: 0.8;
+    transform: scaleX(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1);
   }
 }
 
@@ -428,42 +500,85 @@
   font-size: clamp(3rem, 10vw, 6rem);
   font-weight: 900;
   color: white;
-  /* Slam down with bounce, then start glow pulse */
-  animation: title-reveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+  position: relative;
+  /* Heavy slam with impact shake, then glow pulse */
+  animation: title-slam 0.8s cubic-bezier(0.22, 0.1, 0.36, 1) forwards,
              glow-pulse 2s ease-in-out 0.8s infinite;
+}
+
+/* Debris particles that fly on impact */
+.splash-title::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.6), transparent);
+  transform: translateX(-50%) scaleX(0);
+  animation: crack-grow 1s ease-out 0.4s forwards;
 }
 
 .splash-tagline {
   font-size: clamp(1rem, 3vw, 1.5rem);
   color: #a78bfa;
   opacity: 0;
-  animation: title-reveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards;
+  /* Slower fade in, starts after impact settles */
+  animation: tagline-reveal 1.2s ease-out 1s forwards;
   margin-top: 1rem;
+}
+
+@keyframes tagline-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .splash-cta {
   margin-top: 2rem;
   opacity: 0;
-  animation: title-reveal 0.6s ease-out 1s forwards;
+  animation: tagline-reveal 0.8s ease-out 1.8s forwards;
 }
 
-.splash-particle {
+/* Shockwave ring - hidden */
+.splash-impact-ring {
+  display: none;
+}
+
+/* Debris particles - positioned at center, fly outward on impact */
+.splash-debris {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  opacity: 0;
   pointer-events: none;
 }
 
-.splash-shockwave {
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  border: 4px solid rgba(147, 51, 234, 0.6);
-  animation: shockwave 1.5s ease-out forwards;
-  pointer-events: none;
-}
+/* 16 debris particles with varied timing */
+.debris-1 { background: #9333ea; animation: debris-fly-1 0.7s ease-out 0.38s forwards; }
+.debris-2 { background: #fbbf24; animation: debris-fly-2 0.7s ease-out 0.4s forwards; }
+.debris-3 { background: #a855f7; animation: debris-fly-3 0.65s ease-out 0.36s forwards; }
+.debris-4 { background: #eab308; animation: debris-fly-4 0.75s ease-out 0.42s forwards; }
+.debris-5 { background: #7c3aed; animation: debris-fly-5 0.6s ease-out 0.39s forwards; }
+.debris-6 { background: #fcd34d; animation: debris-fly-6 0.7s ease-out 0.37s forwards; }
+.debris-7 { background: #8b5cf6; animation: debris-fly-7 0.65s ease-out 0.41s forwards; }
+.debris-8 { background: #f59e0b; animation: debris-fly-8 0.6s ease-out 0.35s forwards; }
+.debris-9 { background: #c084fc; animation: debris-fly-9 0.8s ease-out 0.36s forwards; }
+.debris-10 { background: #facc15; animation: debris-fly-10 0.75s ease-out 0.38s forwards; }
+.debris-11 { background: #a78bfa; animation: debris-fly-11 0.65s ease-out 0.4s forwards; }
+.debris-12 { background: #fde047; animation: debris-fly-12 0.7s ease-out 0.37s forwards; }
+.debris-13 { background: #7e22ce; animation: debris-fly-13 0.8s ease-out 0.39s forwards; }
+.debris-14 { background: #ca8a04; animation: debris-fly-14 0.7s ease-out 0.41s forwards; }
+.debris-15 { background: #6d28d9; animation: debris-fly-15 0.65s ease-out 0.35s forwards; }
+.debris-16 { background: #d97706; animation: debris-fly-16 0.75s ease-out 0.43s forwards; }
 
 /* Skip button */
 .splash-skip {

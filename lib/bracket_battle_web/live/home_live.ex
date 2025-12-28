@@ -520,10 +520,28 @@ defmodule BracketBattleWeb.HomeLive do
   defp welcome_splash(assigns) do
     ~H"""
     <div id="welcome-splash" class="welcome-splash" phx-click="dismiss_welcome_splash">
+      <!-- Debris particles that fly on impact - 16 particles -->
+      <div class="splash-debris debris-1"></div>
+      <div class="splash-debris debris-2"></div>
+      <div class="splash-debris debris-3"></div>
+      <div class="splash-debris debris-4"></div>
+      <div class="splash-debris debris-5"></div>
+      <div class="splash-debris debris-6"></div>
+      <div class="splash-debris debris-7"></div>
+      <div class="splash-debris debris-8"></div>
+      <div class="splash-debris debris-9"></div>
+      <div class="splash-debris debris-10"></div>
+      <div class="splash-debris debris-11"></div>
+      <div class="splash-debris debris-12"></div>
+      <div class="splash-debris debris-13"></div>
+      <div class="splash-debris debris-14"></div>
+      <div class="splash-debris debris-15"></div>
+      <div class="splash-debris debris-16"></div>
+
       <!-- Animated Title -->
-      <div class="text-center">
+      <div class="text-center relative z-10">
         <h1 class="splash-title">
-          <span class="text-purple-400">Bracket</span><span class="text-yellow-400">Battle</span>
+          <span class="text-purple-400">Battle</span><span class="text-yellow-400">Grounds</span>
         </h1>
         <p class="splash-tagline">Where opinions clash and champions emerge</p>
         <div class="splash-cta">
