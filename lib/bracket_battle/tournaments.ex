@@ -95,7 +95,11 @@ defmodule BracketBattle.Tournaments do
   @doc "Transition: registration -> active (starts round 1)"
   def start_tournament(%Tournament{status: "registration"} = tournament) do
     Repo.transaction(fn ->
-      # Generate all 63 matchups
+      # Clean up any existing matchups from previous failed start attempts
+      from(m in Matchup, where: m.tournament_id == ^tournament.id)
+      |> Repo.delete_all()
+
+      # Generate all matchups for the bracket size
       generate_all_matchups(tournament)
 
       # Activate round 1 voting
