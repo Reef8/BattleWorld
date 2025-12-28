@@ -262,7 +262,15 @@ defmodule BracketBattleWeb.HomeLive do
                     <div class="space-y-2">
                       <div class="text-green-400 text-sm">Round <%= @tournament.current_round %> voting is open!</div>
                       <%= if @voting_ends_at do %>
-                        <div class="text-gray-400 text-xs">Round ends at <%= format_time(@voting_ends_at) %></div>
+                        <div class="text-gray-400 text-xs">
+                          Round ends at
+                          <span
+                            id="home-voting-deadline"
+                            phx-hook="LocalTime"
+                            data-utc={DateTime.to_iso8601(@voting_ends_at)}
+                            data-format="datetime"
+                          ><%= format_time(@voting_ends_at) %> UTC</span>
+                        </div>
                       <% end %>
                       <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                         <%= if @has_voted, do: "View Bracket", else: "Vote Now" %>

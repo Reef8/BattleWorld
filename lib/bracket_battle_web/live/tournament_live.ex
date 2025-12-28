@@ -490,6 +490,11 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class={if round == @region_rounds, do: "flex flex-col justify-center", else: "flex flex-col justify-around"} style={"min-height: #{@container_height}px;"}>
           <%= for {matchup, idx} <- Enum.with_index(Map.get(@matchups, round, [])) do %>
             <div class="relative">
+              <!-- Connector line from previous round (for rounds 2+) -->
+              <%= if round > 1 do %>
+                <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
+              <% end %>
+
               <.bracket_matchup_box matchup={matchup} size={if round < @region_rounds - 1, do: "small", else: "normal"} user_picks={@user_picks} />
 
               <%= if round < @region_rounds do %>
@@ -549,6 +554,11 @@ defmodule BracketBattleWeb.TournamentLive do
               <% end %>
 
               <.bracket_matchup_box matchup={matchup} size={if round < @region_rounds - 1, do: "small", else: "normal"} user_picks={@user_picks} />
+
+              <!-- Connector line to next round (for rounds 2+, connects to the right) -->
+              <%= if round > 1 do %>
+                <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
+              <% end %>
             </div>
           <% end %>
         </div>
@@ -761,7 +771,13 @@ defmodule BracketBattleWeb.TournamentLive do
             <% diff = DateTime.diff(voting_ends_at, DateTime.utc_now()) %>
             <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-3 mb-4 text-center">
               <span class="text-gray-400 text-sm">Voting closes at </span>
-              <span class="text-white font-medium"><%= Calendar.strftime(voting_ends_at, "%b %d at %I:%M %p") %></span>
+              <span
+                id="voting-deadline"
+                phx-hook="LocalTime"
+                data-utc={DateTime.to_iso8601(voting_ends_at)}
+                data-format="datetime"
+                class="text-white font-medium"
+              ><%= Calendar.strftime(voting_ends_at, "%b %d at %I:%M %p") %> UTC</span>
               <%= if diff > 0 do %>
                 <span class="text-gray-500 text-sm ml-2">(<%= format_countdown(diff) %> remaining)</span>
               <% else %>
@@ -973,9 +989,13 @@ defmodule BracketBattleWeb.TournamentLive do
                     <span class="text-purple-400 text-sm font-medium">
                       <%= message.user.display_name || message.user.email %>
                     </span>
-                    <span class="text-gray-600 text-xs">
-                      <%= format_time(message.inserted_at) %>
-                    </span>
+                    <span
+                      id={"chat-time-#{message.id}"}
+                      phx-hook="LocalTime"
+                      data-utc={DateTime.to_iso8601(message.inserted_at)}
+                      data-format="time"
+                      class="text-gray-600 text-xs"
+                    ><%= format_time(message.inserted_at) %></span>
                   </div>
                   <p class="text-gray-300 text-sm mt-1"><%= message.content %></p>
                 </div>

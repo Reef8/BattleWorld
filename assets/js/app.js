@@ -27,6 +27,80 @@ import topbar from "../vendor/topbar"
 
 // Custom hooks
 const Hooks = {
+  LocalTime: {
+    mounted() {
+      this.formatTime()
+    },
+    updated() {
+      this.formatTime()
+    },
+    formatTime() {
+      const utcTime = this.el.dataset.utc
+      if (!utcTime) return
+
+      const date = new Date(utcTime)
+      if (isNaN(date.getTime())) return
+
+      const format = this.el.dataset.format || "full"
+      const options = this.getFormatOptions(format)
+
+      // Format the date in user's local timezone
+      const formatter = new Intl.DateTimeFormat(undefined, options)
+      const formattedDate = formatter.format(date)
+
+      // Get timezone abbreviation
+      const tzFormatter = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+      const parts = tzFormatter.formatToParts(date)
+      const tz = parts.find(p => p.type === 'timeZoneName')?.value || ''
+
+      // Update the element content
+      if (format === "relative") {
+        this.el.textContent = this.getRelativeTime(date)
+      } else {
+        this.el.textContent = `${formattedDate} ${tz}`.trim()
+      }
+
+      // Store original UTC for tooltip
+      this.el.title = `UTC: ${utcTime}`
+    },
+    getFormatOptions(format) {
+      switch (format) {
+        case "date":
+          return { month: 'short', day: 'numeric', year: 'numeric' }
+        case "time":
+          return { hour: 'numeric', minute: '2-digit' }
+        case "datetime":
+          return { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }
+        case "full":
+        default:
+          return {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          }
+      }
+    },
+    getRelativeTime(date) {
+      const now = new Date()
+      const diff = date - now
+      const absDiff = Math.abs(diff)
+
+      const minutes = Math.floor(absDiff / 60000)
+      const hours = Math.floor(absDiff / 3600000)
+      const days = Math.floor(absDiff / 86400000)
+
+      const isPast = diff < 0
+      const suffix = isPast ? " ago" : ""
+      const prefix = isPast ? "" : "in "
+
+      if (minutes < 1) return "just now"
+      if (minutes < 60) return `${prefix}${minutes}m${suffix}`
+      if (hours < 24) return `${prefix}${hours}h${suffix}`
+      return `${prefix}${days}d${suffix}`
+    }
+  },
   ScrollToBottom: {
     mounted() {
       this.el.scrollTop = this.el.scrollHeight
