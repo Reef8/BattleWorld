@@ -50,7 +50,8 @@ defmodule BracketBattleWeb.DashboardLive do
        past_brackets: past_with_ranks,
        member_since: member_since,
        editing_name: false,
-       show_mobile_menu: false
+       show_mobile_menu: false,
+       instructions_expanded: false
      )}
   end
 
@@ -116,6 +117,96 @@ defmodule BracketBattleWeb.DashboardLive do
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- How It Works Card -->
+        <div class="mb-6 bg-gray-800 rounded-xl border border-gray-700">
+          <button
+            phx-click="toggle_instructions"
+            class="w-full flex justify-between items-center p-4 text-left"
+          >
+            <h2 class="text-lg font-semibold text-white">How It Works</h2>
+            <svg class={["w-5 h-5 text-gray-400 transition-transform", @instructions_expanded && "rotate-180"]} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <%= if @instructions_expanded do %>
+            <div class="px-4 pb-4 border-t border-gray-700 pt-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Step 1: Fill Out Bracket -->
+                <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                  <div class="flex items-center mb-2">
+                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">1</span>
+                    <h3 class="text-white font-medium">Fill Out Your Bracket</h3>
+                  </div>
+                  <p class="text-gray-400 text-sm">
+                    Pick winners for every matchup before registration closes. Click on a contestant to select them as the winner. Your picks auto-save as you go.
+                  </p>
+                </div>
+
+                <!-- Step 2: Submit -->
+                <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                  <div class="flex items-center mb-2">
+                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">2</span>
+                    <h3 class="text-white font-medium">Submit Your Bracket</h3>
+                  </div>
+                  <p class="text-gray-400 text-sm">
+                    Once you've made all your picks, submit your bracket to lock it in. You can edit until registration closes, but must submit to compete.
+                  </p>
+                </div>
+
+                <!-- Step 3: Voting -->
+                <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                  <div class="flex items-center mb-2">
+                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">3</span>
+                    <h3 class="text-white font-medium">Vote Each Round</h3>
+                  </div>
+                  <p class="text-gray-400 text-sm">
+                    When the tournament starts, vote on active matchups. Each round has a voting period (usually 24 hours). The contestant with the most votes advances.
+                  </p>
+                </div>
+
+                <!-- Step 4: Points -->
+                <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                  <div class="flex items-center mb-2">
+                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">4</span>
+                    <h3 class="text-white font-medium">Earn Points</h3>
+                  </div>
+                  <p class="text-gray-400 text-sm">
+                    Score points when your bracket predictions match the voting results. Later rounds are worth more points - picking the champion correctly is huge!
+                  </p>
+                </div>
+
+                <!-- Step 5: Leaderboard -->
+                <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                  <div class="flex items-center mb-2">
+                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">5</span>
+                    <h3 class="text-white font-medium">Climb the Leaderboard</h3>
+                  </div>
+                  <p class="text-gray-400 text-sm">
+                    Check the Leaderboard tab to see your rank. Ties are broken by most correct picks, then earliest submission time.
+                  </p>
+                </div>
+
+                <!-- Tournament Tabs -->
+                <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
+                  <div class="flex items-center mb-2">
+                    <svg class="w-6 h-6 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                    <h3 class="text-white font-medium">Tournament Tabs</h3>
+                  </div>
+                  <p class="text-gray-400 text-sm">
+                    <span class="text-purple-400">Bracket:</span> Live results &bull;
+                    <span class="text-purple-400">Vote:</span> Cast votes &bull;
+                    <span class="text-purple-400">My Bracket:</span> Your picks &bull;
+                    <span class="text-purple-400">Leaderboard:</span> Rankings
+                  </p>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Profile Card -->
           <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
@@ -308,6 +399,10 @@ defmodule BracketBattleWeb.DashboardLive do
   @impl true
   def handle_event("toggle_mobile_menu", _, socket) do
     {:noreply, assign(socket, show_mobile_menu: !socket.assigns.show_mobile_menu)}
+  end
+
+  def handle_event("toggle_instructions", _, socket) do
+    {:noreply, assign(socket, instructions_expanded: !socket.assigns.instructions_expanded)}
   end
 
   def handle_event("edit_name", _, socket) do
