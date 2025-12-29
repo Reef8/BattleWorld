@@ -591,7 +591,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
     <div class="flex items-center justify-end">
       <!-- Elite 8 (region winner matchup) -->
       <%= if @regional_rounds >= 4 do %>
-        <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
+        <div class="flex flex-col justify-center translate-x-4" style={"min-height: #{@container_height}px;"}>
           <div class="relative">
             <.pick_matchup_box_from_picks
               position={@r4_pos}

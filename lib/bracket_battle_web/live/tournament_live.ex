@@ -552,7 +552,7 @@ defmodule BracketBattleWeb.TournamentLive do
     ~H"""
     <div class="flex items-center justify-end">
       <%= for round <- @region_rounds..1 do %>
-        <%= if round < @region_rounds do %>
+        <%= if round > 1 do %>
           <!-- Connector column between rounds -->
           <div class="w-4"></div>
         <% end %>
