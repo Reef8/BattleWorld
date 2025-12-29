@@ -8,7 +8,8 @@ defmodule BracketBattleWeb.Endpoint do
     store: :cookie,
     key: "_bracket_battle_key",
     signing_salt: "9Y+N9pid",
-    same_site: "Lax"
+    same_site: "Lax",
+    max_age: 30 * 24 * 60 * 60  # 30 days in seconds
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
