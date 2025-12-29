@@ -53,6 +53,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
     |> assign(:region_count, tournament.region_count || 4)
     |> assign(:region_names, tournament.region_names || Tournament.default_regions())
     |> assign(:round_names, tournament.round_names || %{})
+    |> assign(:show_success, false)
   end
 
   @impl true
@@ -86,6 +87,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
             region_names={@region_names}
             round_names={@round_names}
             show_round_names={@show_round_names}
+            show_success={@show_success}
           />
         <% end %>
       </main>
@@ -345,6 +347,10 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
             Cancel
           </.link>
         </div>
+
+        <%= if @show_success do %>
+          <p class="mt-3 text-green-400 text-sm">Tournament updated successfully</p>
+        <% end %>
       </.form>
 
       <%= if @tournament.id do %>
@@ -526,15 +532,21 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
   defp save_tournament(socket, :edit, params) do
     case Tournaments.update_tournament(socket.assigns.tournament, params) do
       {:ok, tournament} ->
+        Process.send_after(self(), :clear_success, 3000)
         {:noreply,
          socket
-         |> put_flash(:info, "Tournament updated")
          |> assign(:tournament, tournament)
-         |> assign(:form, to_form(Tournament.changeset(tournament, %{})))}
+         |> assign(:form, to_form(Tournament.changeset(tournament, %{})))
+         |> assign(:show_success, true)}
 
       {:error, changeset} ->
         {:noreply, assign(socket, :form, to_form(changeset))}
     end
+  end
+
+  @impl true
+  def handle_info(:clear_success, socket) do
+    {:noreply, assign(socket, :show_success, false)}
   end
 
   defp status_color("draft"), do: "bg-gray-600 text-gray-200"
