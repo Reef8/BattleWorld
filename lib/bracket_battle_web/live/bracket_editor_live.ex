@@ -26,39 +26,57 @@ defmodule BracketBattleWeb.BracketEditorLive do
     if is_nil(user) do
       {:ok, push_navigate(socket, to: "/auth/signin")}
     else
-      tournament = Tournaments.get_tournament!(tournament_id)
-      contestants = Tournaments.list_contestants(tournament_id)
+      case Tournaments.get_tournament(tournament_id) do
+        nil ->
+          {:ok,
+           socket
+           |> put_flash(:error, "Tournament not found")
+           |> push_navigate(to: "/")}
 
-      # Get or create user's bracket
-      {:ok, bracket} = Brackets.get_or_create_bracket(tournament_id, user.id)
-
-      # Build contestant lookup map
-      contestants_map = Map.new(contestants, fn c -> {c.id, c} end)
-
-      # Group contestants by region for Round 1
-      by_region = Enum.group_by(contestants, & &1.region)
-
-      # Build region data with seed lookups using tournament config
-      regions_data = build_regions_data(by_region, tournament)
-
-      # Calculate round position bases for dynamic bracket handling
-      bracket_config = calculate_round_bases(tournament)
-
-      {:ok,
-       assign(socket,
-         page_title: "Fill Bracket - #{tournament.name}",
-         current_user: user,
-         tournament: tournament,
-         bracket: bracket,
-         picks: bracket.picks || %{},
-         contestants_map: contestants_map,
-         regions_data: regions_data,
-         is_submitted: not is_nil(bracket.submitted_at),
-         picks_count: count_picks(bracket.picks || %{}),
-         bracket_config: bracket_config,
-         total_matchups: (tournament.bracket_size || 64) - 1
-       )}
+        tournament ->
+          mount_bracket_editor(socket, tournament, user, tournament_id)
+      end
     end
+  end
+
+  defp mount_bracket_editor(socket, tournament, user, tournament_id) do
+    contestants = Tournaments.list_contestants(tournament_id)
+
+    # Get or create user's bracket
+    {:ok, bracket} = Brackets.get_or_create_bracket(tournament_id, user.id)
+
+    # Build contestant lookup map
+    contestants_map = Map.new(contestants, fn c -> {c.id, c} end)
+
+    # Group contestants by region for Round 1
+    by_region = Enum.group_by(contestants, & &1.region)
+
+    # Build region data with seed lookups using tournament config
+    regions_data = build_regions_data(by_region, tournament)
+
+    # Calculate round position bases for dynamic bracket handling
+    bracket_config = calculate_round_bases(tournament)
+
+    # Schedule countdown tick if there's a deadline
+    if connected?(socket) && tournament.registration_deadline do
+      :timer.send_interval(1000, self(), :tick_countdown)
+    end
+
+    {:ok,
+     assign(socket,
+       page_title: "Fill Bracket - #{tournament.name}",
+       current_user: user,
+       tournament: tournament,
+       bracket: bracket,
+       picks: bracket.picks || %{},
+       contestants_map: contestants_map,
+       regions_data: regions_data,
+       is_submitted: not is_nil(bracket.submitted_at),
+       picks_count: count_picks(bracket.picks || %{}),
+       bracket_config: bracket_config,
+       total_matchups: (tournament.bracket_size || 64) - 1,
+       time_remaining: calculate_time_remaining(tournament.registration_deadline)
+     )}
   end
 
   defp build_regions_data(by_region, tournament) do
@@ -141,6 +159,18 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <h1 class="text-xl font-bold text-white"><%= @tournament.name %></h1>
             </div>
             <div class="flex items-center space-x-4">
+              <%= if @time_remaining && !@is_submitted do %>
+                <div class={["text-sm", @time_remaining.expired && "text-red-400", !@time_remaining.expired && "text-yellow-400"]}>
+                  <%= if @time_remaining.expired do %>
+                    <span class="font-medium">Deadline passed</span>
+                  <% else %>
+                    <span class="text-gray-400">Deadline:</span>
+                    <span class="font-medium">
+                      <%= if @time_remaining.days > 0 do %><%= @time_remaining.days %>d <% end %><%= String.pad_leading(to_string(@time_remaining.hours), 2, "0") %>:<%= String.pad_leading(to_string(@time_remaining.minutes), 2, "0") %>:<%= String.pad_leading(to_string(@time_remaining.seconds), 2, "0") %>
+                    </span>
+                  <% end %>
+                </div>
+              <% end %>
               <div class="text-gray-400 text-sm">
                 <span class="text-white font-medium"><%= @picks_count %></span>/<%= @total_matchups %> picks
               </div>
@@ -1064,6 +1094,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
         {:error, :registration_closed} ->
           {:noreply, put_flash(socket, :error, "Registration has closed")}
 
+        {:error, :deadline_passed} ->
+          {:noreply, put_flash(socket, :error, "The registration deadline has passed")}
+
         {:error, :incomplete_bracket} ->
           {:noreply, put_flash(socket, :error, "Please complete all #{required_picks} picks")}
       end
@@ -1163,5 +1196,28 @@ defmodule BracketBattleWeb.BracketEditorLive do
     picks
     |> Map.values()
     |> Enum.count(&(&1 != nil))
+  end
+
+  # Handle countdown tick
+  @impl true
+  def handle_info(:tick_countdown, socket) do
+    time_remaining = calculate_time_remaining(socket.assigns.tournament.registration_deadline)
+    {:noreply, assign(socket, time_remaining: time_remaining)}
+  end
+
+  defp calculate_time_remaining(nil), do: nil
+  defp calculate_time_remaining(deadline) do
+    now = DateTime.utc_now()
+    case DateTime.compare(deadline, now) do
+      :gt ->
+        diff = DateTime.diff(deadline, now, :second)
+        days = div(diff, 86400)
+        hours = div(rem(diff, 86400), 3600)
+        minutes = div(rem(diff, 3600), 60)
+        seconds = rem(diff, 60)
+        %{days: days, hours: hours, minutes: minutes, seconds: seconds, expired: false}
+      _ ->
+        %{days: 0, hours: 0, minutes: 0, seconds: 0, expired: true}
+    end
   end
 end

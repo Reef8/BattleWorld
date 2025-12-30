@@ -16,8 +16,19 @@ defmodule BracketBattleWeb.TournamentLive do
       Accounts.get_user(user_id)
     end
 
-    tournament = Tournaments.get_tournament!(tournament_id)
+    case Tournaments.get_tournament(tournament_id) do
+      nil ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Tournament not found")
+         |> push_navigate(to: "/")}
 
+      tournament ->
+        mount_tournament(socket, tournament, user, tournament_id)
+    end
+  end
+
+  defp mount_tournament(socket, tournament, user, tournament_id) do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}")
       Phoenix.PubSub.subscribe(BracketBattle.PubSub, "tournament:#{tournament_id}:votes")

@@ -51,15 +51,22 @@ defmodule BracketBattle.Brackets do
 
   @doc "Submit bracket (locks it in)"
   def submit_bracket(%UserBracket{is_complete: true} = bracket) do
-    # Verify tournament is still in registration
+    # Verify tournament is still in registration and deadline hasn't passed
     tournament = Tournaments.get_tournament!(bracket.tournament_id)
+    now = DateTime.utc_now()
 
-    if tournament.status == "registration" do
-      bracket
-      |> UserBracket.changeset(%{submitted_at: DateTime.utc_now()})
-      |> Repo.update()
-    else
-      {:error, :registration_closed}
+    cond do
+      tournament.status != "registration" ->
+        {:error, :registration_closed}
+
+      tournament.registration_deadline &&
+          DateTime.compare(now, tournament.registration_deadline) == :gt ->
+        {:error, :deadline_passed}
+
+      true ->
+        bracket
+        |> UserBracket.changeset(%{submitted_at: DateTime.utc_now()})
+        |> Repo.update()
     end
   end
 
