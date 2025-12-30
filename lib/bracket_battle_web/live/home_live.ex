@@ -146,7 +146,7 @@ defmodule BracketBattleWeb.HomeLive do
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center">
-              <h1 class="text-2xl font-bold text-white">BattleGrounds</h1>
+              <h1 class="text-2xl font-bold text-white">Pantheon</h1>
             </div>
 
             <!-- Desktop nav -->
@@ -220,15 +220,14 @@ defmodule BracketBattleWeb.HomeLive do
         <div class="text-center">
           <!-- Hero Section -->
           <div class="mb-8 sm:mb-12">
-            <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-3 sm:mb-4">
-              <span class="text-purple-400">BattleGrounds</span>
+            <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-3 sm:mb-4">
+              <span class="text-purple-400">Pantheon</span>
             </h2>
             <p class="text-lg sm:text-xl md:text-2xl text-gray-300 font-medium mb-2">
-              The best place to battle your friends on topics you love
+              Where legends rise and champions are crowned
             </p>
             <p class="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto px-2">
-              Create brackets, vote on matchups, and compete on the leaderboard.
-              From Marvel characters to movie villains - anything can be a tournament!
+              Create brackets, vote on matchups, compete on the leaderboard, and talk smack in the chat!
             </p>
           </div>
 
@@ -549,7 +548,7 @@ defmodule BracketBattleWeb.HomeLive do
       <!-- Animated Title -->
       <div class="text-center relative z-10">
         <h1 class="splash-title">
-          <span class="text-purple-400">Battle</span><span class="text-yellow-400">Grounds</span>
+          <span class="text-purple-400">Pan</span><span class="text-yellow-400">theon</span>
         </h1>
         <p class="splash-tagline">Where opinions clash and champions emerge</p>
         <div class="splash-cta">
