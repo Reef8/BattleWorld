@@ -121,21 +121,21 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
       <% else %>
         <div class="space-y-4">
           <%= for tournament <- @tournaments do %>
-            <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <div class="flex justify-between items-start">
+            <div class="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700">
+              <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
-                  <h3 class="text-xl font-bold text-white"><%= tournament.name %></h3>
-                  <p class="text-gray-400 mt-1"><%= tournament.description || "No description" %></p>
+                  <h3 class="text-lg sm:text-xl font-bold text-white"><%= tournament.name %></h3>
+                  <p class="text-gray-400 mt-1 text-sm sm:text-base"><%= tournament.description || "No description" %></p>
                   <div class="flex items-center space-x-4 mt-3">
                     <span class={"px-2 py-1 rounded text-xs font-medium #{status_color(tournament.status)}"}>
                       <%= tournament.status %>
                     </span>
-                    <span class="text-gray-500 text-sm">
+                    <span class="text-gray-500 text-xs sm:text-sm">
                       Created <%= Calendar.strftime(tournament.inserted_at, "%b %d, %Y") %>
                     </span>
                   </div>
                 </div>
-                <div class="flex space-x-2">
+                <div class="flex flex-wrap gap-2">
                   <.link
                     navigate={"/admin/tournaments/#{tournament.id}/contestants"}
                     class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm"
