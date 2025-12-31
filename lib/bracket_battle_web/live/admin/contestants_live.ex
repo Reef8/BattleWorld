@@ -72,7 +72,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
           </div>
           <div class="w-full bg-gray-700 rounded-full h-2">
             <div
-              class="bg-purple-600 h-2 rounded-full transition-all"
+              class="bg-blue-600 h-2 rounded-full transition-all"
               style={"width: #{length(@contestants) / @bracket_size * 100}%"}
             ></div>
           </div>
@@ -83,7 +83,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
           <div class="flex space-x-4 mb-6">
             <button
               phx-click="show_form"
-              class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
             >
               + Add Contestant
             </button>
@@ -151,7 +151,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
                 </div>
               </div>
               <div class="flex space-x-2">
-                <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                   <%= if @editing, do: "Update", else: "Add" %>
                 </button>
                 <button type="button" phx-click="cancel_form" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
@@ -175,7 +175,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
                 <button
                   phx-click="set_bulk_region"
                   phx-value-region={region}
-                  class={"px-3 py-1 rounded text-sm #{if @bulk_region == region, do: "bg-purple-600 text-white", else: "bg-gray-700 text-gray-300 hover:bg-gray-600"}"}
+                  class={"px-3 py-1 rounded text-sm #{if @bulk_region == region, do: "bg-blue-600 text-white", else: "bg-gray-700 text-gray-300 hover:bg-gray-600"}"}
                 >
                   <%= region %> (<%= length(Map.get(@by_region, region, [])) %>/<%= @contestants_per_region %>)
                 </button>
@@ -191,7 +191,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
               ><%= @bulk_text %></textarea>
 
               <div class="flex space-x-2 mt-4">
-                <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                   Import <%= @contestants_per_region %> to <%= @bulk_region %>
                 </button>
                 <button type="button" phx-click="cancel_bulk" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm">
@@ -388,6 +388,6 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
   defp status_color("draft"), do: "bg-gray-600 text-gray-200"
   defp status_color("registration"), do: "bg-blue-600 text-blue-100"
   defp status_color("active"), do: "bg-green-600 text-green-100"
-  defp status_color("completed"), do: "bg-purple-600 text-purple-100"
+  defp status_color("completed"), do: "bg-blue-600 text-blue-100"
   defp status_color(_), do: "bg-gray-600 text-gray-200"
 end

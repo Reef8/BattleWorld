@@ -94,7 +94,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
                 phx-value-round={round}
                 disabled={round > @tournament.current_round and @tournament.status != "completed"}
                 class={"px-4 py-2 rounded text-sm font-medium transition-colors #{cond do
-                  @selected_round == round -> "bg-purple-600 text-white"
+                  @selected_round == round -> "bg-blue-600 text-white"
                   round > @tournament.current_round and @tournament.status != "completed" -> "bg-gray-800 text-gray-600 cursor-not-allowed"
                   true -> "bg-gray-700 text-gray-300 hover:bg-gray-600"
                 end}"}
@@ -189,7 +189,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
                   phx-click="decide"
                   phx-value-matchup={@matchup.id}
                   phx-value-winner={@matchup.contestant_1_id}
-                  class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 rounded"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 rounded"
                 >
                   <%= @matchup.contestant_1 && @matchup.contestant_1.name %>
                 </button>
@@ -197,7 +197,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
                   phx-click="decide"
                   phx-value-matchup={@matchup.id}
                   phx-value-winner={@matchup.contestant_2_id}
-                  class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs py-1 rounded"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 rounded"
                 >
                   <%= @matchup.contestant_2 && @matchup.contestant_2.name %>
                 </button>
@@ -227,7 +227,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
           <button
             phx-click="toggle_voters"
             phx-value-matchup={@matchup.id}
-            class="text-purple-400 hover:text-purple-300 text-xs flex items-center"
+            class="text-blue-400 hover:text-blue-300 text-xs flex items-center"
           >
             <%= if @expanded do %>
               <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,7 +322,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
   defp status_color("draft"), do: "bg-gray-600 text-gray-200"
   defp status_color("registration"), do: "bg-blue-600 text-blue-100"
   defp status_color("active"), do: "bg-green-600 text-green-100"
-  defp status_color("completed"), do: "bg-purple-600 text-purple-100"
+  defp status_color("completed"), do: "bg-blue-600 text-blue-100"
   defp status_color(_), do: "bg-gray-600 text-gray-200"
 
   defp status_badge("pending"), do: "text-gray-400"

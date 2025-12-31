@@ -71,7 +71,7 @@ defmodule BracketBattleWeb.DashboardLive do
             <!-- Desktop nav -->
             <nav class="hidden md:flex items-center space-x-4">
               <%= if @user.is_admin do %>
-                <a href="/admin" class="text-purple-400 hover:text-purple-300 text-sm">
+                <a href="/admin" class="text-blue-400 hover:text-blue-300 text-sm">
                   Admin
                 </a>
               <% end %>
@@ -104,7 +104,7 @@ defmodule BracketBattleWeb.DashboardLive do
           <div class="md:hidden border-t border-gray-700 bg-gray-800">
             <div class="px-4 py-3 space-y-2">
               <%= if @user.is_admin do %>
-                <a href="/admin" class="block py-2 text-purple-400 hover:text-purple-300">
+                <a href="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
                   Admin
                 </a>
               <% end %>
@@ -135,7 +135,7 @@ defmodule BracketBattleWeb.DashboardLive do
                 <!-- Step 1: Fill Out Bracket -->
                 <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                   <div class="flex items-center mb-2">
-                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">1</span>
+                    <span class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">1</span>
                     <h3 class="text-white font-medium">Fill Out Your Bracket</h3>
                   </div>
                   <p class="text-gray-400 text-sm">
@@ -146,7 +146,7 @@ defmodule BracketBattleWeb.DashboardLive do
                 <!-- Step 2: Submit -->
                 <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                   <div class="flex items-center mb-2">
-                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">2</span>
+                    <span class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">2</span>
                     <h3 class="text-white font-medium">Submit Your Bracket</h3>
                   </div>
                   <p class="text-gray-400 text-sm">
@@ -157,7 +157,7 @@ defmodule BracketBattleWeb.DashboardLive do
                 <!-- Step 3: Voting -->
                 <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                   <div class="flex items-center mb-2">
-                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">3</span>
+                    <span class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">3</span>
                     <h3 class="text-white font-medium">Vote Each Round</h3>
                   </div>
                   <p class="text-gray-400 text-sm">
@@ -168,7 +168,7 @@ defmodule BracketBattleWeb.DashboardLive do
                 <!-- Step 4: Points -->
                 <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                   <div class="flex items-center mb-2">
-                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">4</span>
+                    <span class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">4</span>
                     <h3 class="text-white font-medium">Earn Points</h3>
                   </div>
                   <p class="text-gray-400 text-sm">
@@ -179,7 +179,7 @@ defmodule BracketBattleWeb.DashboardLive do
                 <!-- Step 5: Leaderboard -->
                 <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                   <div class="flex items-center mb-2">
-                    <span class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">5</span>
+                    <span class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">5</span>
                     <h3 class="text-white font-medium">Climb the Leaderboard</h3>
                   </div>
                   <p class="text-gray-400 text-sm">
@@ -190,16 +190,16 @@ defmodule BracketBattleWeb.DashboardLive do
                 <!-- Tournament Tabs -->
                 <div class="bg-gray-750 rounded-lg p-4 border border-gray-600">
                   <div class="flex items-center mb-2">
-                    <svg class="w-6 h-6 text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-6 h-6 text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
                     </svg>
                     <h3 class="text-white font-medium">Tournament Tabs</h3>
                   </div>
                   <p class="text-gray-400 text-sm">
-                    <span class="text-purple-400">Bracket:</span> Live results &bull;
-                    <span class="text-purple-400">Vote:</span> Cast votes &bull;
-                    <span class="text-purple-400">My Bracket:</span> Your picks &bull;
-                    <span class="text-purple-400">Leaderboard:</span> Rankings
+                    <span class="text-blue-400">Bracket:</span> Live results &bull;
+                    <span class="text-blue-400">Vote:</span> Cast votes &bull;
+                    <span class="text-blue-400">My Bracket:</span> Your picks &bull;
+                    <span class="text-blue-400">Leaderboard:</span> Rankings
                   </p>
                 </div>
               </div>
@@ -213,7 +213,7 @@ defmodule BracketBattleWeb.DashboardLive do
             <h2 class="text-lg font-semibold text-white mb-4">Profile</h2>
 
             <!-- Avatar placeholder -->
-            <div class="w-20 h-20 bg-purple-600 rounded-full flex items-center justify-center mb-4 mx-auto">
+            <div class="w-20 h-20 bg-blue-600 rounded-full flex items-center justify-center mb-4 mx-auto">
               <span class="text-3xl text-white font-bold">
                 <%= String.first(@user.display_name || @user.email) |> String.upcase() %>
               </span>
@@ -234,7 +234,7 @@ defmodule BracketBattleWeb.DashboardLive do
                     maxlength="50"
                     autofocus
                   />
-                  <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm">
+                  <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm">
                     Save
                   </button>
                   <button type="button" phx-click="cancel_edit_name" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
@@ -246,7 +246,7 @@ defmodule BracketBattleWeb.DashboardLive do
                   <span class="text-white">
                     <%= @user.display_name || "Not set" %>
                   </span>
-                  <button phx-click="edit_name" class="text-purple-400 hover:text-purple-300 text-sm">
+                  <button phx-click="edit_name" class="text-blue-400 hover:text-blue-300 text-sm">
                     Edit
                   </button>
                 </div>
@@ -302,7 +302,7 @@ defmodule BracketBattleWeb.DashboardLive do
                       <div class="text-gray-400 text-xs sm:text-sm">Rank</div>
                     </div>
                     <div class="bg-gray-700 rounded-lg p-2 sm:p-3 text-center">
-                      <div class="text-lg sm:text-2xl font-bold text-purple-400"><%= @current_bracket.total_score %></div>
+                      <div class="text-lg sm:text-2xl font-bold text-blue-400"><%= @current_bracket.total_score %></div>
                       <div class="text-gray-400 text-xs sm:text-sm">Points</div>
                     </div>
                     <div class="bg-gray-700 rounded-lg p-2 sm:p-3 text-center">
@@ -312,7 +312,7 @@ defmodule BracketBattleWeb.DashboardLive do
                   </div>
 
                   <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <a href={"/tournament/#{@active_tournament.id}"} class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors">
+                    <a href={"/tournament/#{@active_tournament.id}"} class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors">
                       View Tournament
                     </a>
                     <%= if !@current_bracket.submitted_at do %>
@@ -324,7 +324,7 @@ defmodule BracketBattleWeb.DashboardLive do
                 <% else %>
                   <div class="text-center py-4">
                     <p class="text-gray-400 mb-4">You haven't created a bracket for this tournament yet.</p>
-                    <a href={"/tournament/#{@active_tournament.id}/bracket"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    <a href={"/tournament/#{@active_tournament.id}/bracket"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                       Create Bracket
                     </a>
                   </div>
@@ -364,7 +364,7 @@ defmodule BracketBattleWeb.DashboardLive do
                   <%= for bracket <- @past_brackets do %>
                     <tr class="border-b border-gray-700/50 hover:bg-gray-750">
                       <td class="py-2 sm:py-3 pr-2">
-                        <a href={"/tournament/#{bracket.tournament_id}"} class="text-white hover:text-purple-400 text-sm sm:text-base">
+                        <a href={"/tournament/#{bracket.tournament_id}"} class="text-white hover:text-blue-400 text-sm sm:text-base">
                           <%= bracket.tournament.name %>
                         </a>
                       </td>
@@ -373,7 +373,7 @@ defmodule BracketBattleWeb.DashboardLive do
                           #<%= bracket.final_rank %>
                         </span>
                       </td>
-                      <td class="py-2 sm:py-3 px-2 text-center text-purple-400 font-medium text-sm sm:text-base">
+                      <td class="py-2 sm:py-3 px-2 text-center text-blue-400 font-medium text-sm sm:text-base">
                         <%= bracket.total_score %>
                       </td>
                       <td class="py-2 sm:py-3 px-2 text-center text-gray-300 text-sm sm:text-base hidden sm:table-cell">
@@ -442,7 +442,7 @@ defmodule BracketBattleWeb.DashboardLive do
 
   defp status_color("registration"), do: "bg-blue-600 text-blue-100"
   defp status_color("active"), do: "bg-green-600 text-green-100"
-  defp status_color("completed"), do: "bg-purple-600 text-purple-100"
+  defp status_color("completed"), do: "bg-blue-600 text-blue-100"
   defp status_color(_), do: "bg-gray-600 text-gray-200"
 
   defp rank_color(1), do: "text-yellow-400"

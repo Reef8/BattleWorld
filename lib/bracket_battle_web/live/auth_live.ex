@@ -36,7 +36,7 @@ defmodule BracketBattleWeb.AuthLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-gray-900 to-gray-900">
+    <div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#0a1628] via-[#1e3a5f] to-[#0d2137]">
       <div class="w-full max-w-md px-6">
         <!-- Flash messages -->
         <%= if Phoenix.Flash.get(@flash, :error) do %>
@@ -54,7 +54,7 @@ defmodule BracketBattleWeb.AuthLive do
           <%= if @email_sent do %>
             <!-- Success state -->
             <div class="text-center">
-              <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
@@ -63,7 +63,7 @@ defmodule BracketBattleWeb.AuthLive do
               <p class="text-gray-300 mb-2">
                 We sent a magic link to
               </p>
-              <p class="text-purple-400 font-medium mb-6"><%= @email %></p>
+              <p class="text-blue-400 font-medium mb-6"><%= @email %></p>
               <p class="text-sm text-gray-500">
                 Click the link in the email to sign in. The link expires in 15 minutes.
               </p>
@@ -84,7 +84,7 @@ defmodule BracketBattleWeb.AuthLive do
                   name="email"
                   placeholder="you@example.com"
                   required
-                  class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -96,7 +96,7 @@ defmodule BracketBattleWeb.AuthLive do
 
               <button
                 type="submit"
-                class="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800"
               >
                 Send Magic Link
               </button>

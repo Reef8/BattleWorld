@@ -44,18 +44,18 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
       <header class="bg-gray-800 border-b border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
-            <div class="flex items-center space-x-4">
-              <a href="/" class="text-gray-400 hover:text-white text-sm">
-                &larr; Back to Site
+            <div class="flex items-center space-x-2 sm:space-x-4">
+              <a href="/" class="text-gray-400 hover:text-white text-xs sm:text-sm">
+                &larr; Back
               </a>
-              <h1 class="text-xl font-bold text-white">Admin Dashboard</h1>
+              <h1 class="text-base sm:text-xl font-bold text-white">Admin Dashboard</h1>
             </div>
-            <nav class="flex items-center space-x-4">
-              <.link navigate="/admin/tournaments" class="text-gray-400 hover:text-white text-sm">
+            <nav class="flex items-center space-x-2 sm:space-x-4">
+              <.link navigate="/admin/tournaments" class="text-gray-400 hover:text-white text-xs sm:text-sm">
                 Tournaments
               </.link>
-              <span class="text-gray-600">|</span>
-              <span class="text-purple-400 text-sm">
+              <span class="hidden sm:inline text-gray-600">|</span>
+              <span class="hidden sm:inline text-blue-400 text-sm">
                 <%= @current_user.email %>
               </span>
             </nav>
@@ -116,7 +116,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                   </.link>
                   <.link
                     navigate={"/admin/tournaments/#{@tournament.id}"}
-                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
                   >
                     Manage
                   </.link>
@@ -169,7 +169,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
               <p class="text-gray-400 mb-4">No active tournament</p>
               <.link
                 navigate="/admin/tournaments/new"
-                class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
+                class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
               >
                 Create Tournament
               </.link>
@@ -207,7 +207,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                           <%= Calendar.strftime(bracket.submitted_at, "%b %d, %I:%M %p") %>
                         </td>
                         <td class="px-4 py-3 text-right">
-                          <span class="text-purple-400 font-medium"><%= bracket.total_score %> pts</span>
+                          <span class="text-blue-400 font-medium"><%= bracket.total_score %> pts</span>
                           <span class="text-gray-500 text-sm ml-2">(<%= bracket.correct_picks %> correct)</span>
                         </td>
                       </tr>
@@ -225,7 +225,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
             <h2 class="text-lg font-semibold text-white">All Tournaments</h2>
             <.link
               navigate="/admin/tournaments/new"
-              class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
             >
               + New Tournament
             </.link>
@@ -234,32 +234,32 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
           <%= if Enum.empty?(@all_tournaments) do %>
             <p class="text-gray-500">No tournaments yet.</p>
           <% else %>
-            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-x-auto">
               <table class="w-full">
                 <thead class="bg-gray-750">
                   <tr class="border-b border-gray-700">
-                    <th class="text-left text-gray-400 text-sm font-medium px-4 py-3">Name</th>
-                    <th class="text-left text-gray-400 text-sm font-medium px-4 py-3">Status</th>
-                    <th class="text-left text-gray-400 text-sm font-medium px-4 py-3">Created</th>
-                    <th class="text-right text-gray-400 text-sm font-medium px-4 py-3">Actions</th>
+                    <th class="text-left text-gray-400 text-sm font-medium px-2 sm:px-4 py-3">Name</th>
+                    <th class="text-left text-gray-400 text-sm font-medium px-2 sm:px-4 py-3">Status</th>
+                    <th class="hidden sm:table-cell text-left text-gray-400 text-sm font-medium px-4 py-3">Created</th>
+                    <th class="text-right text-gray-400 text-sm font-medium px-2 sm:px-4 py-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   <%= for tournament <- @all_tournaments do %>
                     <tr class="border-b border-gray-700 last:border-0">
-                      <td class="px-4 py-3 text-white"><%= tournament.name %></td>
-                      <td class="px-4 py-3">
+                      <td class="px-2 sm:px-4 py-3 text-white"><%= tournament.name %></td>
+                      <td class="px-2 sm:px-4 py-3">
                         <span class={"px-2 py-1 rounded text-xs font-medium #{status_color(tournament.status)}"}>
                           <%= tournament.status %>
                         </span>
                       </td>
-                      <td class="px-4 py-3 text-gray-400 text-sm">
+                      <td class="hidden sm:table-cell px-4 py-3 text-gray-400 text-sm">
                         <%= Calendar.strftime(tournament.inserted_at, "%b %d, %Y") %>
                       </td>
-                      <td class="px-4 py-3 text-right">
+                      <td class="px-2 sm:px-4 py-3 text-right">
                         <.link
                           navigate={"/admin/tournaments/#{tournament.id}"}
-                          class="text-purple-400 hover:text-purple-300 text-sm"
+                          class="text-blue-400 hover:text-blue-300 text-sm"
                         >
                           Edit
                         </.link>
@@ -341,6 +341,6 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
   defp status_color("draft"), do: "bg-gray-600 text-gray-200"
   defp status_color("registration"), do: "bg-blue-600 text-blue-100"
   defp status_color("active"), do: "bg-green-600 text-green-100"
-  defp status_color("completed"), do: "bg-purple-600 text-purple-100"
+  defp status_color("completed"), do: "bg-blue-600 text-blue-100"
   defp status_color(_), do: "bg-gray-600 text-gray-200"
 end

@@ -328,111 +328,51 @@
   }
 }
 
-/* Welcome Splash - Epic Title Reveal */
+/* Welcome Splash - Underwater Rising Effect */
 .welcome-splash {
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f1a 100%);
+  background: linear-gradient(180deg, #0a1628 0%, #1e3a5f 50%, #0d2137 100%);
   z-index: 200;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  /* Screen shake on title impact - slower for heavier feel */
-  animation: screen-shake 0.7s cubic-bezier(.36,.07,.19,.97) 0.35s;
 }
 
-/* Title animation - HEAVY SLAM with screen shake on impact */
-@keyframes title-slam {
+/* Title animation - Float up from the deep */
+@keyframes title-rise {
   0% {
     opacity: 0;
-    transform: translateY(-100vh) scale(1.5);
+    transform: translateY(100vh) scale(0.8);
   }
-  40% {
+  60% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  80% {
+    transform: translateY(5px) scale(1);
+  }
+  100% {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-  /* Impact shake sequence - aggressive, no bounce */
-  43% {
-    transform: translateY(0) scale(1.03) translateX(-10px);
-  }
-  46% {
-    transform: translateY(-2px) scale(0.97) translateX(10px);
-  }
-  49% {
-    transform: translateY(2px) scale(1.02) translateX(-7px);
-  }
-  52% {
-    transform: translateY(-1px) scale(0.99) translateX(7px);
-  }
-  55% {
-    transform: translateY(1px) translateX(-4px);
-  }
-  58% {
-    transform: translateY(0) translateX(4px);
-  }
-  61% {
-    transform: translateY(0) translateX(-2px);
-  }
-  64% {
-    transform: translateY(0) translateX(1px);
-  }
-  70% {
-    transform: translateY(0) translateX(0) scale(1);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-  }
 }
 
-/* Screen shake for the whole splash container on impact */
-@keyframes screen-shake {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  10% { transform: translate(-8px, -4px) rotate(-0.5deg); }
-  20% { transform: translate(8px, 4px) rotate(0.5deg); }
-  30% { transform: translate(-6px, 2px) rotate(-0.3deg); }
-  40% { transform: translate(6px, -2px) rotate(0.3deg); }
-  50% { transform: translate(-4px, 1px) rotate(-0.2deg); }
-  60% { transform: translate(4px, -1px) rotate(0.2deg); }
-  70% { transform: translate(-2px, 0) rotate(-0.1deg); }
-  80% { transform: translate(2px, 0) rotate(0.1deg); }
-  90% { transform: translate(-1px, 0) rotate(0deg); }
-}
-
-/* Impact debris particles flying outward - 16 particles */
-@keyframes debris-fly-1 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-120px, -80px) scale(0); } }
-@keyframes debris-fly-2 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(100px, -90px) scale(0); } }
-@keyframes debris-fly-3 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-80px, -60px) scale(0); } }
-@keyframes debris-fly-4 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(130px, -70px) scale(0); } }
-@keyframes debris-fly-5 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-60px, -100px) scale(0); } }
-@keyframes debris-fly-6 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(90px, -50px) scale(0); } }
-@keyframes debris-fly-7 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-100px, -40px) scale(0); } }
-@keyframes debris-fly-8 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(70px, -110px) scale(0); } }
-@keyframes debris-fly-9 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-150px, -30px) scale(0); } }
-@keyframes debris-fly-10 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(140px, -45px) scale(0); } }
-@keyframes debris-fly-11 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-40px, -120px) scale(0); } }
-@keyframes debris-fly-12 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(50px, -130px) scale(0); } }
-@keyframes debris-fly-13 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-110px, -95px) scale(0); } }
-@keyframes debris-fly-14 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(115px, -85px) scale(0); } }
-@keyframes debris-fly-15 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(-70px, -140px) scale(0); } }
-@keyframes debris-fly-16 { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(85px, -125px) scale(0); } }
-
-/* Ground crack lines */
-@keyframes crack-grow {
-  0% {
-    opacity: 0;
-    transform: scaleX(0);
-  }
-  20% {
-    opacity: 0.8;
-    transform: scaleX(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scaleX(1);
-  }
-}
+/* Bubble float animations - 12 bubbles with varied paths */
+@keyframes bubble-float-1 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.7; } 100% { opacity: 0; transform: translateY(-100vh) translateX(20px); } }
+@keyframes bubble-float-2 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.6; } 100% { opacity: 0; transform: translateY(-100vh) translateX(-15px); } }
+@keyframes bubble-float-3 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-100vh) translateX(10px); } }
+@keyframes bubble-float-4 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.5; } 100% { opacity: 0; transform: translateY(-100vh) translateX(-25px); } }
+@keyframes bubble-float-5 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.7; } 100% { opacity: 0; transform: translateY(-100vh) translateX(30px); } }
+@keyframes bubble-float-6 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.6; } 100% { opacity: 0; transform: translateY(-100vh) translateX(-10px); } }
+@keyframes bubble-float-7 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-100vh) translateX(15px); } }
+@keyframes bubble-float-8 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.5; } 100% { opacity: 0; transform: translateY(-100vh) translateX(-20px); } }
+@keyframes bubble-float-9 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.7; } 100% { opacity: 0; transform: translateY(-100vh) translateX(25px); } }
+@keyframes bubble-float-10 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.6; } 100% { opacity: 0; transform: translateY(-100vh) translateX(-30px); } }
+@keyframes bubble-float-11 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-100vh) translateX(5px); } }
+@keyframes bubble-float-12 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.5; } 100% { opacity: 0; transform: translateY(-100vh) translateX(-5px); } }
 
 /* Glow pulse effect */
 @keyframes glow-pulse {
@@ -448,6 +388,23 @@
       0 0 80px rgba(147, 51, 234, 0.8),
       0 0 120px rgba(147, 51, 234, 0.6),
       0 0 160px rgba(251, 191, 36, 0.4);
+  }
+}
+
+/* Gold glow pulse effect for splash title */
+@keyframes gold-glow-pulse {
+  0%, 100% {
+    text-shadow:
+      0 0 20px rgba(234, 179, 8, 0.6),
+      0 0 40px rgba(234, 179, 8, 0.4),
+      0 0 60px rgba(234, 179, 8, 0.2);
+  }
+  50% {
+    text-shadow:
+      0 0 30px rgba(234, 179, 8, 0.9),
+      0 0 60px rgba(234, 179, 8, 0.7),
+      0 0 100px rgba(234, 179, 8, 0.5),
+      0 0 140px rgba(234, 179, 8, 0.3);
   }
 }
 
@@ -501,30 +458,20 @@
   font-weight: 900;
   color: white;
   position: relative;
-  /* Heavy slam with impact shake, then glow pulse */
-  animation: title-slam 0.8s cubic-bezier(0.22, 0.1, 0.36, 1) forwards,
-             glow-pulse 2s ease-in-out 0.8s infinite;
-}
-
-/* Debris particles that fly on impact */
-.splash-title::before {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.6), transparent);
-  transform: translateX(-50%) scaleX(0);
-  animation: crack-grow 1s ease-out 0.4s forwards;
+  /* Float up from the deep with gold glow */
+  animation: title-rise 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             gold-glow-pulse 2s ease-in-out 2.5s infinite;
+  text-shadow: 0 0 20px rgba(234, 179, 8, 0.6),
+               0 0 40px rgba(234, 179, 8, 0.4),
+               0 0 60px rgba(234, 179, 8, 0.2);
 }
 
 .splash-tagline {
   font-size: clamp(1rem, 3vw, 1.5rem);
-  color: #a78bfa;
+  color: #93c5fd;
   opacity: 0;
-  /* Slower fade in, starts after impact settles */
-  animation: tagline-reveal 1.2s ease-out 1s forwards;
+  /* Fade in after title surfaces */
+  animation: tagline-reveal 1.2s ease-out 2.8s forwards;
   margin-top: 1rem;
 }
 
@@ -542,43 +489,76 @@
 .splash-cta {
   margin-top: 2rem;
   opacity: 0;
-  animation: tagline-reveal 0.8s ease-out 1.8s forwards;
+  animation: tagline-reveal 0.8s ease-out 3.5s forwards;
 }
 
-/* Shockwave ring - hidden */
-.splash-impact-ring {
-  display: none;
-}
-
-/* Debris particles - positioned at center, fly outward on impact */
-.splash-debris {
+/* Bubbles floating up from the deep */
+.splash-bubble {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
+  bottom: -20px;
+  border-radius: 50%;
   opacity: 0;
   pointer-events: none;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(147, 197, 253, 0.4));
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* 16 debris particles with varied timing */
-.debris-1 { background: #9333ea; animation: debris-fly-1 0.7s ease-out 0.38s forwards; }
-.debris-2 { background: #fbbf24; animation: debris-fly-2 0.7s ease-out 0.4s forwards; }
-.debris-3 { background: #a855f7; animation: debris-fly-3 0.65s ease-out 0.36s forwards; }
-.debris-4 { background: #eab308; animation: debris-fly-4 0.75s ease-out 0.42s forwards; }
-.debris-5 { background: #7c3aed; animation: debris-fly-5 0.6s ease-out 0.39s forwards; }
-.debris-6 { background: #fcd34d; animation: debris-fly-6 0.7s ease-out 0.37s forwards; }
-.debris-7 { background: #8b5cf6; animation: debris-fly-7 0.65s ease-out 0.41s forwards; }
-.debris-8 { background: #f59e0b; animation: debris-fly-8 0.6s ease-out 0.35s forwards; }
-.debris-9 { background: #c084fc; animation: debris-fly-9 0.8s ease-out 0.36s forwards; }
-.debris-10 { background: #facc15; animation: debris-fly-10 0.75s ease-out 0.38s forwards; }
-.debris-11 { background: #a78bfa; animation: debris-fly-11 0.65s ease-out 0.4s forwards; }
-.debris-12 { background: #fde047; animation: debris-fly-12 0.7s ease-out 0.37s forwards; }
-.debris-13 { background: #7e22ce; animation: debris-fly-13 0.8s ease-out 0.39s forwards; }
-.debris-14 { background: #ca8a04; animation: debris-fly-14 0.7s ease-out 0.41s forwards; }
-.debris-15 { background: #6d28d9; animation: debris-fly-15 0.65s ease-out 0.35s forwards; }
-.debris-16 { background: #d97706; animation: debris-fly-16 0.75s ease-out 0.43s forwards; }
+/* 12 bubbles with varied sizes, positions, and timing */
+.bubble-1 { left: 10%; width: 12px; height: 12px; animation: bubble-float-1 3s ease-out 0s infinite; }
+.bubble-2 { left: 20%; width: 8px; height: 8px; animation: bubble-float-2 3.5s ease-out 0.5s infinite; }
+.bubble-3 { left: 30%; width: 16px; height: 16px; animation: bubble-float-3 2.8s ease-out 0.2s infinite; }
+.bubble-4 { left: 40%; width: 10px; height: 10px; animation: bubble-float-4 3.2s ease-out 0.8s infinite; }
+.bubble-5 { left: 50%; width: 14px; height: 14px; animation: bubble-float-5 2.5s ease-out 0.3s infinite; }
+.bubble-6 { left: 60%; width: 8px; height: 8px; animation: bubble-float-6 3.8s ease-out 1s infinite; }
+.bubble-7 { left: 70%; width: 18px; height: 18px; animation: bubble-float-7 2.6s ease-out 0.1s infinite; }
+.bubble-8 { left: 80%; width: 10px; height: 10px; animation: bubble-float-8 3.4s ease-out 0.6s infinite; }
+.bubble-9 { left: 15%; width: 6px; height: 6px; animation: bubble-float-9 4s ease-out 1.2s infinite; }
+.bubble-10 { left: 45%; width: 20px; height: 20px; animation: bubble-float-10 2.2s ease-out 0.4s infinite; }
+.bubble-11 { left: 75%; width: 12px; height: 12px; animation: bubble-float-11 3s ease-out 0.7s infinite; }
+.bubble-12 { left: 90%; width: 8px; height: 8px; animation: bubble-float-12 3.6s ease-out 0.9s infinite; }
+
+/* Ambient bubbles for home page background */
+.ambient-bubbles {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.ambient-bubble {
+  position: absolute;
+  bottom: -20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(147, 197, 253, 0.1));
+  animation: ambient-float linear infinite;
+}
+
+.ambient-bubble:nth-child(1) { left: 5%; width: 8px; height: 8px; animation-duration: 12s; animation-delay: 0s; }
+.ambient-bubble:nth-child(2) { left: 15%; width: 12px; height: 12px; animation-duration: 15s; animation-delay: 3s; }
+.ambient-bubble:nth-child(3) { left: 30%; width: 6px; height: 6px; animation-duration: 10s; animation-delay: 6s; }
+.ambient-bubble:nth-child(4) { left: 45%; width: 10px; height: 10px; animation-duration: 14s; animation-delay: 2s; }
+.ambient-bubble:nth-child(5) { left: 60%; width: 8px; height: 8px; animation-duration: 11s; animation-delay: 8s; }
+.ambient-bubble:nth-child(6) { left: 75%; width: 14px; height: 14px; animation-duration: 16s; animation-delay: 4s; }
+.ambient-bubble:nth-child(7) { left: 85%; width: 6px; height: 6px; animation-duration: 13s; animation-delay: 10s; }
+.ambient-bubble:nth-child(8) { left: 95%; width: 10px; height: 10px; animation-duration: 12s; animation-delay: 7s; }
+
+@keyframes ambient-float {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.4;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
+}
 
 /* Skip button */
 .splash-skip {

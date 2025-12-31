@@ -266,7 +266,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <!-- FIRST REGION - flows left to right -->
               <div class="flex-1">
                 <div class="text-center mb-3">
-                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 0) %></span>
+                  <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 0) %></span>
                 </div>
                 <.region_bracket_left
                   region_data={@regions_data[Enum.at(region_names, 0)]}
@@ -282,7 +282,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <!-- SECOND REGION - flows right to left -->
               <div class="flex-1">
                 <div class="text-center mb-3">
-                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 1) %></span>
+                  <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 1) %></span>
                 </div>
                 <.region_bracket_right
                   region_data={@regions_data[Enum.at(region_names, 1)]}
@@ -351,7 +351,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                 <!-- THIRD REGION - flows left to right -->
                 <div class="flex-1">
                   <div class="text-center mb-3">
-                    <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 2) %></span>
+                    <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 2) %></span>
                   </div>
                   <.region_bracket_left
                     region_data={@regions_data[Enum.at(region_names, 2)]}
@@ -367,7 +367,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                 <!-- FOURTH REGION - flows right to left -->
                 <div class="flex-1">
                   <div class="text-center mb-3">
-                    <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 3) %></span>
+                    <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(region_names, 3) %></span>
                   </div>
                   <.region_bracket_right
                     region_data={@regions_data[Enum.at(region_names, 3)]}
@@ -753,7 +753,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
       "bg-gray-800 border rounded overflow-hidden",
       @size == "small" && "w-36",
       @size == "normal" && "w-44",
-      @current_pick && "border-purple-500",
+      @current_pick && "border-blue-500",
       !@current_pick && "border-gray-700"
     ]}>
       <.pick_contestant_row
@@ -797,7 +797,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
       "bg-gray-800 border rounded overflow-hidden",
       @size == "small" && "w-36",
       @size == "normal" && "w-44",
-      @current_pick && "border-purple-500",
+      @current_pick && "border-blue-500",
       !@current_pick && "border-gray-700"
     ]}>
       <.pick_contestant_row
@@ -830,14 +830,14 @@ defmodule BracketBattleWeb.BracketEditorLive do
         class={[
           "w-full flex items-center px-2 py-1 transition-colors text-left",
           @has_border && "border-b border-gray-700",
-          @is_picked && "bg-purple-600/40",
+          @is_picked && "bg-blue-600/40",
           !@is_picked && !@is_submitted && "hover:bg-gray-700",
           @is_submitted && "cursor-default"
         ]}
       >
         <span class={[
           "text-xs font-mono w-5",
-          @is_picked && "text-purple-300",
+          @is_picked && "text-blue-300",
           !@is_picked && "text-gray-500"
         ]}>
           <%= @contestant.seed %>
@@ -850,7 +850,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
           <%= @contestant.name %>
         </span>
         <%= if @is_picked do %>
-          <span class="text-purple-300 text-xs">✓</span>
+          <span class="text-blue-300 text-xs">✓</span>
         <% end %>
       </button>
     <% else %>
@@ -884,7 +884,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
       <div class="text-xs text-gray-500 mb-1"><%= @label %></div>
       <div class={[
         "bg-gray-800 border rounded overflow-hidden w-full",
-        @current_pick && "border-purple-500",
+        @current_pick && "border-blue-500",
         !@current_pick && "border-gray-700"
       ]}>
         <%= if @contestant_a do %>
@@ -895,7 +895,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
             disabled={@is_submitted}
             class={[
               "w-full flex items-center px-2 py-1 transition-colors text-left border-b border-gray-700",
-              @current_pick == @contestant_a.id && "bg-purple-600/40",
+              @current_pick == @contestant_a.id && "bg-blue-600/40",
               @current_pick != @contestant_a.id && !@is_submitted && "hover:bg-gray-700"
             ]}
           >
@@ -903,7 +903,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
             <span class={["text-xs truncate flex-1", @current_pick == @contestant_a.id && "text-white font-semibold", @current_pick != @contestant_a.id && "text-gray-300"]}>
               <%= @contestant_a.name %>
             </span>
-            <%= if @current_pick == @contestant_a.id do %><span class="text-purple-300 text-xs">✓</span><% end %>
+            <%= if @current_pick == @contestant_a.id do %><span class="text-blue-300 text-xs">✓</span><% end %>
           </button>
         <% else %>
           <div class="flex items-center px-2 py-1 border-b border-gray-700">
@@ -919,7 +919,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
             disabled={@is_submitted}
             class={[
               "w-full flex items-center px-2 py-1 transition-colors text-left",
-              @current_pick == @contestant_b.id && "bg-purple-600/40",
+              @current_pick == @contestant_b.id && "bg-blue-600/40",
               @current_pick != @contestant_b.id && !@is_submitted && "hover:bg-gray-700"
             ]}
           >
@@ -927,7 +927,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
             <span class={["text-xs truncate flex-1", @current_pick == @contestant_b.id && "text-white font-semibold", @current_pick != @contestant_b.id && "text-gray-300"]}>
               <%= @contestant_b.name %>
             </span>
-            <%= if @current_pick == @contestant_b.id do %><span class="text-purple-300 text-xs">✓</span><% end %>
+            <%= if @current_pick == @contestant_b.id do %><span class="text-blue-300 text-xs">✓</span><% end %>
           </button>
         <% else %>
           <div class="flex items-center px-2 py-1">

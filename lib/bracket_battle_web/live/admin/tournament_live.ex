@@ -102,7 +102,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
         <h2 class="text-lg font-semibold text-white">All Tournaments</h2>
         <.link
           navigate="/admin/tournaments/new"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
         >
           + New Tournament
         </.link>
@@ -113,7 +113,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
           <p class="text-gray-400 mb-4">No tournaments yet. Create your first one!</p>
           <.link
             navigate="/admin/tournaments/new"
-            class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
+            class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
           >
             Create Tournament
           </.link>
@@ -144,7 +144,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
                   </.link>
                   <.link
                     navigate={"/admin/tournaments/#{tournament.id}"}
-                    class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm"
                   >
                     Edit
                   </.link>
@@ -181,7 +181,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
             field={@form[:name]}
             type="text"
             placeholder="e.g., Marvel Showdown 2025"
-            class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500"
+            class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -192,7 +192,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
             type="textarea"
             rows="3"
             placeholder="What's this tournament about?"
-            class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500"
+            class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -201,7 +201,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
           <.input
             field={@form[:registration_deadline]}
             type="datetime-local"
-            class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500"
+            class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
           />
           <p class="text-gray-500 text-sm mt-1">When should bracket submissions close?</p>
         </div>
@@ -217,7 +217,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
                 {"Registration Open", "registration"},
                 {"Completed", "completed"}
               ]}
-              class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-purple-500 focus:border-purple-500"
+              class="w-full bg-gray-800 border-gray-600 text-white rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <p class="text-gray-500 text-sm mt-1">Use "Start Tournament" button to begin voting</p>
           </div>
@@ -299,7 +299,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
               <button
                 type="button"
                 phx-click="toggle_round_names"
-                class="text-purple-400 hover:text-purple-300 text-sm flex items-center"
+                class="text-blue-400 hover:text-blue-300 text-sm flex items-center"
               >
                 <svg class={"w-4 h-4 mr-1 transition-transform #{if @show_round_names, do: "rotate-90"}"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -336,7 +336,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
         <div class="flex space-x-4">
           <button
             type="submit"
-            class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
           >
             <%= if @action == :new, do: "Create Tournament", else: "Update Tournament" %>
           </button>
@@ -552,7 +552,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
   defp status_color("draft"), do: "bg-gray-600 text-gray-200"
   defp status_color("registration"), do: "bg-blue-600 text-blue-100"
   defp status_color("active"), do: "bg-green-600 text-green-100"
-  defp status_color("completed"), do: "bg-purple-600 text-purple-100"
+  defp status_color("completed"), do: "bg-blue-600 text-blue-100"
   defp status_color(_), do: "bg-gray-600 text-gray-200"
 
   # Get valid region counts for a bracket size (must divide evenly)

@@ -140,20 +140,32 @@ defmodule BracketBattleWeb.HomeLive do
       </div>
     <% end %>
 
-    <div class="min-h-screen bg-gradient-to-br from-purple-900 via-gray-900 to-gray-900">
+    <div class="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#1e3a5f] to-[#0d2137] relative overflow-hidden">
+      <!-- Ambient bubbles -->
+      <div class="ambient-bubbles">
+        <div class="ambient-bubble"></div>
+        <div class="ambient-bubble"></div>
+        <div class="ambient-bubble"></div>
+        <div class="ambient-bubble"></div>
+        <div class="ambient-bubble"></div>
+        <div class="ambient-bubble"></div>
+        <div class="ambient-bubble"></div>
+        <div class="ambient-bubble"></div>
+      </div>
+
       <!-- Header -->
       <header class="border-b border-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center">
-              <h1 class="text-2xl font-bold text-white">Pantheon</h1>
+              <h1 class="text-2xl font-bold text-white">Minnows</h1>
             </div>
 
             <!-- Desktop nav -->
             <nav class="hidden md:flex items-center space-x-4">
               <%= if @current_user do %>
                 <%= if @current_user.is_admin do %>
-                  <a href="/admin" class="text-purple-400 hover:text-purple-300 text-sm">
+                  <a href="/admin" class="text-blue-400 hover:text-blue-300 text-sm">
                     Admin
                   </a>
                 <% end %>
@@ -164,7 +176,7 @@ defmodule BracketBattleWeb.HomeLive do
                   Sign Out
                 </a>
               <% else %>
-                <a href="/auth/signin" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <a href="/auth/signin" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                   Sign In
                 </a>
               <% end %>
@@ -195,7 +207,7 @@ defmodule BracketBattleWeb.HomeLive do
             <div class="px-4 py-3 space-y-2">
               <%= if @current_user do %>
                 <%= if @current_user.is_admin do %>
-                  <a href="/admin" class="block py-2 text-purple-400 hover:text-purple-300">
+                  <a href="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
                     Admin
                   </a>
                 <% end %>
@@ -206,7 +218,7 @@ defmodule BracketBattleWeb.HomeLive do
                   Sign Out
                 </a>
               <% else %>
-                <a href="/auth/signin" class="block py-2 text-purple-400 hover:text-purple-300">
+                <a href="/auth/signin" class="block py-2 text-blue-400 hover:text-blue-300">
                   Sign In
                 </a>
               <% end %>
@@ -221,18 +233,18 @@ defmodule BracketBattleWeb.HomeLive do
           <!-- Hero Section -->
           <div class="mb-8 sm:mb-12">
             <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-3 sm:mb-4">
-              <span class="text-purple-400">Pantheon</span>
+              <span class="text-blue-400">Minnows</span>
             </h2>
             <p class="text-lg sm:text-xl md:text-2xl text-gray-300 font-medium mb-2">
-              Where legends rise and champions are crowned
+              In a sea of minnows, be the shark
             </p>
             <p class="text-base sm:text-lg md:text-xl text-gray-400 max-w-2xl mx-auto px-2">
-              Create brackets, vote on matchups, compete on the leaderboard, and talk smack in the chat!
+              Create brackets, vote on matchups, talk smack in the chat, and compete on the leaderboard for ultimate tournament glory!
             </p>
           </div>
 
           <!-- Tournament Status Card -->
-          <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-6 md:p-8 max-w-lg mx-auto">
+          <div class="bg-[#0d2137]/70 border border-blue-900/50 rounded-2xl p-4 sm:p-6 md:p-8 max-w-lg mx-auto">
             <%= if @tournament do %>
               <div class="text-gray-400 text-xs sm:text-sm uppercase tracking-wide mb-2">
                 <%= status_label(@tournament.status) %>
@@ -248,11 +260,11 @@ defmodule BracketBattleWeb.HomeLive do
                 <%= case @tournament.status do %>
                   <% "registration" -> %>
                     <div class="space-y-2">
-                      <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                      <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                         View Tournament
                       </a>
                       <div>
-                        <a href={"/tournament/#{@tournament.id}/bracket"} class="text-purple-400 hover:text-purple-300 text-sm">
+                        <a href={"/tournament/#{@tournament.id}/bracket"} class="text-blue-400 hover:text-blue-300 text-sm">
                           Fill Out Your Bracket →
                         </a>
                       </div>
@@ -271,7 +283,7 @@ defmodule BracketBattleWeb.HomeLive do
                           ><%= format_time(@voting_ends_at) %> UTC</span>
                         </div>
                       <% end %>
-                      <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                      <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                         <%= if @has_voted, do: "View Bracket", else: "Vote Now" %>
                       </a>
                     </div>
@@ -282,11 +294,11 @@ defmodule BracketBattleWeb.HomeLive do
                 <% end %>
               <% else %>
                 <div class="space-y-3">
-                  <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                  <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                     View Tournament
                   </a>
                   <div>
-                    <a href="/auth/signin" class="text-purple-400 hover:text-purple-300 text-sm">
+                    <a href="/auth/signin" class="text-blue-400 hover:text-blue-300 text-sm">
                       Sign in to participate →
                     </a>
                   </div>
@@ -308,7 +320,7 @@ defmodule BracketBattleWeb.HomeLive do
                   You're signed in and ready to compete!
                 </div>
               <% else %>
-                <a href="/auth/signin" class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                <a href="/auth/signin" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                   Sign In to Get Started
                 </a>
               <% end %>
@@ -318,8 +330,8 @@ defmodule BracketBattleWeb.HomeLive do
           <!-- Features -->
           <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6">
-              <div class="w-12 h-12 bg-purple-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -330,8 +342,8 @@ defmodule BracketBattleWeb.HomeLive do
             </div>
 
             <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6">
-              <div class="w-12 h-12 bg-purple-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -342,8 +354,8 @@ defmodule BracketBattleWeb.HomeLive do
             </div>
 
             <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6">
-              <div class="w-12 h-12 bg-purple-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
@@ -478,7 +490,7 @@ defmodule BracketBattleWeb.HomeLive do
         1 -> {"border-yellow-500", "🥇", "You Won!"}
         2 -> {"border-gray-400", "🥈", "2nd Place!"}
         3 -> {"border-amber-600", "🥉", "3rd Place!"}
-        _ -> {"border-purple-500", "🎉", "Tournament Complete!"}
+        _ -> {"border-blue-500", "🎉", "Tournament Complete!"}
       end
 
     assigns = assign(assigns, border_color: border_color, emoji: emoji, headline: headline)
@@ -509,13 +521,13 @@ defmodule BracketBattleWeb.HomeLive do
           <div class="text-4xl font-bold text-white mb-1">#<%= @rank %></div>
           <div class="text-gray-400 text-sm">Final Placement</div>
           <%= if @score do %>
-            <div class="text-purple-400 font-semibold mt-2"><%= @score %> points</div>
+            <div class="text-blue-400 font-semibold mt-2"><%= @score %> points</div>
           <% end %>
         </div>
 
         <a href={"/tournament/#{@tournament.id}?tab=leaderboard"}
            phx-click="dismiss_tournament_complete"
-           class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
           View Leaderboard
         </a>
       </div>
@@ -527,32 +539,28 @@ defmodule BracketBattleWeb.HomeLive do
   defp welcome_splash(assigns) do
     ~H"""
     <div id="welcome-splash" class="welcome-splash" phx-click="dismiss_welcome_splash">
-      <!-- Debris particles that fly on impact - 16 particles -->
-      <div class="splash-debris debris-1"></div>
-      <div class="splash-debris debris-2"></div>
-      <div class="splash-debris debris-3"></div>
-      <div class="splash-debris debris-4"></div>
-      <div class="splash-debris debris-5"></div>
-      <div class="splash-debris debris-6"></div>
-      <div class="splash-debris debris-7"></div>
-      <div class="splash-debris debris-8"></div>
-      <div class="splash-debris debris-9"></div>
-      <div class="splash-debris debris-10"></div>
-      <div class="splash-debris debris-11"></div>
-      <div class="splash-debris debris-12"></div>
-      <div class="splash-debris debris-13"></div>
-      <div class="splash-debris debris-14"></div>
-      <div class="splash-debris debris-15"></div>
-      <div class="splash-debris debris-16"></div>
+      <!-- Bubbles floating up from the deep -->
+      <div class="splash-bubble bubble-1"></div>
+      <div class="splash-bubble bubble-2"></div>
+      <div class="splash-bubble bubble-3"></div>
+      <div class="splash-bubble bubble-4"></div>
+      <div class="splash-bubble bubble-5"></div>
+      <div class="splash-bubble bubble-6"></div>
+      <div class="splash-bubble bubble-7"></div>
+      <div class="splash-bubble bubble-8"></div>
+      <div class="splash-bubble bubble-9"></div>
+      <div class="splash-bubble bubble-10"></div>
+      <div class="splash-bubble bubble-11"></div>
+      <div class="splash-bubble bubble-12"></div>
 
       <!-- Animated Title -->
       <div class="text-center relative z-10">
         <h1 class="splash-title">
-          <span class="text-purple-400">Pan</span><span class="text-yellow-400">theon</span>
+          <span class="text-white">Minnows</span>
         </h1>
-        <p class="splash-tagline">Where opinions clash and champions emerge</p>
+        <p class="splash-tagline">Let the feeding frenzy begin</p>
         <div class="splash-cta">
-          <span class="text-gray-400 text-sm">Click anywhere to continue</span>
+          <span class="text-blue-200 text-sm">Click anywhere to continue</span>
         </div>
       </div>
 

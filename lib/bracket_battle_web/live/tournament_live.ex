@@ -148,13 +148,13 @@ defmodule BracketBattleWeb.TournamentLive do
             <div class="hidden md:flex items-center space-x-4">
               <%= if @current_user do %>
                 <%= if @tournament.status == "registration" do %>
-                  <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
+                  <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                     <%= if @has_bracket, do: "View Bracket", else: "Fill Bracket" %>
                   </a>
                 <% end %>
                 <span class="text-gray-400 text-sm"><%= @current_user.display_name || @current_user.email %></span>
               <% else %>
-                <a href="/auth/signin" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm">
+                <a href="/auth/signin" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                   Sign In
                 </a>
               <% end %>
@@ -185,7 +185,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <div class="px-4 py-3 space-y-2">
               <%= if @current_user do %>
                 <%= if @tournament.status == "registration" do %>
-                  <a href={"/tournament/#{@tournament.id}/bracket"} class="block py-2 text-purple-400 hover:text-purple-300">
+                  <a href={"/tournament/#{@tournament.id}/bracket"} class="block py-2 text-blue-400 hover:text-blue-300">
                     <%= if @has_bracket, do: "View Bracket", else: "Fill Bracket" %>
                   </a>
                 <% end %>
@@ -199,7 +199,7 @@ defmodule BracketBattleWeb.TournamentLive do
                   Sign Out
                 </a>
               <% else %>
-                <a href="/auth/signin" class="block py-2 text-purple-400 hover:text-purple-300">
+                <a href="/auth/signin" class="block py-2 text-blue-400 hover:text-blue-300">
                   Sign In
                 </a>
               <% end %>
@@ -215,7 +215,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <button
               phx-click="switch_tab"
               phx-value-tab="bracket"
-              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "bracket", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "bracket", do: "border-blue-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
             >
               Bracket
             </button>
@@ -223,11 +223,11 @@ defmodule BracketBattleWeb.TournamentLive do
               <button
                 phx-click="switch_tab"
                 phx-value-tab="voting"
-                class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "voting", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+                class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "voting", do: "border-blue-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
               >
                 Vote
                 <%= if length(@active_matchups) > 0 and map_size(@pending_votes) < length(@active_matchups) do %>
-                  <span class="ml-1 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  <span class="ml-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
                     <%= length(@active_matchups) - map_size(@pending_votes) %>
                   </span>
                 <% end %>
@@ -236,14 +236,14 @@ defmodule BracketBattleWeb.TournamentLive do
             <button
               phx-click="switch_tab"
               phx-value-tab="leaderboard"
-              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "leaderboard", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "leaderboard", do: "border-blue-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
             >
               Leaderboard
             </button>
             <button
               phx-click="switch_tab"
               phx-value-tab="chat"
-              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "chat", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+              class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "chat", do: "border-blue-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
             >
               Chat
             </button>
@@ -251,7 +251,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <button
                 phx-click="switch_tab"
                 phx-value-tab="my_bracket"
-                class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "my_bracket", do: "border-purple-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+                class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "my_bracket", do: "border-blue-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
               >
                 My Bracket
               </button>
@@ -313,7 +313,7 @@ defmodule BracketBattleWeb.TournamentLive do
         </p>
         <%= if @status == "registration" do %>
           <a href={"/tournament/#{@tournament.id}/bracket"}
-             class="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+             class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             Fill Out Your Bracket →
           </a>
         <% end %>
@@ -404,7 +404,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <!-- REGION 1 - flows left to right -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 0) %></span>
+                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 0) %></span>
               </div>
               <.region_bracket_left matchups={@region_1_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
@@ -415,7 +415,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <!-- REGION 2 - flows right to left -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 1) %></span>
+                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 1) %></span>
               </div>
               <.region_bracket_right matchups={@region_2_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
@@ -467,7 +467,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <!-- REGION 3 - flows left to right -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 2) %></span>
+                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 2) %></span>
               </div>
               <.region_bracket_left matchups={@region_3_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
@@ -478,7 +478,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <!-- REGION 4 - flows right to left -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 3) %></span>
+                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 3) %></span>
               </div>
               <.region_bracket_right matchups={@region_4_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
             </div>
@@ -766,7 +766,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <%= if !@has_bracket do %>
         <div class="bg-yellow-900/20 border border-yellow-700 rounded-lg p-6 text-center">
           <p class="text-yellow-400 mb-4">You need to submit a bracket before you can vote!</p>
-          <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded">
+          <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
             Fill Out Bracket
           </a>
         </div>
@@ -844,7 +844,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 disabled={@votes_cast == 0}
                 class={[
                   "px-8 py-3 rounded-lg font-semibold text-lg transition-all",
-                  @votes_cast > 0 && "bg-purple-600 hover:bg-purple-700 text-white cursor-pointer",
+                  @votes_cast > 0 && "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer",
                   @votes_cast == 0 && "bg-gray-700 text-gray-500 cursor-not-allowed"
                 ]}
               >
@@ -908,7 +908,7 @@ defmodule BracketBattleWeb.TournamentLive do
           phx-value-contestant={@matchup.contestant_1_id}
           class={[
             "w-full text-left p-3 rounded transition-all duration-200",
-            is_selected(@selected, @matchup.contestant_1_id) && "bg-purple-600 ring-2 ring-purple-400 scale-[1.02]",
+            is_selected(@selected, @matchup.contestant_1_id) && "bg-blue-600 ring-2 ring-blue-400 scale-[1.02]",
             !is_selected(@selected, @matchup.contestant_1_id) && "bg-gray-700 hover:bg-gray-600"
           ]}
         >
@@ -930,7 +930,7 @@ defmodule BracketBattleWeb.TournamentLive do
           phx-value-contestant={@matchup.contestant_2_id}
           class={[
             "w-full text-left p-3 rounded transition-all duration-200",
-            is_selected(@selected, @matchup.contestant_2_id) && "bg-purple-600 ring-2 ring-purple-400 scale-[1.02]",
+            is_selected(@selected, @matchup.contestant_2_id) && "bg-blue-600 ring-2 ring-blue-400 scale-[1.02]",
             !is_selected(@selected, @matchup.contestant_2_id) && "bg-gray-700 hover:bg-gray-600"
           ]}
         >
@@ -982,7 +982,7 @@ defmodule BracketBattleWeb.TournamentLive do
                   <td class="px-2 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
                     <%= entry.user.display_name || entry.user.email %>
                   </td>
-                  <td class="px-2 sm:px-4 py-2 sm:py-3 text-right text-purple-400 font-bold text-sm sm:text-base">
+                  <td class="px-2 sm:px-4 py-2 sm:py-3 text-right text-blue-400 font-bold text-sm sm:text-base">
                     <%= entry.total_score %>
                   </td>
                   <td class="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-400 text-sm sm:text-base">
@@ -1017,7 +1017,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="flex space-x-3">
                 <div class="flex-1">
                   <div class="flex items-baseline space-x-2">
-                    <span class="text-purple-400 text-sm font-medium">
+                    <span class="text-blue-400 text-sm font-medium">
                       <%= message.user.display_name || message.user.email %>
                     </span>
                     <span
@@ -1045,12 +1045,12 @@ defmodule BracketBattleWeb.TournamentLive do
                 value={@message_input}
                 placeholder="Type a message..."
                 maxlength="500"
-                class="flex-1 bg-gray-700 border-gray-600 text-white rounded px-3 py-2 text-sm focus:ring-purple-500 focus:border-purple-500"
+                class="flex-1 bg-gray-700 border-gray-600 text-white rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
                 autocomplete="off"
               />
               <button
                 type="submit"
-                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
               >
                 Send
               </button>
@@ -1058,7 +1058,7 @@ defmodule BracketBattleWeb.TournamentLive do
           </form>
         <% else %>
           <div class="border-t border-gray-700 p-4 text-center">
-            <a href="/auth/signin" class="text-purple-400 hover:text-purple-300 text-sm">
+            <a href="/auth/signin" class="text-blue-400 hover:text-blue-300 text-sm">
               Sign in to chat
             </a>
           </div>
@@ -1176,7 +1176,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <!-- FIRST REGION - flows left to right -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 0) %></span>
+                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 0) %></span>
               </div>
               <.my_bracket_region_left
                 region_data={@regions_data[Enum.at(@region_names, 0)]}
@@ -1191,7 +1191,7 @@ defmodule BracketBattleWeb.TournamentLive do
             <!-- SECOND REGION - flows right to left -->
             <div class="flex-1">
               <div class="text-center mb-3">
-                <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 1) %></span>
+                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 1) %></span>
               </div>
               <.my_bracket_region_right
                 region_data={@regions_data[Enum.at(@region_names, 1)]}
@@ -1256,7 +1256,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <!-- THIRD REGION - flows left to right -->
               <div class="flex-1">
                 <div class="text-center mb-3">
-                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 2) %></span>
+                  <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 2) %></span>
                 </div>
                 <.my_bracket_region_left
                   region_data={@regions_data[Enum.at(@region_names, 2)]}
@@ -1271,7 +1271,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <!-- FOURTH REGION - flows right to left -->
               <div class="flex-1">
                 <div class="text-center mb-3">
-                  <span class="text-purple-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 3) %></span>
+                  <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 3) %></span>
                 </div>
                 <.my_bracket_region_right
                   region_data={@regions_data[Enum.at(@region_names, 3)]}
@@ -1601,7 +1601,7 @@ defmodule BracketBattleWeb.TournamentLive do
     ~H"""
     <div class={[
       "bg-gray-800 rounded border overflow-hidden",
-      @current_pick && "border-purple-500",
+      @current_pick && "border-blue-500",
       !@current_pick && "border-gray-700",
       @size == "small" && "w-36",
       @size == "normal" && "w-44"
@@ -1609,12 +1609,12 @@ defmodule BracketBattleWeb.TournamentLive do
       <!-- Contestant A -->
       <div class={[
         "flex items-center px-2 py-1 border-b border-gray-700",
-        @current_pick && @contestant_a && @current_pick == @contestant_a.id && "bg-purple-600/40"
+        @current_pick && @contestant_a && @current_pick == @contestant_a.id && "bg-blue-600/40"
       ]}>
         <%= if @contestant_a do %>
           <span class={[
             "text-xs font-mono w-5",
-            @current_pick == @contestant_a.id && "text-purple-300",
+            @current_pick == @contestant_a.id && "text-blue-300",
             @current_pick != @contestant_a.id && "text-gray-500"
           ]}><%= @contestant_a.seed %></span>
           <span class={[
@@ -1623,7 +1623,7 @@ defmodule BracketBattleWeb.TournamentLive do
             @current_pick != @contestant_a.id && "text-gray-300"
           ]}><%= @contestant_a.name %></span>
           <%= if @current_pick == @contestant_a.id do %>
-            <span class="text-purple-300 text-xs">✓</span>
+            <span class="text-blue-300 text-xs">✓</span>
           <% end %>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
@@ -1632,12 +1632,12 @@ defmodule BracketBattleWeb.TournamentLive do
       <!-- Contestant B -->
       <div class={[
         "flex items-center px-2 py-1",
-        @current_pick && @contestant_b && @current_pick == @contestant_b.id && "bg-purple-600/40"
+        @current_pick && @contestant_b && @current_pick == @contestant_b.id && "bg-blue-600/40"
       ]}>
         <%= if @contestant_b do %>
           <span class={[
             "text-xs font-mono w-5",
-            @current_pick == @contestant_b.id && "text-purple-300",
+            @current_pick == @contestant_b.id && "text-blue-300",
             @current_pick != @contestant_b.id && "text-gray-500"
           ]}><%= @contestant_b.seed %></span>
           <span class={[
@@ -1646,7 +1646,7 @@ defmodule BracketBattleWeb.TournamentLive do
             @current_pick != @contestant_b.id && "text-gray-300"
           ]}><%= @contestant_b.name %></span>
           <%= if @current_pick == @contestant_b.id do %>
-            <span class="text-purple-300 text-xs">✓</span>
+            <span class="text-blue-300 text-xs">✓</span>
           <% end %>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
@@ -1678,7 +1678,7 @@ defmodule BracketBattleWeb.TournamentLive do
     ~H"""
     <div class={[
       "bg-gray-800 rounded border overflow-hidden",
-      @current_pick && "border-purple-500",
+      @current_pick && "border-blue-500",
       !@current_pick && "border-gray-700",
       @size == "small" && "w-36",
       @size == "normal" && "w-44"
@@ -1686,12 +1686,12 @@ defmodule BracketBattleWeb.TournamentLive do
       <!-- Contestant A -->
       <div class={[
         "flex items-center px-2 py-1 border-b border-gray-700",
-        @current_pick && @contestant_a && @current_pick == @contestant_a.id && "bg-purple-600/40"
+        @current_pick && @contestant_a && @current_pick == @contestant_a.id && "bg-blue-600/40"
       ]}>
         <%= if @contestant_a do %>
           <span class={[
             "text-xs font-mono w-5",
-            @current_pick == @contestant_a.id && "text-purple-300",
+            @current_pick == @contestant_a.id && "text-blue-300",
             @current_pick != @contestant_a.id && "text-gray-500"
           ]}><%= @contestant_a.seed %></span>
           <span class={[
@@ -1700,7 +1700,7 @@ defmodule BracketBattleWeb.TournamentLive do
             @current_pick != @contestant_a.id && "text-gray-300"
           ]}><%= @contestant_a.name %></span>
           <%= if @current_pick == @contestant_a.id do %>
-            <span class="text-purple-300 text-xs">✓</span>
+            <span class="text-blue-300 text-xs">✓</span>
           <% end %>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
@@ -1709,12 +1709,12 @@ defmodule BracketBattleWeb.TournamentLive do
       <!-- Contestant B -->
       <div class={[
         "flex items-center px-2 py-1",
-        @current_pick && @contestant_b && @current_pick == @contestant_b.id && "bg-purple-600/40"
+        @current_pick && @contestant_b && @current_pick == @contestant_b.id && "bg-blue-600/40"
       ]}>
         <%= if @contestant_b do %>
           <span class={[
             "text-xs font-mono w-5",
-            @current_pick == @contestant_b.id && "text-purple-300",
+            @current_pick == @contestant_b.id && "text-blue-300",
             @current_pick != @contestant_b.id && "text-gray-500"
           ]}><%= @contestant_b.seed %></span>
           <span class={[
@@ -1723,7 +1723,7 @@ defmodule BracketBattleWeb.TournamentLive do
             @current_pick != @contestant_b.id && "text-gray-300"
           ]}><%= @contestant_b.name %></span>
           <%= if @current_pick == @contestant_b.id do %>
-            <span class="text-purple-300 text-xs">✓</span>
+            <span class="text-blue-300 text-xs">✓</span>
           <% end %>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
@@ -1754,7 +1754,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="text-xs text-gray-500 mb-1">Final Four</div>
       <div class="bg-gray-800 rounded border border-gray-700 overflow-hidden w-44 mx-auto">
         <!-- Contestant A -->
-        <div class={["flex items-center px-2 py-1.5 border-b border-gray-700", @winner && @winner.id == @contestant_a && @contestant_a && "bg-purple-900/30"]}>
+        <div class={["flex items-center px-2 py-1.5 border-b border-gray-700", @winner && @winner.id == @contestant_a && @contestant_a && "bg-blue-900/30"]}>
           <%= if @contestant_a do %>
             <span class="text-gray-500 text-xs font-mono w-5"><%= @contestant_a.seed %></span>
             <span class="text-white text-xs truncate flex-1"><%= @contestant_a.name %></span>
@@ -1763,7 +1763,7 @@ defmodule BracketBattleWeb.TournamentLive do
           <% end %>
         </div>
         <!-- Contestant B -->
-        <div class={["flex items-center px-2 py-1.5", @winner && @winner.id == @contestant_b && @contestant_b && "bg-purple-900/30"]}>
+        <div class={["flex items-center px-2 py-1.5", @winner && @winner.id == @contestant_b && @contestant_b && "bg-blue-900/30"]}>
           <%= if @contestant_b do %>
             <span class="text-gray-500 text-xs font-mono w-5"><%= @contestant_b.seed %></span>
             <span class="text-white text-xs truncate flex-1"><%= @contestant_b.name %></span>
@@ -1861,7 +1861,7 @@ defmodule BracketBattleWeb.TournamentLive do
     <!-- Overlay -->
     <div class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
       <!-- Modal Card -->
-      <div class="bg-gray-800 rounded-2xl border border-purple-500 shadow-2xl shadow-purple-500/20 max-w-md w-full p-8 text-center relative animate-bounce-in">
+      <div class="bg-gray-800 rounded-2xl border border-blue-500 shadow-2xl shadow-blue-500/20 max-w-md w-full p-8 text-center relative animate-bounce-in">
         <!-- Close Button -->
         <button
           phx-click="dismiss_reveal"
@@ -1888,14 +1888,14 @@ defmodule BracketBattleWeb.TournamentLive do
         </p>
 
         <!-- Voting Reminder -->
-        <p class="text-purple-400 font-medium mb-6">
+        <p class="text-blue-400 font-medium mb-6">
           Don't forget to vote in the next round!
         </p>
 
         <!-- CTA Button -->
         <button
           phx-click="dismiss_reveal"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
         >
           View Bracket
           <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1914,7 +1914,7 @@ defmodule BracketBattleWeb.TournamentLive do
         1 -> {"border-yellow-500", "🥇", "Congratulations!"}
         2 -> {"border-gray-400", "🥈", "Congratulations!"}
         3 -> {"border-amber-600", "🥉", "Congratulations!"}
-        _ -> {"border-purple-500", "🎉", "Tournament Complete!"}
+        _ -> {"border-blue-500", "🎉", "Tournament Complete!"}
       end
 
     assigns =
@@ -1975,7 +1975,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <!-- Placement -->
         <p class="text-xl text-gray-300 mb-2">
           <%= if @rank do %>
-            You finished in <span class="font-bold text-purple-400"><%= ordinal(@rank) %> place</span>!
+            You finished in <span class="font-bold text-blue-400"><%= ordinal(@rank) %> place</span>!
           <% else %>
             Thanks for watching!
           <% end %>
@@ -1997,7 +1997,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <button
           phx-click="dismiss_tournament_complete"
           phx-value-tab="leaderboard"
-          class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
         >
           View Leaderboard
           <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2222,7 +2222,7 @@ defmodule BracketBattleWeb.TournamentLive do
   defp status_color("draft"), do: "bg-gray-600 text-gray-200"
   defp status_color("registration"), do: "bg-blue-600 text-blue-100"
   defp status_color("active"), do: "bg-green-600 text-green-100"
-  defp status_color("completed"), do: "bg-purple-600 text-purple-100"
+  defp status_color("completed"), do: "bg-blue-600 text-blue-100"
   defp status_color(_), do: "bg-gray-600 text-gray-200"
 
   defp status_label("draft"), do: "Coming Soon"
