@@ -621,7 +621,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
     <div class="flex items-center justify-end">
       <!-- Elite 8 (region winner matchup) -->
       <%= if @regional_rounds >= 4 do %>
-        <div class="flex flex-col justify-center translate-x-4" style={"min-height: #{@container_height}px;"}>
+        <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
           <div class="relative">
             <.pick_matchup_box_from_picks
               position={@r4_pos}
@@ -631,19 +631,17 @@ defmodule BracketBattleWeb.BracketEditorLive do
               contestants_map={@contestants_map}
               is_submitted={@is_submitted}
             />
+            <!-- Horizontal connector to R3 vertical line -->
+            <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
           </div>
         </div>
 
-        <!-- Connector column R4<-R3 -->
+        <!-- Spacer between Elite 8 and R3 -->
         <div class="w-4"></div>
       <% end %>
 
       <!-- Round 3 matchups (dynamic count) -->
       <%= if @r3_matchups_per_region > 0 do %>
-        <!-- Connector column R3<-Elite8 (only if there's an Elite 8 round) -->
-        <%= if @regional_rounds >= 4 do %>
-          <div class="w-4"></div>
-        <% end %>
 
         <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>

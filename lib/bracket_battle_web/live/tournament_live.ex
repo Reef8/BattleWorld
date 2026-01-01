@@ -328,60 +328,19 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   defp bracket_tab_content(assigns) do
-    # Group matchups by round and region
-    by_round = Enum.group_by(assigns.matchups, & &1.round)
+    alias BracketBattle.Brackets.ViewerData
 
-    # Get region names from tournament (default to standard names)
-    region_names = assigns.tournament.region_names || ["East", "West", "South", "Midwest"]
-    [region_1, region_2, region_3, region_4] = Enum.take(region_names, 4)
+    # Get contestants for the viewer
+    contestants = Tournaments.list_contestants(assigns.tournament.id)
 
-    # Separate matchups by region
-    region_1_matchups = get_region_matchups(assigns.matchups, region_1)
-    region_2_matchups = get_region_matchups(assigns.matchups, region_2)
-    region_3_matchups = get_region_matchups(assigns.matchups, region_3)
-    region_4_matchups = get_region_matchups(assigns.matchups, region_4)
+    # Build viewer data
+    viewer_data = ViewerData.to_viewer_format(
+      assigns.tournament,
+      assigns.matchups,
+      contestants
+    )
 
-    # Calculate total rounds for this bracket size
-    total_rounds = BracketBattle.Tournaments.Tournament.total_rounds(assigns.tournament)
-
-    # Calculate regional rounds (total rounds - 2 for Final Four and Championship)
-    # For 64-bracket: 6 total rounds, 4 regional rounds
-    # For 32-bracket: 5 total rounds, 3 regional rounds
-    # For 16-bracket: 4 total rounds, 2 regional rounds
-    region_rounds = total_rounds - 2
-
-    # Final Four is second-to-last round, Championship is last round
-    final_four_round = total_rounds - 1
-    championship_round = total_rounds
-
-    final_four = Map.get(by_round, final_four_round, []) |> Enum.sort_by(& &1.position)
-    championship = Map.get(by_round, championship_round, []) |> Enum.sort_by(& &1.position)
-
-    # Get user picks (already set by bracket_tab)
-    user_picks = Map.get(assigns, :user_picks, %{})
-
-    # Calculate minimum width based on bracket size
-    # Each round column is about 180px, plus center column (288px)
-    # 64-bracket: 4 rounds * 2 sides * 180px + 288px = 1728px (use 1400px for tighter fit)
-    # 32-bracket: 3 rounds * 2 sides * 180px + 288px = 1368px (use 1100px for tighter fit)
-    min_bracket_width = case region_rounds do
-      4 -> 1400  # 64-bracket
-      3 -> 1200  # 32-bracket (increased for better layout)
-      2 -> 900   # 16-bracket
-      _ -> 1400  # default
-    end
-
-    assigns = assigns
-      |> assign(:region_names, region_names)
-      |> assign(:region_1_matchups, region_1_matchups)
-      |> assign(:region_2_matchups, region_2_matchups)
-      |> assign(:region_3_matchups, region_3_matchups)
-      |> assign(:region_4_matchups, region_4_matchups)
-      |> assign(:final_four, final_four)
-      |> assign(:championship, championship)
-      |> assign(:user_picks, user_picks)
-      |> assign(:region_rounds, region_rounds)
-      |> assign(:min_bracket_width, min_bracket_width)
+    assigns = assign(assigns, :viewer_data, viewer_data)
 
     ~H"""
     <div class="space-y-4">
@@ -396,93 +355,17 @@ defmodule BracketBattleWeb.TournamentLive do
         </p>
       </div>
 
-      <!-- ESPN-Style Bracket Layout - Horizontal scroll on all devices -->
+      <!-- brackets-viewer.js powered bracket -->
       <div class="overflow-x-auto pb-4">
-        <div style={"min-width: #{@min_bracket_width}px;"}>
-          <!-- Top Half: Region 1 (left) and Region 2 (right) -->
-          <div class="flex">
-            <!-- REGION 1 - flows left to right -->
-            <div class="flex-1">
-              <div class="text-center mb-3">
-                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 0) %></span>
-              </div>
-              <.region_bracket_left matchups={@region_1_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
-            </div>
-
-            <!-- Empty center column for top regions -->
-            <div class="w-72 flex-shrink-0"></div>
-
-            <!-- REGION 2 - flows right to left -->
-            <div class="flex-1">
-              <div class="text-center mb-3">
-                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 1) %></span>
-              </div>
-              <.region_bracket_right matchups={@region_2_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
-            </div>
-          </div>
-
-          <!-- CENTER ROW: Final Four 1 | Championship | Final Four 2 -->
-          <div class="flex flex-row justify-center items-center my-6 gap-8">
-            <!-- Final Four Game 1 (Region 1 vs Region 2 winners) -->
-            <div class="flex-shrink-0">
-              <%= if length(@final_four) > 0 do %>
-                <div class="text-center">
-                  <div class="text-xs text-gray-500 mb-1">Final Four</div>
-                  <.bracket_matchup_box matchup={Enum.at(@final_four, 0)} user_picks={@user_picks} />
-                </div>
-              <% end %>
-            </div>
-
-            <!-- Championship -->
-            <div class="flex-shrink-0">
-              <div class="text-center">
-                <div class="text-xs text-yellow-500 font-bold mb-1 uppercase">Championship</div>
-                <%= if length(@championship) > 0 do %>
-                  <% champ_matchup = Enum.at(@championship, 0) %>
-                  <!-- Show Champion section if winner exists -->
-                  <%= if champ_matchup.winner do %>
-                    <div class="mb-3 bg-yellow-900/40 border border-yellow-600 rounded-lg p-3">
-                      <div class="text-yellow-400 text-lg font-bold">🏆 <%= champ_matchup.winner.name %></div>
-                      <div class="text-yellow-500/70 text-xs">Champion</div>
-                    </div>
-                  <% end %>
-                  <.bracket_matchup_box matchup={champ_matchup} highlight={true} user_picks={@user_picks} />
-                <% end %>
-              </div>
-            </div>
-
-            <!-- Final Four Game 2 (Region 3 vs Region 4 winners) -->
-            <div class="flex-shrink-0">
-              <%= if length(@final_four) > 1 do %>
-                <div class="text-center">
-                  <div class="text-xs text-gray-500 mb-1">Final Four</div>
-                  <.bracket_matchup_box matchup={Enum.at(@final_four, 1)} user_picks={@user_picks} />
-                </div>
-              <% end %>
-            </div>
-          </div>
-
-          <!-- Bottom Half: Region 3 (left) and Region 4 (right) -->
-          <div class="flex">
-            <!-- REGION 3 - flows left to right -->
-            <div class="flex-1">
-              <div class="text-center mb-3">
-                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 2) %></span>
-              </div>
-              <.region_bracket_left matchups={@region_3_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
-            </div>
-
-            <!-- Empty center column for bottom regions -->
-            <div class="w-72 flex-shrink-0"></div>
-
-            <!-- REGION 4 - flows right to left -->
-            <div class="flex-1">
-              <div class="text-center mb-3">
-                <span class="text-blue-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 3) %></span>
-              </div>
-              <.region_bracket_right matchups={@region_4_matchups} user_picks={@user_picks} region_rounds={@region_rounds} />
-            </div>
-          </div>
+        <div
+          id="tournament-bracket-viewer"
+          phx-hook="BracketViewer"
+          phx-update="ignore"
+          data-bracket={Jason.encode!(@viewer_data)}
+          data-interactive="false"
+          class="brackets-viewer"
+        >
+          <div class="text-center text-gray-400 py-8">Loading bracket...</div>
         </div>
       </div>
     </div>

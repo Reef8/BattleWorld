@@ -38,6 +38,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
     |> assign(:region_count, 4)
     |> assign(:region_names, Tournament.default_regions())
     |> assign(:round_names, %{})
+    |> assign(:show_success, false)
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do

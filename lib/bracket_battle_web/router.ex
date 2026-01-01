@@ -57,6 +57,7 @@ defmodule BracketBattleWeb.Router do
       live "/tournaments/:id", TournamentLive, :edit
       live "/tournaments/:id/contestants", ContestantsLive, :index
       live "/tournaments/:id/matchups", MatchupsLive, :index
+      live "/tournaments/:id/advance", AdvanceVotingLive, :index
     end
   end
 

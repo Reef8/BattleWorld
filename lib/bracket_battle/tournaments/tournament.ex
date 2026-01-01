@@ -135,8 +135,9 @@ defmodule BracketBattle.Tournaments.Tournament do
     reg_rounds = regional_rounds(tournament)
     tot_rounds = total_rounds(tournament)
 
-    # Build sequence: East R1, East R2, East R3, South R1, South R2, ...
-    region_sequence = for region <- names, round <- 1..reg_rounds do
+    # Build sequence: Sketch R1, Rotoscope R1, Cartoon R1, Claymation R1, Sketch R2, ...
+    # (all regions for each round, then move to next round)
+    region_sequence = for round <- 1..reg_rounds, region <- names do
       {region, round}
     end
 

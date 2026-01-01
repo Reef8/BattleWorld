@@ -154,9 +154,9 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                       <.link
                         href={"/admin/end-round/#{@tournament.id}"}
                         method="post"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm cursor-pointer"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm inline-block"
                       >
-                        Advance to Round <%= @tournament.current_round + 1 %>
+                        <%= next_voting_phase_text(@tournament) %>
                       </.link>
                     <% "completed" -> %>
                       <span class="text-green-400 text-sm">Tournament Complete</span>
@@ -308,27 +308,6 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
     end
   end
 
-  @impl true
-  def handle_event("advance_round", %{"id" => id}, socket) do
-    IO.inspect(id, label: "advance_round called with id")
-    tournament = Tournaments.get_tournament!(id)
-    IO.inspect(tournament.status, label: "tournament status")
-
-    case Tournaments.advance_round(tournament) do
-      {:ok, updated} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Advanced to round #{updated.current_round}!")
-         |> assign(tournament: updated, stats: update_stats(updated))}
-
-      {:error, :matchups_pending} ->
-        {:noreply, put_flash(socket, :error, "Some matchups are still pending. Decide ties first.")}
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, "Failed to advance: #{inspect(reason)}")}
-    end
-  end
-
   defp update_stats(tournament) do
     %{
       contestants: Tournaments.count_contestants(tournament.id),
@@ -343,4 +322,20 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
   defp status_color("active"), do: "bg-green-600 text-green-100"
   defp status_color("completed"), do: "bg-blue-600 text-blue-100"
   defp status_color(_), do: "bg-gray-600 text-gray-200"
+
+  defp next_voting_phase_text(tournament) do
+    alias BracketBattle.Tournaments.Tournament
+
+    current_region = tournament.current_voting_region
+    current_round = tournament.current_voting_round
+
+    case Tournament.next_voting_phase(tournament, current_region, current_round) do
+      nil ->
+        "Complete Tournament"
+      {nil, next_round} ->
+        "Advance to Round #{next_round} (Finals)"
+      {next_region, next_round} ->
+        "Advance to #{next_region} (Round #{next_round})"
+    end
+  end
 end

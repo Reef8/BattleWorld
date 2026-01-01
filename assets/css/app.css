@@ -604,3 +604,53 @@
     display: none;
   }
 }
+
+/* brackets-viewer.js dark theme overrides */
+.brackets-viewer {
+  --primary-background: #111827;
+  --secondary-background: #1f2937;
+  --match-background: #374151;
+  --font-color: #f9fafb;
+  --win-color: #10b981;
+  --loss-color: #6b7280;
+  --label-color: #9ca3af;
+  --hint-color: #6b7280;
+  --connector-color: #4b5563;
+  --border-color: #4b5563;
+  --border-hover-color: #60a5fa;
+}
+
+.brackets-viewer .match {
+  background: var(--match-background);
+  border: 1px solid var(--border-color);
+  border-radius: 0.375rem;
+}
+
+.brackets-viewer .match:hover {
+  border-color: var(--border-hover-color);
+}
+
+.brackets-viewer .participant {
+  background: transparent;
+  color: var(--font-color);
+}
+
+.brackets-viewer .participant.winner {
+  color: var(--win-color);
+  font-weight: 600;
+}
+
+.brackets-viewer .participant.loser {
+  color: var(--loss-color);
+}
+
+.brackets-viewer .round-label {
+  color: var(--label-color);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.brackets-viewer svg .connector {
+  stroke: var(--connector-color);
+}

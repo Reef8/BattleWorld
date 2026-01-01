@@ -196,6 +196,70 @@ const Hooks = {
         localStorage.setItem(`tournament_complete_seen_${tournament_id}`, "true")
       })
     }
+  },
+  BracketViewer: {
+    mounted() {
+      this.renderBracket()
+    },
+    updated() {
+      this.renderBracket()
+    },
+    renderBracket() {
+      const data = JSON.parse(this.el.dataset.bracket)
+      const interactive = this.el.dataset.interactive === "true"
+      const isSubmitted = this.el.dataset.submitted === "true"
+
+      if (window.bracketsViewer && data.stages && data.stages.length > 0) {
+        window.bracketsViewer.render({
+          stages: data.stages,
+          matches: data.matches,
+          matchGames: data.matchGames || [],
+          participants: data.participants,
+        }, {
+          selector: `#${this.el.id}`,
+          clear: true,
+          participantOriginPlacement: 'before',
+          separatedChildCountLabel: true,
+          showSlotsOrigin: true,
+          highlightParticipantOnHover: true,
+          onMatchClick: interactive && !isSubmitted ? (match) => {
+            this.pushEvent("match_clicked", { match_id: match.id })
+          } : undefined
+        })
+
+        // If interactive, add click handlers on participant names for picking
+        if (interactive && !isSubmitted) {
+          this.setupParticipantClicks()
+        }
+      }
+    },
+    setupParticipantClicks() {
+      const container = this.el
+      const self = this
+
+      // Add click handlers to participant name elements
+      setTimeout(() => {
+        container.querySelectorAll('.participant .name').forEach(el => {
+          const participantEl = el.closest('.participant')
+          if (participantEl) {
+            participantEl.style.cursor = 'pointer'
+            participantEl.onclick = (e) => {
+              e.stopPropagation()
+              const matchEl = participantEl.closest('.match')
+              if (matchEl) {
+                // Get match and participant IDs from data attributes
+                const matchId = matchEl.getAttribute('data-match-id')
+                const isOpponent1 = participantEl.classList.contains('opponent1')
+                self.pushEvent("pick_winner", {
+                  match_id: matchId,
+                  is_opponent1: isOpponent1
+                })
+              }
+            }
+          }
+        })
+      }, 100) // Small delay to ensure DOM is ready
+    }
   }
 }
 
