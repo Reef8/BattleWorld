@@ -1039,9 +1039,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
       <!-- Champion display -->
       <%= if @champion do %>
-        <div class="mt-3 bg-pink-900/40 border border-pink-600 rounded p-3">
-          <div class="text-xs text-pink-500 mb-1">Your Champion</div>
-          <div class="text-pink-400 font-bold text-lg">🏆 <%= @champion.name %></div>
+        <div class="mt-3 bg-yellow-900/40 border border-yellow-600 rounded p-3">
+          <div class="text-xs text-yellow-500 mb-1">Your Champion</div>
+          <div class="text-yellow-400 font-bold text-lg">🏆 <%= @champion.name %></div>
         </div>
       <% end %>
     </div>
