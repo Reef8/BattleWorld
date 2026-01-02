@@ -1375,8 +1375,6 @@ defmodule BracketBattleWeb.TournamentLive do
             />
           </div>
         </div>
-
-        <div class="w-4"></div>
       <% end %>
 
       <!-- Round 3 (Sweet 16) -->
