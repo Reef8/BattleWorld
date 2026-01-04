@@ -339,36 +339,31 @@ defmodule BracketBattleWeb.TournamentLive do
     matchups_per_region_r1 = div(contestants_per_region, 2)
     regional_rounds = trunc(:math.log2(contestants_per_region))
 
-    # Build matchups map by position for easy lookup
-    matchups_map = Map.new(matchups, fn m -> {m.position, m} end)
+    # Build matchups map by {region, round, position} for easy lookup
+    # Regional matchups use region, Final Four/Championship use nil region
+    matchups_map = Map.new(matchups, fn m ->
+      key = {String.downcase(m.region || ""), m.round, m.position}
+      {key, m}
+    end)
 
-    # Calculate base positions for each round
-    r1_total = div(bracket_size, 2)
-    r2_total = div(bracket_size, 4)
-    r3_total = div(bracket_size, 8)
+    # Final Four and Championship use round 5 and 6 with nil region
+    # Round 5 (Final Four): positions 1 and 2
+    # Round 6 (Championship): position 1
+    ff1_pos = 1  # Final Four game 1
+    ff2_pos = 2  # Final Four game 2
+    championship_pos = 1  # Championship game
 
-    # Regional winner positions
-    regional_winner_base = case regional_rounds do
-      3 -> r1_total + r2_total
-      4 -> r1_total + r2_total + r3_total
-      _ -> r1_total + r2_total + r3_total
-    end
-
-    regional_winner_1 = regional_winner_base + 1
-    regional_winner_2 = regional_winner_base + 2
-    regional_winner_3 = regional_winner_base + 3
-    regional_winner_4 = regional_winner_base + 4
-
-    # Final Four positions
-    ff_base = regional_winner_base + region_count
-    ff1_pos = ff_base + 1
-    ff2_pos = ff_base + 2
-    championship_pos = ff_base + 3
+    # Regional winner matchup keys (Round 4, Elite 8)
+    # Each region has exactly one Round 4 matchup with position matching the region order
+    regional_winner_1 = {String.downcase(Enum.at(region_names, 0)), 4, 1}  # sad at position 1
+    regional_winner_2 = {String.downcase(Enum.at(region_names, 1)), 4, 2}  # happy at position 2
+    regional_winner_3 = {String.downcase(Enum.at(region_names, 2)), 4, 3}  # South at position 3
+    regional_winner_4 = {String.downcase(Enum.at(region_names, 3)), 4, 4}  # Midwest at position 4
 
     # Build contestants map from preloaded contestants
-    contestants = tournament.contestants || []
+    contestants = if Ecto.assoc_loaded?(tournament.contestants), do: tournament.contestants, else: []
     contestants_map = Map.new(contestants, fn c -> {c.id, c} end)
-    by_region = Enum.group_by(contestants, & &1.region)
+    by_region = Enum.group_by(contestants, fn c -> String.downcase(c.region || "") end)
 
     # Get seed pairs for matchups
     seed_pairs = Tournaments.seeding_pattern(contestants_per_region)
@@ -378,7 +373,7 @@ defmodule BracketBattleWeb.TournamentLive do
       |> Enum.with_index()
       |> Enum.map(fn {region_name, idx} ->
         offset = idx * matchups_per_region_r1
-        region_contestants = Map.get(by_region, region_name, [])
+        region_contestants = Map.get(by_region, String.downcase(region_name), [])
         by_seed = Map.new(region_contestants, fn c -> {c.seed, c} end)
 
         r1_matchups = seed_pairs
@@ -437,6 +432,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 <span class="text-green-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 0) %></span>
               </div>
               <.results_region_left
+                region_name={Enum.at(@region_names, 0)}
                 region_data={@regions_data[Enum.at(@region_names, 0)]}
                 matchups_map={@matchups_map}
                 contestants_map={@contestants_map}
@@ -452,6 +448,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 <span class="text-green-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 1) %></span>
               </div>
               <.results_region_right
+                region_name={Enum.at(@region_names, 1)}
                 region_data={@regions_data[Enum.at(@region_names, 1)]}
                 matchups_map={@matchups_map}
                 contestants_map={@contestants_map}
@@ -517,6 +514,7 @@ defmodule BracketBattleWeb.TournamentLive do
                   <span class="text-green-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 2) %></span>
                 </div>
                 <.results_region_left
+                  region_name={Enum.at(@region_names, 2)}
                   region_data={@regions_data[Enum.at(@region_names, 2)]}
                   matchups_map={@matchups_map}
                   contestants_map={@contestants_map}
@@ -532,6 +530,7 @@ defmodule BracketBattleWeb.TournamentLive do
                   <span class="text-green-400 font-bold text-lg uppercase tracking-wider"><%= Enum.at(@region_names, 3) %></span>
                 </div>
                 <.results_region_right
+                  region_name={Enum.at(@region_names, 3)}
                   region_data={@regions_data[Enum.at(@region_names, 3)]}
                   matchups_map={@matchups_map}
                   contestants_map={@contestants_map}
@@ -1165,9 +1164,9 @@ defmodule BracketBattleWeb.TournamentLive do
 
     # Build proper regions_data with actual contestant matchups (exactly like bracket_editor)
     # Build contestants map from preloaded contestants
-    contestants = tournament.contestants || []
+    contestants = if Ecto.assoc_loaded?(tournament.contestants), do: tournament.contestants, else: []
     contestants_map = Map.new(contestants, fn c -> {c.id, c} end)
-    by_region = Enum.group_by(contestants, & &1.region)
+    by_region = Enum.group_by(contestants, fn c -> String.downcase(c.region || "") end)
 
     # Get seed pairs for matchups
     seed_pairs = Tournaments.seeding_pattern(contestants_per_region)
@@ -1177,7 +1176,7 @@ defmodule BracketBattleWeb.TournamentLive do
       |> Enum.with_index()
       |> Enum.map(fn {region_name, idx} ->
         offset = idx * matchups_per_region_r1
-        region_contestants = Map.get(by_region, region_name, [])
+        region_contestants = Map.get(by_region, String.downcase(region_name), [])
         by_seed = Map.new(region_contestants, fn c -> {c.seed, c} end)
 
         matchups = seed_pairs
@@ -1894,20 +1893,19 @@ defmodule BracketBattleWeb.TournamentLive do
   # =============================================================================
 
   # Left-side region bracket for Results tab
+  # Expects: region_name (string like "sad"), region_data, matchups_per_region_r1, regional_rounds, bracket_size
   defp results_region_left(assigns) do
     region_data = assigns.region_data
     offset = region_data.offset
     matchups_per_region_r1 = assigns.matchups_per_region_r1
     regional_rounds = assigns.regional_rounds
-    bracket_size = assigns.bracket_size
+    region_name = assigns.region_name
 
-    # Calculate round bases
-    r1_total = div(bracket_size, 2)
-    r2_total = div(bracket_size, 4)
-    r3_total = div(bracket_size, 8)
-    r2_base = r1_total + div(offset, 2)
-    r3_base = r1_total + r2_total + div(offset, 4)
-    r4_pos = r1_total + r2_total + r3_total + div(offset, 8) + 1
+    # Calculate position bases for each round (positions within each round, offset by region index)
+    # Round 2: 4 matchups per region, positions 1-4 for first region, 5-8 for second, etc.
+    r2_pos_base = div(offset, 2)  # 0, 4, 8, 12 for regions 0-3
+    r3_pos_base = div(offset, 4)  # 0, 2, 4, 6 for regions 0-3
+    r4_pos = div(offset, 8) + 1   # 1, 2, 3, 4 for regions 0-3
 
     # Calculate matchups per round for this region
     r2_matchups_per_region = div(matchups_per_region_r1, 2)
@@ -1918,12 +1916,13 @@ defmodule BracketBattleWeb.TournamentLive do
 
     assigns = assigns
       |> assign(:r1_matchups, region_data.matchups)
-      |> assign(:r2_base, r2_base)
-      |> assign(:r3_base, r3_base)
+      |> assign(:r2_pos_base, r2_pos_base)
+      |> assign(:r3_pos_base, r3_pos_base)
       |> assign(:r4_pos, r4_pos)
       |> assign(:r2_matchups_per_region, r2_matchups_per_region)
       |> assign(:r3_matchups_per_region, r3_matchups_per_region)
       |> assign(:container_height, container_height)
+      |> assign(:region_name, region_name)
 
     ~H"""
     <div class="flex items-center">
@@ -1932,6 +1931,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <%= for matchup <- @r1_matchups do %>
           <div class="relative">
             <.results_matchup_box
+              region={@region_name}
               position={matchup.position}
               contestant_a={matchup.contestant_a}
               contestant_b={matchup.contestant_b}
@@ -1957,9 +1957,11 @@ defmodule BracketBattleWeb.TournamentLive do
       <!-- Round 2 matchups -->
       <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
         <%= for idx <- 0..(@r2_matchups_per_region - 1) do %>
-          <% position = @r2_base + idx + 1 %>
+          <% position = @r2_pos_base + idx + 1 %>
           <div class="relative">
             <.results_matchup_box_from_matchups
+              region={@region_name}
+              round={2}
               position={position}
               matchups_map={@matchups_map}
               contestants_map={@contestants_map}
@@ -1984,9 +1986,11 @@ defmodule BracketBattleWeb.TournamentLive do
 
         <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>
-            <% position = @r3_base + idx + 1 %>
+            <% position = @r3_pos_base + idx + 1 %>
             <div class="relative">
               <.results_matchup_box_from_matchups
+                region={@region_name}
+                round={3}
                 position={position}
                 matchups_map={@matchups_map}
                 contestants_map={@contestants_map}
@@ -2011,6 +2015,8 @@ defmodule BracketBattleWeb.TournamentLive do
       <%= if @regional_rounds >= 4 do %>
         <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
           <.results_matchup_box_from_matchups
+            region={@region_name}
+            round={4}
             position={@r4_pos}
             matchups_map={@matchups_map}
             contestants_map={@contestants_map}
@@ -2022,20 +2028,18 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   # Right-side region bracket for Results tab
+  # Expects: region_name (string like "happy"), region_data, matchups_per_region_r1, regional_rounds, bracket_size
   defp results_region_right(assigns) do
     region_data = assigns.region_data
     offset = region_data.offset
     matchups_per_region_r1 = assigns.matchups_per_region_r1
     regional_rounds = assigns.regional_rounds
-    bracket_size = assigns.bracket_size
+    region_name = assigns.region_name
 
-    # Calculate round bases
-    r1_total = div(bracket_size, 2)
-    r2_total = div(bracket_size, 4)
-    r3_total = div(bracket_size, 8)
-    r2_base = r1_total + div(offset, 2)
-    r3_base = r1_total + r2_total + div(offset, 4)
-    r4_pos = r1_total + r2_total + r3_total + div(offset, 8) + 1
+    # Calculate position bases for each round (positions within each round, offset by region index)
+    r2_pos_base = div(offset, 2)  # 0, 4, 8, 12 for regions 0-3
+    r3_pos_base = div(offset, 4)  # 0, 2, 4, 6 for regions 0-3
+    r4_pos = div(offset, 8) + 1   # 1, 2, 3, 4 for regions 0-3
 
     # Calculate matchups per round for this region
     r2_matchups_per_region = div(matchups_per_region_r1, 2)
@@ -2046,12 +2050,13 @@ defmodule BracketBattleWeb.TournamentLive do
 
     assigns = assigns
       |> assign(:r1_matchups, region_data.matchups)
-      |> assign(:r2_base, r2_base)
-      |> assign(:r3_base, r3_base)
+      |> assign(:r2_pos_base, r2_pos_base)
+      |> assign(:r3_pos_base, r3_pos_base)
       |> assign(:r4_pos, r4_pos)
       |> assign(:r2_matchups_per_region, r2_matchups_per_region)
       |> assign(:r3_matchups_per_region, r3_matchups_per_region)
       |> assign(:container_height, container_height)
+      |> assign(:region_name, region_name)
 
     ~H"""
     <div class="flex items-center justify-end">
@@ -2060,6 +2065,8 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
           <div class="relative">
             <.results_matchup_box_from_matchups
+              region={@region_name}
+              round={4}
               position={@r4_pos}
               matchups_map={@matchups_map}
               contestants_map={@contestants_map}
@@ -2076,7 +2083,7 @@ defmodule BracketBattleWeb.TournamentLive do
 
         <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>
-            <% position = @r3_base + idx + 1 %>
+            <% position = @r3_pos_base + idx + 1 %>
             <div class="relative">
               <%= if @regional_rounds >= 4 do %>
                 <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
@@ -2088,6 +2095,8 @@ defmodule BracketBattleWeb.TournamentLive do
                 <% end %>
               <% end %>
               <.results_matchup_box_from_matchups
+                region={@region_name}
+                round={3}
                 position={position}
                 matchups_map={@matchups_map}
                 contestants_map={@contestants_map}
@@ -2102,7 +2111,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <!-- Round 2 -->
       <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
         <%= for idx <- 0..(@r2_matchups_per_region - 1) do %>
-          <% position = @r2_base + idx + 1 %>
+          <% position = @r2_pos_base + idx + 1 %>
           <div class="relative">
             <%= if @regional_rounds >= 3 do %>
               <div class="absolute left-0 top-1/2 w-4 h-px bg-gray-600 -translate-x-full"></div>
@@ -2114,6 +2123,8 @@ defmodule BracketBattleWeb.TournamentLive do
               <% end %>
             <% end %>
             <.results_matchup_box_from_matchups
+              region={@region_name}
+              round={2}
               position={position}
               matchups_map={@matchups_map}
               contestants_map={@contestants_map}
@@ -2137,6 +2148,7 @@ defmodule BracketBattleWeb.TournamentLive do
               <div class="absolute left-0 bottom-1/2 w-px bg-gray-600 -translate-x-[16px]" style={"height: #{connector_height}px;"}></div>
             <% end %>
             <.results_matchup_box
+              region={@region_name}
               position={matchup.position}
               contestant_a={matchup.contestant_a}
               contestant_b={matchup.contestant_b}
@@ -2152,77 +2164,31 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   # Results matchup box for R1 (contestants known from seeding)
+  # Results matchup box for Round 1 (contestants are passed directly)
+  # Expects: region (lowercase string), position (integer)
   defp results_matchup_box(assigns) do
     assigns = Map.put_new(assigns, :size, "normal")
-    matchup = Map.get(assigns.matchups_map, assigns.position)
-    winner_id = if matchup, do: matchup.winner_id
-
-    assigns = assigns
-      |> assign(:winner_id, winner_id)
-      |> assign(:matchup, matchup)
 
     ~H"""
     <div class={[
-      "bg-gray-800 rounded border overflow-hidden",
+      "bg-gray-800 rounded border border-gray-700 overflow-hidden",
       @size == "small" && "w-36",
-      @size == "normal" && "w-44",
-      @winner_id && "border-green-500",
-      !@winner_id && "border-gray-700"
+      @size == "normal" && "w-44"
     ]}>
       <!-- Contestant A -->
-      <div class={[
-        "flex items-center px-2 py-1 border-b border-gray-700",
-        @winner_id && @contestant_a && @winner_id == @contestant_a.id && "bg-green-600/40",
-        @winner_id && @contestant_a && @winner_id != @contestant_a.id && "bg-red-600/20"
-      ]}>
+      <div class="flex items-center px-2 py-1 border-b border-gray-700">
         <%= if @contestant_a do %>
-          <span class={[
-            "text-xs font-mono w-5",
-            @winner_id == @contestant_a.id && "text-green-300",
-            @winner_id && @winner_id != @contestant_a.id && "text-red-400",
-            !@winner_id && "text-gray-500"
-          ]}><%= @contestant_a.seed %></span>
-          <span class={[
-            "text-xs truncate flex-1",
-            @winner_id == @contestant_a.id && "text-white font-semibold",
-            @winner_id && @winner_id != @contestant_a.id && "text-gray-500 line-through",
-            !@winner_id && "text-gray-300"
-          ]}><%= @contestant_a.name %></span>
-          <%= if @winner_id == @contestant_a.id do %>
-            <span class="text-green-300 text-xs">✓</span>
-          <% end %>
-          <%= if @winner_id && @winner_id != @contestant_a.id do %>
-            <span class="text-red-400 text-xs">✗</span>
-          <% end %>
+          <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
+          <span class="text-xs truncate flex-1 text-gray-300"><%= @contestant_a.name %></span>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
         <% end %>
       </div>
       <!-- Contestant B -->
-      <div class={[
-        "flex items-center px-2 py-1",
-        @winner_id && @contestant_b && @winner_id == @contestant_b.id && "bg-green-600/40",
-        @winner_id && @contestant_b && @winner_id != @contestant_b.id && "bg-red-600/20"
-      ]}>
+      <div class="flex items-center px-2 py-1">
         <%= if @contestant_b do %>
-          <span class={[
-            "text-xs font-mono w-5",
-            @winner_id == @contestant_b.id && "text-green-300",
-            @winner_id && @winner_id != @contestant_b.id && "text-red-400",
-            !@winner_id && "text-gray-500"
-          ]}><%= @contestant_b.seed %></span>
-          <span class={[
-            "text-xs truncate flex-1",
-            @winner_id == @contestant_b.id && "text-white font-semibold",
-            @winner_id && @winner_id != @contestant_b.id && "text-gray-500 line-through",
-            !@winner_id && "text-gray-300"
-          ]}><%= @contestant_b.name %></span>
-          <%= if @winner_id == @contestant_b.id do %>
-            <span class="text-green-300 text-xs">✓</span>
-          <% end %>
-          <%= if @winner_id && @winner_id != @contestant_b.id do %>
-            <span class="text-red-400 text-xs">✗</span>
-          <% end %>
+          <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
+          <span class="text-xs truncate flex-1 text-gray-300"><%= @contestant_b.name %></span>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
         <% end %>
@@ -2232,10 +2198,12 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   # Results matchup box for later rounds (contestants come from previous matchup winners)
+  # Expects: region (lowercase string), round (integer), position (integer)
   defp results_matchup_box_from_matchups(assigns) do
     assigns = Map.put_new(assigns, :size, "normal")
-    matchup = Map.get(assigns.matchups_map, assigns.position)
-    winner_id = if matchup, do: matchup.winner_id
+    # Build lookup key from region, round, and position
+    key = {String.downcase(assigns[:region] || ""), assigns.round, assigns.position}
+    matchup = Map.get(assigns.matchups_map, key)
 
     contestant_a = if matchup && matchup.contestant_1_id do
       Map.get(assigns.contestants_map, matchup.contestant_1_id)
@@ -2247,70 +2215,27 @@ defmodule BracketBattleWeb.TournamentLive do
     assigns = assigns
       |> assign(:contestant_a, contestant_a)
       |> assign(:contestant_b, contestant_b)
-      |> assign(:winner_id, winner_id)
 
     ~H"""
     <div class={[
-      "bg-gray-800 rounded border overflow-hidden",
+      "bg-gray-800 rounded border border-gray-700 overflow-hidden",
       @size == "small" && "w-36",
-      @size == "normal" && "w-44",
-      @winner_id && "border-green-500",
-      !@winner_id && "border-gray-700"
+      @size == "normal" && "w-44"
     ]}>
       <!-- Contestant A -->
-      <div class={[
-        "flex items-center px-2 py-1 border-b border-gray-700",
-        @winner_id && @contestant_a && @winner_id == @contestant_a.id && "bg-green-600/40",
-        @winner_id && @contestant_a && @winner_id != @contestant_a.id && "bg-red-600/20"
-      ]}>
+      <div class="flex items-center px-2 py-1 border-b border-gray-700">
         <%= if @contestant_a do %>
-          <span class={[
-            "text-xs font-mono w-5",
-            @winner_id == @contestant_a.id && "text-green-300",
-            @winner_id && @winner_id != @contestant_a.id && "text-red-400",
-            !@winner_id && "text-gray-500"
-          ]}><%= @contestant_a.seed %></span>
-          <span class={[
-            "text-xs truncate flex-1",
-            @winner_id == @contestant_a.id && "text-white font-semibold",
-            @winner_id && @winner_id != @contestant_a.id && "text-gray-500 line-through",
-            !@winner_id && "text-gray-300"
-          ]}><%= @contestant_a.name %></span>
-          <%= if @winner_id == @contestant_a.id do %>
-            <span class="text-green-300 text-xs">✓</span>
-          <% end %>
-          <%= if @winner_id && @winner_id != @contestant_a.id do %>
-            <span class="text-red-400 text-xs">✗</span>
-          <% end %>
+          <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
+          <span class="text-xs truncate flex-1 text-gray-300"><%= @contestant_a.name %></span>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
         <% end %>
       </div>
       <!-- Contestant B -->
-      <div class={[
-        "flex items-center px-2 py-1",
-        @winner_id && @contestant_b && @winner_id == @contestant_b.id && "bg-green-600/40",
-        @winner_id && @contestant_b && @winner_id != @contestant_b.id && "bg-red-600/20"
-      ]}>
+      <div class="flex items-center px-2 py-1">
         <%= if @contestant_b do %>
-          <span class={[
-            "text-xs font-mono w-5",
-            @winner_id == @contestant_b.id && "text-green-300",
-            @winner_id && @winner_id != @contestant_b.id && "text-red-400",
-            !@winner_id && "text-gray-500"
-          ]}><%= @contestant_b.seed %></span>
-          <span class={[
-            "text-xs truncate flex-1",
-            @winner_id == @contestant_b.id && "text-white font-semibold",
-            @winner_id && @winner_id != @contestant_b.id && "text-gray-500 line-through",
-            !@winner_id && "text-gray-300"
-          ]}><%= @contestant_b.name %></span>
-          <%= if @winner_id == @contestant_b.id do %>
-            <span class="text-green-300 text-xs">✓</span>
-          <% end %>
-          <%= if @winner_id && @winner_id != @contestant_b.id do %>
-            <span class="text-red-400 text-xs">✗</span>
-          <% end %>
+          <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
+          <span class="text-xs truncate flex-1 text-gray-300"><%= @contestant_b.name %></span>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
         <% end %>
@@ -2321,10 +2246,8 @@ defmodule BracketBattleWeb.TournamentLive do
 
   # Final Four slot for Results tab
   defp results_final_four_slot(assigns) do
-    matchup = Map.get(assigns.matchups_map, assigns.position)
-    winner_id = if matchup, do: matchup.winner_id
-
-    # Get contestants from source matchups
+    # Get contestants from source matchups (Elite 8 winners)
+    # source_a and source_b are {region, round, position} tuples
     source_a_matchup = Map.get(assigns.matchups_map, assigns.source_a)
     source_b_matchup = Map.get(assigns.matchups_map, assigns.source_b)
 
@@ -2338,70 +2261,25 @@ defmodule BracketBattleWeb.TournamentLive do
     assigns = assigns
       |> assign(:contestant_a, contestant_a)
       |> assign(:contestant_b, contestant_b)
-      |> assign(:winner_id, winner_id)
 
     ~H"""
     <div class="text-center">
       <div class="text-xs text-gray-500 mb-1">Final Four</div>
-      <div class={[
-        "bg-gray-800 rounded border overflow-hidden",
-        @winner_id && "border-green-500",
-        !@winner_id && "border-gray-700"
-      ]}>
+      <div class="bg-gray-800 rounded border border-gray-700 overflow-hidden">
         <!-- Semifinalist A -->
-        <div class={[
-          "flex items-center px-2 py-1.5 border-b border-gray-700",
-          @winner_id && @contestant_a && @winner_id == @contestant_a.id && "bg-green-600/40",
-          @winner_id && @contestant_a && @winner_id != @contestant_a.id && "bg-red-600/20"
-        ]}>
+        <div class="flex items-center px-2 py-1.5 border-b border-gray-700">
           <%= if @contestant_a do %>
-            <span class={[
-              "text-xs font-mono w-5",
-              @winner_id == @contestant_a.id && "text-green-300",
-              @winner_id && @winner_id != @contestant_a.id && "text-red-400",
-              !@winner_id && "text-gray-500"
-            ]}><%= @contestant_a.seed %></span>
-            <span class={[
-              "text-xs truncate flex-1",
-              @winner_id == @contestant_a.id && "text-white font-semibold",
-              @winner_id && @winner_id != @contestant_a.id && "text-gray-500 line-through",
-              !@winner_id && "text-white"
-            ]}><%= @contestant_a.name %></span>
-            <%= if @winner_id == @contestant_a.id do %>
-              <span class="text-green-300 text-xs">✓</span>
-            <% end %>
-            <%= if @winner_id && @winner_id != @contestant_a.id do %>
-              <span class="text-red-400 text-xs">✗</span>
-            <% end %>
+            <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
+            <span class="text-xs truncate flex-1 text-white"><%= @contestant_a.name %></span>
           <% else %>
             <span class="text-gray-500 text-xs"><%= @placeholder_a %></span>
           <% end %>
         </div>
         <!-- Semifinalist B -->
-        <div class={[
-          "flex items-center px-2 py-1.5",
-          @winner_id && @contestant_b && @winner_id == @contestant_b.id && "bg-green-600/40",
-          @winner_id && @contestant_b && @winner_id != @contestant_b.id && "bg-red-600/20"
-        ]}>
+        <div class="flex items-center px-2 py-1.5">
           <%= if @contestant_b do %>
-            <span class={[
-              "text-xs font-mono w-5",
-              @winner_id == @contestant_b.id && "text-green-300",
-              @winner_id && @winner_id != @contestant_b.id && "text-red-400",
-              !@winner_id && "text-gray-500"
-            ]}><%= @contestant_b.seed %></span>
-            <span class={[
-              "text-xs truncate flex-1",
-              @winner_id == @contestant_b.id && "text-white font-semibold",
-              @winner_id && @winner_id != @contestant_b.id && "text-gray-500 line-through",
-              !@winner_id && "text-white"
-            ]}><%= @contestant_b.name %></span>
-            <%= if @winner_id == @contestant_b.id do %>
-              <span class="text-green-300 text-xs">✓</span>
-            <% end %>
-            <%= if @winner_id && @winner_id != @contestant_b.id do %>
-              <span class="text-red-400 text-xs">✗</span>
-            <% end %>
+            <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
+            <span class="text-xs truncate flex-1 text-white"><%= @contestant_b.name %></span>
           <% else %>
             <span class="text-gray-500 text-xs"><%= @placeholder_b %></span>
           <% end %>
@@ -2413,9 +2291,12 @@ defmodule BracketBattleWeb.TournamentLive do
 
   # Championship slot for Results tab
   defp results_championship_slot(assigns) do
-    ff1_matchup = Map.get(assigns.matchups_map, assigns.ff1_pos)
-    ff2_matchup = Map.get(assigns.matchups_map, assigns.ff2_pos)
-    championship_matchup = Map.get(assigns.matchups_map, assigns.championship_pos)
+    # Final Four matchups: round 5, positions 1 and 2, no region
+    ff1_key = {"", 5, assigns.ff1_pos}
+    ff2_key = {"", 5, assigns.ff2_pos}
+
+    ff1_matchup = Map.get(assigns.matchups_map, ff1_key)
+    ff2_matchup = Map.get(assigns.matchups_map, ff2_key)
 
     contestant_a = if ff1_matchup && ff1_matchup.winner_id do
       Map.get(assigns.contestants_map, ff1_matchup.winner_id)
@@ -2424,85 +2305,28 @@ defmodule BracketBattleWeb.TournamentLive do
       Map.get(assigns.contestants_map, ff2_matchup.winner_id)
     end
 
-    champion = if championship_matchup && championship_matchup.winner_id do
-      Map.get(assigns.contestants_map, championship_matchup.winner_id)
-    end
-
     assigns = assigns
       |> assign(:contestant_a, contestant_a)
       |> assign(:contestant_b, contestant_b)
-      |> assign(:champion, champion)
 
     ~H"""
     <div class="text-center">
-      <!-- Champion display -->
-      <%= if @champion do %>
-        <div class="mb-3 bg-yellow-900/40 border border-yellow-600 rounded-lg p-3">
-          <div class="text-yellow-400 text-lg font-bold"><%= @champion.seed %>. <%= @champion.name %></div>
-          <div class="text-yellow-500/70 text-xs">Champion</div>
-        </div>
-      <% end %>
-
       <div class="text-xs text-gray-500 mb-1">Championship</div>
-      <div class={[
-        "bg-gray-800 rounded border overflow-hidden w-48 mx-auto",
-        @champion && "border-yellow-600",
-        !@champion && "border-gray-700"
-      ]}>
+      <div class="bg-gray-800 rounded border border-gray-700 overflow-hidden w-48 mx-auto">
         <!-- Finalist A -->
-        <div class={[
-          "flex items-center px-2 py-1.5 border-b border-gray-700",
-          @champion && @contestant_a && @champion.id == @contestant_a.id && "bg-green-600/40",
-          @champion && @contestant_a && @champion.id != @contestant_a.id && "bg-red-600/20"
-        ]}>
+        <div class="flex items-center px-2 py-1.5 border-b border-gray-700">
           <%= if @contestant_a do %>
-            <span class={[
-              "text-xs font-mono w-5",
-              @champion && @champion.id == @contestant_a.id && "text-green-300",
-              @champion && @champion.id != @contestant_a.id && "text-red-400",
-              !@champion && "text-gray-500"
-            ]}><%= @contestant_a.seed %></span>
-            <span class={[
-              "text-xs truncate flex-1",
-              @champion && @champion.id == @contestant_a.id && "text-white font-semibold",
-              @champion && @champion.id != @contestant_a.id && "text-gray-500 line-through",
-              !@champion && "text-white"
-            ]}><%= @contestant_a.name %></span>
-            <%= if @champion && @champion.id == @contestant_a.id do %>
-              <span class="text-green-300 text-xs">✓</span>
-            <% end %>
-            <%= if @champion && @champion.id != @contestant_a.id do %>
-              <span class="text-red-400 text-xs">✗</span>
-            <% end %>
+            <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
+            <span class="text-xs truncate flex-1 text-white"><%= @contestant_a.name %></span>
           <% else %>
             <span class="text-gray-500 text-xs">Final Four 1 Winner</span>
           <% end %>
         </div>
         <!-- Finalist B -->
-        <div class={[
-          "flex items-center px-2 py-1.5",
-          @champion && @contestant_b && @champion.id == @contestant_b.id && "bg-green-600/40",
-          @champion && @contestant_b && @champion.id != @contestant_b.id && "bg-red-600/20"
-        ]}>
+        <div class="flex items-center px-2 py-1.5">
           <%= if @contestant_b do %>
-            <span class={[
-              "text-xs font-mono w-5",
-              @champion && @champion.id == @contestant_b.id && "text-green-300",
-              @champion && @champion.id != @contestant_b.id && "text-red-400",
-              !@champion && "text-gray-500"
-            ]}><%= @contestant_b.seed %></span>
-            <span class={[
-              "text-xs truncate flex-1",
-              @champion && @champion.id == @contestant_b.id && "text-white font-semibold",
-              @champion && @champion.id != @contestant_b.id && "text-gray-500 line-through",
-              !@champion && "text-white"
-            ]}><%= @contestant_b.name %></span>
-            <%= if @champion && @champion.id == @contestant_b.id do %>
-              <span class="text-green-300 text-xs">✓</span>
-            <% end %>
-            <%= if @champion && @champion.id != @contestant_b.id do %>
-              <span class="text-red-400 text-xs">✗</span>
-            <% end %>
+            <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
+            <span class="text-xs truncate flex-1 text-white"><%= @contestant_b.name %></span>
           <% else %>
             <span class="text-gray-500 text-xs">Final Four 2 Winner</span>
           <% end %>
@@ -2817,6 +2641,8 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   def handle_info({:tournament_updated, tournament}, socket) do
+    # Preload contestants for bracket display
+    tournament = BracketBattle.Repo.preload(tournament, :contestants)
     socket = assign(socket, tournament: tournament)
 
     # Show tournament complete popup when tournament ends
