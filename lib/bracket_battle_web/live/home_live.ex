@@ -110,7 +110,7 @@ defmodule BracketBattleWeb.HomeLive do
           <!-- Active tournament: show matchups -->
           <div class="ticker-label">
             <span class="live-dot"></span>
-            ROUND <%= @tournament.current_round %> LIVE
+            LIVE MATCHUPS
           </div>
           <div class="ticker-track">
             <div class="ticker-content">
@@ -417,7 +417,6 @@ defmodule BracketBattleWeb.HomeLive do
   defp ticker_matchup(assigns) do
     ~H"""
     <div class="ticker-matchup">
-      <span class="ticker-region"><%= @matchup.region %></span>
       <div class="ticker-contestants">
         <span class={["ticker-contestant", @matchup.winner_id == @matchup.contestant_1.id && "winner"]}>
           (<%= @matchup.contestant_1.seed %>) <%= @matchup.contestant_1.name %>

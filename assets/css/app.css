@@ -220,7 +220,7 @@
 
 .ticker-label {
   flex-shrink: 0;
-  background: #805AD5;
+  background: #3B82F6;
   color: white;
   padding: 0.25rem 1rem;
   font-size: 0.75rem;
@@ -233,7 +233,7 @@
 .live-dot {
   width: 8px;
   height: 8px;
-  background: #48BB78;
+  background: #EF4444;
   border-radius: 50%;
   animation: pulse 1.5s infinite;
 }
