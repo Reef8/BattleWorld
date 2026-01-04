@@ -271,10 +271,16 @@ defmodule BracketBattleWeb.HomeLive do
                     </div>
                   <% "active" -> %>
                     <div class="space-y-2">
-                      <div class="text-green-400 text-sm">Round <%= @tournament.current_round %> voting is open!</div>
+                      <div class="text-green-400 text-sm">
+                        <%= if @tournament.current_voting_region do %>
+                          <%= String.capitalize(@tournament.current_voting_region) %> Region, Round <%= @tournament.current_voting_round %> voting is open!
+                        <% else %>
+                          Round <%= @tournament.current_round %> voting is open!
+                        <% end %>
+                      </div>
                       <%= if @voting_ends_at do %>
                         <div class="text-gray-400 text-xs">
-                          Round ends at
+                          Voting period ends
                           <span
                             id="home-voting-deadline"
                             phx-hook="LocalTime"
@@ -383,6 +389,7 @@ defmodule BracketBattleWeb.HomeLive do
   defp load_ticker_matchups(tournament) do
     tournament.id
     |> Tournaments.get_matchups_by_round(tournament.current_round)
+    |> Enum.filter(fn m -> m.status == "voting" end)
     |> Enum.map(fn m ->
       counts = Voting.get_vote_counts(m.id)
       c1_votes = Map.get(counts, m.contestant_1_id, 0)
@@ -414,16 +421,10 @@ defmodule BracketBattleWeb.HomeLive do
       <div class="ticker-contestants">
         <span class={["ticker-contestant", @matchup.winner_id == @matchup.contestant_1.id && "winner"]}>
           (<%= @matchup.contestant_1.seed %>) <%= @matchup.contestant_1.name %>
-          <%= if @has_voted do %>
-            <span class="ticker-pct"><%= @matchup.c1_pct %>%</span>
-          <% end %>
         </span>
         <span class="ticker-vs">vs</span>
         <span class={["ticker-contestant", @matchup.winner_id == @matchup.contestant_2.id && "winner"]}>
           (<%= @matchup.contestant_2.seed %>) <%= @matchup.contestant_2.name %>
-          <%= if @has_voted do %>
-            <span class="ticker-pct"><%= @matchup.c2_pct %>%</span>
-          <% end %>
         </span>
       </div>
     </div>
