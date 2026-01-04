@@ -1937,6 +1937,7 @@ defmodule BracketBattleWeb.TournamentLive do
               contestant_b={matchup.contestant_b}
               matchups_map={@matchups_map}
               contestants_map={@contestants_map}
+              size="small"
             />
             <!-- Connector to R2 -->
             <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -1962,6 +1963,7 @@ defmodule BracketBattleWeb.TournamentLive do
               position={position}
               matchups_map={@matchups_map}
               contestants_map={@contestants_map}
+              size="small"
             />
             <%= if @regional_rounds >= 3 do %>
               <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -2115,6 +2117,7 @@ defmodule BracketBattleWeb.TournamentLive do
               position={position}
               matchups_map={@matchups_map}
               contestants_map={@contestants_map}
+              size="small"
             />
           </div>
         <% end %>
@@ -2139,6 +2142,7 @@ defmodule BracketBattleWeb.TournamentLive do
               contestant_b={matchup.contestant_b}
               matchups_map={@matchups_map}
               contestants_map={@contestants_map}
+              size="small"
             />
           </div>
         <% end %>
@@ -2149,6 +2153,7 @@ defmodule BracketBattleWeb.TournamentLive do
 
   # Results matchup box for R1 (contestants known from seeding)
   defp results_matchup_box(assigns) do
+    assigns = Map.put_new(assigns, :size, "normal")
     matchup = Map.get(assigns.matchups_map, assigns.position)
     winner_id = if matchup, do: matchup.winner_id
 
@@ -2158,7 +2163,9 @@ defmodule BracketBattleWeb.TournamentLive do
 
     ~H"""
     <div class={[
-      "bg-gray-800 rounded border overflow-hidden w-44",
+      "bg-gray-800 rounded border overflow-hidden",
+      @size == "small" && "w-36",
+      @size == "normal" && "w-44",
       @winner_id && "border-green-500",
       !@winner_id && "border-gray-700"
     ]}>
@@ -2226,6 +2233,7 @@ defmodule BracketBattleWeb.TournamentLive do
 
   # Results matchup box for later rounds (contestants come from previous matchup winners)
   defp results_matchup_box_from_matchups(assigns) do
+    assigns = Map.put_new(assigns, :size, "normal")
     matchup = Map.get(assigns.matchups_map, assigns.position)
     winner_id = if matchup, do: matchup.winner_id
 
@@ -2243,7 +2251,9 @@ defmodule BracketBattleWeb.TournamentLive do
 
     ~H"""
     <div class={[
-      "bg-gray-800 rounded border overflow-hidden w-44",
+      "bg-gray-800 rounded border overflow-hidden",
+      @size == "small" && "w-36",
+      @size == "normal" && "w-44",
       @winner_id && "border-green-500",
       !@winner_id && "border-gray-700"
     ]}>
