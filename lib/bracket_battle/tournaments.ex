@@ -624,7 +624,7 @@ defmodule BracketBattle.Tournaments do
     # Broadcast phase completion
     case result do
       {:ok, updated_tournament} ->
-        phase_name = if old_region, do: "#{old_region} Round #{old_round}", else: get_round_name(tournament, old_round)
+        phase_name = if old_region, do: "#{old_region} Region, Round #{old_round}", else: get_round_name(tournament, old_round)
         broadcast_phase_completed(updated_tournament, old_region, old_round, phase_name)
       _ -> :ok
     end
