@@ -150,7 +150,7 @@ defmodule BracketBattleWeb.DashboardLive do
                     <h3 class="text-white font-medium">Submit Your Bracket</h3>
                   </div>
                   <p class="text-gray-400 text-sm">
-                    Once you've made all your picks, submit your bracket to lock it in. You can edit until registration closes, but must submit to compete.
+                    Once you've made all your picks, submit your bracket to lock it in. After submitting, your bracket cannot be edited.
                   </p>
                 </div>
 
@@ -161,7 +161,7 @@ defmodule BracketBattleWeb.DashboardLive do
                     <h3 class="text-white font-medium">Vote Each Round</h3>
                   </div>
                   <p class="text-gray-400 text-sm">
-                    When the tournament starts, vote on active matchups. Each round has a voting period (usually 24 hours). The contestant with the most votes advances.
+                    When the tournament starts, vote on active matchups. Each voting period covers one region's matchups for the current round. The contestant with the most votes advances.
                   </p>
                 </div>
 
