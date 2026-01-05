@@ -1,8 +1,8 @@
 # Find eligible builder and runner images on Docker Hub. We use Ubuntu/Debian
-# instead of Alpine to avoid DNS://rror issues on arm64.
-ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=28.1
-ARG DEBIAN_VERSION=bookworm-20241223-slim
+# instead of Alpine to avoid DNS issues on arm64.
+ARG ELIXIR_VERSION=1.17.3
+ARG OTP_VERSION=27.1.2
+ARG DEBIAN_VERSION=bookworm-20240904-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
