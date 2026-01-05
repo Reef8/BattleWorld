@@ -1435,7 +1435,7 @@ defmodule BracketBattleWeb.TournamentLive do
               eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={1}
-              matchup_position={idx + 1}
+              matchup_position={matchup.position}
               size="small"
             />
             <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -1469,7 +1469,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={2}
-                matchup_position={idx + 1}
+                matchup_position={position}
                 size="small"
               />
               <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -1504,7 +1504,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={3}
-                matchup_position={idx + 1}
+                matchup_position={position}
               />
               <%= if @regional_rounds >= 4 do %>
                 <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -1538,7 +1538,7 @@ defmodule BracketBattleWeb.TournamentLive do
               eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={4}
-              matchup_position={1}
+              matchup_position={@r4_pos}
             />
           </div>
         </div>
@@ -1602,7 +1602,7 @@ defmodule BracketBattleWeb.TournamentLive do
               eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={4}
-              matchup_position={1}
+              matchup_position={@r4_pos}
             />
           </div>
         </div>
@@ -1639,7 +1639,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={3}
-                matchup_position={idx + 1}
+                matchup_position={position}
               />
             </div>
           <% end %>
@@ -1673,7 +1673,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={2}
-                matchup_position={idx + 1}
+                matchup_position={position}
                 size="small"
               />
             </div>
@@ -1704,7 +1704,7 @@ defmodule BracketBattleWeb.TournamentLive do
               eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={1}
-              matchup_position={idx + 1}
+              matchup_position={matchup.position}
               size="small"
             />
           </div>

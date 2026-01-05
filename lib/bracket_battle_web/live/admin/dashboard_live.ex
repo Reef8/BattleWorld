@@ -14,6 +14,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
         contestants: Tournaments.count_contestants(tournament.id),
         brackets: Brackets.count_submitted_brackets(tournament.id),
         current_round: tournament.current_round,
+        current_region: tournament.current_voting_region,
         status: tournament.status
       }
     else
@@ -83,6 +84,12 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
               <div class="text-gray-400 text-sm">Current Round</div>
               <div class="text-xl font-bold text-white">
                 <%= if @stats.current_round > 0, do: @stats.current_round, else: "Not Started" %>
+              </div>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div class="text-gray-400 text-sm">Current Region</div>
+              <div class="text-xl font-bold text-white">
+                <%= @stats.current_region || "Not Started" %>
               </div>
             </div>
           </div>
@@ -313,6 +320,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
       contestants: Tournaments.count_contestants(tournament.id),
       brackets: Brackets.count_submitted_brackets(tournament.id),
       current_round: tournament.current_round,
+      current_region: tournament.current_voting_region,
       status: tournament.status
     }
   end
