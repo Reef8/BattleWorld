@@ -596,7 +596,15 @@ defmodule BracketBattle.Tournaments do
 
   defp advance_to_phase(tournament, old_region, old_round, next_region, next_round) do
     result = Repo.transaction(fn ->
-      # Populate winners into next matchups if needed
+      regional_rounds = Tournament.regional_rounds(tournament)
+
+      # If completing a regional round (not Final Four/Championship),
+      # populate the next round for that region with winners
+      if old_region && old_round < regional_rounds do
+        populate_next_round_for_region(tournament, old_region, old_round + 1)
+      end
+
+      # Handle special population cases (Final Four, Championship)
       populate_next_phase(tournament, old_region, old_round, next_region, next_round)
 
       # Activate voting for the new phase
@@ -624,12 +632,10 @@ defmodule BracketBattle.Tournaments do
     result
   end
 
-  defp populate_next_phase(tournament, old_region, old_round, next_region, next_round) do
+  defp populate_next_phase(tournament, _old_region, _old_round, next_region, next_round) do
+    # Note: Regional winner population is now handled in advance_to_phase
+    # This function only handles Final Four and Championship population
     cond do
-      # Same region, next round - populate winners within region
-      old_region == next_region && next_round == old_round + 1 ->
-        populate_next_round_for_region(tournament, old_region, next_round)
-
       # Moving to Final Four - gather all regional winners
       next_region == nil && next_round == Tournament.regional_rounds(tournament) + 1 ->
         populate_final_four(tournament)
@@ -638,10 +644,7 @@ defmodule BracketBattle.Tournaments do
       next_region == nil && next_round > Tournament.regional_rounds(tournament) + 1 ->
         populate_next_round(tournament, next_round)
 
-      # New region starting (no population needed for round 1)
-      next_round == 1 ->
-        :ok
-
+      # All other cases (regional rounds handled in advance_to_phase)
       true ->
         :ok
     end
