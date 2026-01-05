@@ -170,6 +170,63 @@ defmodule BracketBattle.Tournaments do
     result
   end
 
+  @doc "End current voting phase early - tally votes and advance to next region/round"
+  def end_voting_phase(%Tournament{status: "active"} = tournament) do
+    alias BracketBattle.Voting
+    alias BracketBattle.Scoring
+
+    region = tournament.current_voting_region
+    round = tournament.current_voting_round
+
+    result = Repo.transaction(fn ->
+      # Get voting matchups for current region + round only
+      matchups = get_region_round_matchups(tournament.id, region, round)
+                 |> Enum.filter(& &1.status == "voting")
+
+      # Tally each and decide winners (ties left undecided)
+      ties = Enum.reduce(matchups, [], fn matchup, acc ->
+        case Voting.tally_matchup(matchup) do
+          {:ok, _} -> acc
+          {:tie, matchup_id, _, _} -> [matchup_id | acc]
+        end
+      end)
+
+      if Enum.empty?(ties) do
+        fresh_tournament = get_tournament!(tournament.id)
+        case advance_region(fresh_tournament) do
+          {:ok, updated} -> {:advanced, updated}
+          {:error, reason} -> Repo.rollback(reason)
+        end
+      else
+        {:ties_pending, ties}
+      end
+    end)
+
+    case result do
+      {:ok, _} -> Scoring.recalculate_all_scores(tournament.id)
+      _ -> :ok
+    end
+
+    result
+  end
+
+  defp get_region_round_matchups(tournament_id, region, round) do
+    query = if region do
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament_id
+          and m.round == ^round
+          and m.region == ^region
+      )
+    else
+      from(m in Matchup,
+        where: m.tournament_id == ^tournament_id
+          and m.round == ^round
+          and is_nil(m.region)
+      )
+    end
+    Repo.all(query)
+  end
+
   @doc "Advance to next round after all matchups decided"
   def advance_round(%Tournament{status: "active", current_round: round} = tournament) do
     total_rounds = Tournament.total_rounds(tournament)
