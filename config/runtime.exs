@@ -118,6 +118,7 @@ if config_env() == :prod do
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 end
 
-# Configure Resend client for all environments
-config :resend, Resend.Client,
-  api_key: System.get_env("RESEND_API_KEY")
+# Configure Resend client for all environments (only if env var is set)
+if api_key = System.get_env("RESEND_API_KEY") do
+  config :resend, Resend.Client, api_key: api_key
+end

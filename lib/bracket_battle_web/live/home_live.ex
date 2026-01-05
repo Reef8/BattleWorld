@@ -110,7 +110,8 @@ defmodule BracketBattleWeb.HomeLive do
           <!-- Active tournament: show matchups -->
           <div class="ticker-label">
             <span class="live-dot"></span>
-            LIVE MATCHUPS
+            <span class="hidden md:inline">LIVE MATCHUPS</span>
+            <span class="md:hidden">LIVE</span>
           </div>
           <div class="ticker-track">
             <div class="ticker-content">
