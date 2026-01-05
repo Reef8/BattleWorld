@@ -1,0 +1,33 @@
+# Git
+.git
+.gitignore
+
+# Elixir/Phoenix
+_build
+deps
+*.ez
+*.beam
+/priv/static/assets/
+
+# Node
+assets/node_modules
+
+# Generated files
+/cover/
+/doc/
+.fetch
+erl_crash.dump
+*.log
+
+# Secrets
+config/secrets.exs
+.env
+
+# IDE
+.elixir_ls
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
