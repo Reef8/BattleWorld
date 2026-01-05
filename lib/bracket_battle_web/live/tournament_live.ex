@@ -1140,6 +1140,20 @@ defmodule BracketBattleWeb.TournamentLive do
       {key, m}
     end)
 
+    # Build eliminated_map: contestant_id -> round_eliminated
+    # A contestant is eliminated when they lose a matchup (are in matchup but not winner)
+    eliminated_map = matchups
+      |> Enum.filter(fn m -> m.winner_id != nil end)
+      |> Enum.flat_map(fn m ->
+        loser_id = cond do
+          m.winner_id == m.contestant_1_id -> m.contestant_2_id
+          m.winner_id == m.contestant_2_id -> m.contestant_1_id
+          true -> nil
+        end
+        if loser_id, do: [{loser_id, m.round}], else: []
+      end)
+      |> Map.new()
+
     # Get tournament configuration
     bracket_size = tournament.bracket_size || 64
     region_count = tournament.region_count || 4
@@ -1199,6 +1213,7 @@ defmodule BracketBattleWeb.TournamentLive do
       |> assign(:regions_data, regions_data)
       |> assign(:contestants_map, contestants_map)
       |> assign(:matchups_map, matchups_map)
+      |> assign(:eliminated_map, eliminated_map)
       |> assign(:regional_winner_1, regional_winner_1)
       |> assign(:regional_winner_2, regional_winner_2)
       |> assign(:regional_winner_3, regional_winner_3)
@@ -1241,6 +1256,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 picks={@picks}
                 contestants_map={@contestants_map}
                 matchups_map={@matchups_map}
+                eliminated_map={@eliminated_map}
                 regional_rounds={@regional_rounds}
                 matchups_per_region_r1={@matchups_per_region_r1}
                 bracket_size={@bracket_size}
@@ -1258,6 +1274,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 picks={@picks}
                 contestants_map={@contestants_map}
                 matchups_map={@matchups_map}
+                eliminated_map={@eliminated_map}
                 regional_rounds={@regional_rounds}
                 matchups_per_region_r1={@matchups_per_region_r1}
                 bracket_size={@bracket_size}
@@ -1279,6 +1296,7 @@ defmodule BracketBattleWeb.TournamentLive do
                   picks={@picks}
                   contestants_map={@contestants_map}
                   matchups_map={@matchups_map}
+                  eliminated_map={@eliminated_map}
                 />
               </div>
             </div>
@@ -1289,6 +1307,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 picks={@picks}
                 contestants_map={@contestants_map}
                 matchups_map={@matchups_map}
+                eliminated_map={@eliminated_map}
                 ff1_pos={@ff1_pos}
                 ff2_pos={@ff2_pos}
                 championship_pos={@championship_pos}
@@ -1308,6 +1327,7 @@ defmodule BracketBattleWeb.TournamentLive do
                     picks={@picks}
                     contestants_map={@contestants_map}
                     matchups_map={@matchups_map}
+                    eliminated_map={@eliminated_map}
                   />
                 </div>
               <% end %>
@@ -1328,6 +1348,7 @@ defmodule BracketBattleWeb.TournamentLive do
                   picks={@picks}
                   contestants_map={@contestants_map}
                   matchups_map={@matchups_map}
+                  eliminated_map={@eliminated_map}
                   regional_rounds={@regional_rounds}
                   matchups_per_region_r1={@matchups_per_region_r1}
                   bracket_size={@bracket_size}
@@ -1345,6 +1366,7 @@ defmodule BracketBattleWeb.TournamentLive do
                   picks={@picks}
                   contestants_map={@contestants_map}
                   matchups_map={@matchups_map}
+                  eliminated_map={@eliminated_map}
                   regional_rounds={@regional_rounds}
                   matchups_per_region_r1={@matchups_per_region_r1}
                   bracket_size={@bracket_size}
@@ -1410,6 +1432,7 @@ defmodule BracketBattleWeb.TournamentLive do
               picks={@picks}
               contestants_map={@contestants_map}
               matchups_map={@matchups_map}
+              eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={1}
               matchup_position={idx + 1}
@@ -1443,6 +1466,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 picks={@picks}
                 contestants_map={@contestants_map}
                 matchups_map={@matchups_map}
+                eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={2}
                 matchup_position={idx + 1}
@@ -1477,6 +1501,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 picks={@picks}
                 contestants_map={@contestants_map}
                 matchups_map={@matchups_map}
+                eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={3}
                 matchup_position={idx + 1}
@@ -1510,6 +1535,7 @@ defmodule BracketBattleWeb.TournamentLive do
               picks={@picks}
               contestants_map={@contestants_map}
               matchups_map={@matchups_map}
+              eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={4}
               matchup_position={1}
@@ -1573,6 +1599,7 @@ defmodule BracketBattleWeb.TournamentLive do
               picks={@picks}
               contestants_map={@contestants_map}
               matchups_map={@matchups_map}
+              eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={4}
               matchup_position={1}
@@ -1609,6 +1636,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 picks={@picks}
                 contestants_map={@contestants_map}
                 matchups_map={@matchups_map}
+                eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={3}
                 matchup_position={idx + 1}
@@ -1642,6 +1670,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 picks={@picks}
                 contestants_map={@contestants_map}
                 matchups_map={@matchups_map}
+                eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={2}
                 matchup_position={idx + 1}
@@ -1672,6 +1701,7 @@ defmodule BracketBattleWeb.TournamentLive do
               picks={@picks}
               contestants_map={@contestants_map}
               matchups_map={@matchups_map}
+              eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={1}
               matchup_position={idx + 1}
@@ -1699,9 +1729,15 @@ defmodule BracketBattleWeb.TournamentLive do
     actual_matchup = Map.get(assigns.matchups_map, matchup_key)
     actual_winner_id = if actual_matchup, do: actual_matchup.winner_id
 
-    # Determine pick status: :correct, :incorrect, or :pending
+    # Check if the picked contestant was eliminated in an earlier round
+    # Use eliminated_map built from matchup results
+    eliminated_round = if current_pick, do: Map.get(assigns.eliminated_map, current_pick)
+    current_round = assigns.round
+
+    # Determine pick status: :correct, :incorrect, :eliminated, or :pending
     pick_status = cond do
       is_nil(current_pick) -> :no_pick
+      eliminated_round && eliminated_round < current_round -> :eliminated
       is_nil(actual_winner_id) -> :pending
       current_pick == actual_winner_id -> :correct
       true -> :incorrect
@@ -1716,7 +1752,7 @@ defmodule BracketBattleWeb.TournamentLive do
     <div class={[
       "bg-gray-800 rounded border overflow-hidden",
       @pick_status == :correct && "border-green-500",
-      @pick_status == :incorrect && "border-red-500",
+      @pick_status in [:incorrect, :eliminated] && "border-red-500",
       @pick_status in [:pending, :no_pick] && "border-gray-700",
       @size == "small" && "w-36",
       @size == "normal" && "w-44"
@@ -1725,25 +1761,25 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class={[
         "flex items-center px-2 py-1 border-b border-gray-700",
         @current_pick && @contestant_a && @current_pick == @contestant_a.id && @pick_status == :correct && "bg-green-600/40",
-        @current_pick && @contestant_a && @current_pick == @contestant_a.id && @pick_status == :incorrect && "bg-red-600/30"
+        @current_pick && @contestant_a && @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "bg-red-600/30"
       ]}>
         <%= if @contestant_a do %>
           <span class={[
             "text-xs font-mono w-5",
             @current_pick == @contestant_a.id && @pick_status == :correct && "text-green-300",
-            @current_pick == @contestant_a.id && @pick_status == :incorrect && "text-red-300",
-            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect]) && "text-gray-500"
+            @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
+            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-500"
           ]}><%= @contestant_a.seed %></span>
           <span class={[
             "text-xs truncate flex-1",
             @current_pick == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
-            @current_pick == @contestant_a.id && @pick_status == :incorrect && "text-red-300 line-through",
-            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect]) && "text-gray-300"
+            @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
           ]}><%= @contestant_a.name %></span>
           <%= if @current_pick == @contestant_a.id && @pick_status == :correct do %>
             <span class="text-green-300 text-xs">✓</span>
           <% end %>
-          <%= if @current_pick == @contestant_a.id && @pick_status == :incorrect do %>
+          <%= if @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] do %>
             <span class="text-red-400 text-xs">✗</span>
           <% end %>
         <% else %>
@@ -1754,25 +1790,25 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class={[
         "flex items-center px-2 py-1",
         @current_pick && @contestant_b && @current_pick == @contestant_b.id && @pick_status == :correct && "bg-green-600/40",
-        @current_pick && @contestant_b && @current_pick == @contestant_b.id && @pick_status == :incorrect && "bg-red-600/30"
+        @current_pick && @contestant_b && @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "bg-red-600/30"
       ]}>
         <%= if @contestant_b do %>
           <span class={[
             "text-xs font-mono w-5",
             @current_pick == @contestant_b.id && @pick_status == :correct && "text-green-300",
-            @current_pick == @contestant_b.id && @pick_status == :incorrect && "text-red-300",
-            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect]) && "text-gray-500"
+            @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
+            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-500"
           ]}><%= @contestant_b.seed %></span>
           <span class={[
             "text-xs truncate flex-1",
             @current_pick == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
-            @current_pick == @contestant_b.id && @pick_status == :incorrect && "text-red-300 line-through",
-            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect]) && "text-gray-300"
+            @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
           ]}><%= @contestant_b.name %></span>
           <%= if @current_pick == @contestant_b.id && @pick_status == :correct do %>
             <span class="text-green-300 text-xs">✓</span>
           <% end %>
-          <%= if @current_pick == @contestant_b.id && @pick_status == :incorrect do %>
+          <%= if @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] do %>
             <span class="text-red-400 text-xs">✗</span>
           <% end %>
         <% else %>
@@ -1804,9 +1840,15 @@ defmodule BracketBattleWeb.TournamentLive do
     actual_matchup = Map.get(assigns.matchups_map, matchup_key)
     actual_winner_id = if actual_matchup, do: actual_matchup.winner_id
 
-    # Determine pick status: :correct, :incorrect, or :pending
+    # Check if the picked contestant was eliminated in an earlier round
+    # Use eliminated_map built from matchup results
+    eliminated_round = if current_pick, do: Map.get(assigns.eliminated_map, current_pick)
+    current_round = assigns.round
+
+    # Determine pick status: :correct, :incorrect, :eliminated, or :pending
     pick_status = cond do
       is_nil(current_pick) -> :no_pick
+      eliminated_round && eliminated_round < current_round -> :eliminated
       is_nil(actual_winner_id) -> :pending
       current_pick == actual_winner_id -> :correct
       true -> :incorrect
@@ -1823,7 +1865,7 @@ defmodule BracketBattleWeb.TournamentLive do
     <div class={[
       "bg-gray-800 rounded border overflow-hidden",
       @pick_status == :correct && "border-green-500",
-      @pick_status == :incorrect && "border-red-500",
+      @pick_status in [:incorrect, :eliminated] && "border-red-500",
       @pick_status in [:pending, :no_pick] && "border-gray-700",
       @size == "small" && "w-36",
       @size == "normal" && "w-44"
@@ -1832,25 +1874,25 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class={[
         "flex items-center px-2 py-1 border-b border-gray-700",
         @current_pick && @contestant_a && @current_pick == @contestant_a.id && @pick_status == :correct && "bg-green-600/40",
-        @current_pick && @contestant_a && @current_pick == @contestant_a.id && @pick_status == :incorrect && "bg-red-600/30"
+        @current_pick && @contestant_a && @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "bg-red-600/30"
       ]}>
         <%= if @contestant_a do %>
           <span class={[
             "text-xs font-mono w-5",
             @current_pick == @contestant_a.id && @pick_status == :correct && "text-green-300",
-            @current_pick == @contestant_a.id && @pick_status == :incorrect && "text-red-300",
-            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect]) && "text-gray-500"
+            @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
+            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-500"
           ]}><%= @contestant_a.seed %></span>
           <span class={[
             "text-xs truncate flex-1",
             @current_pick == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
-            @current_pick == @contestant_a.id && @pick_status == :incorrect && "text-red-300 line-through",
-            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect]) && "text-gray-300"
+            @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
           ]}><%= @contestant_a.name %></span>
           <%= if @current_pick == @contestant_a.id && @pick_status == :correct do %>
             <span class="text-green-300 text-xs">✓</span>
           <% end %>
-          <%= if @current_pick == @contestant_a.id && @pick_status == :incorrect do %>
+          <%= if @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] do %>
             <span class="text-red-400 text-xs">✗</span>
           <% end %>
         <% else %>
@@ -1861,25 +1903,25 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class={[
         "flex items-center px-2 py-1",
         @current_pick && @contestant_b && @current_pick == @contestant_b.id && @pick_status == :correct && "bg-green-600/40",
-        @current_pick && @contestant_b && @current_pick == @contestant_b.id && @pick_status == :incorrect && "bg-red-600/30"
+        @current_pick && @contestant_b && @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "bg-red-600/30"
       ]}>
         <%= if @contestant_b do %>
           <span class={[
             "text-xs font-mono w-5",
             @current_pick == @contestant_b.id && @pick_status == :correct && "text-green-300",
-            @current_pick == @contestant_b.id && @pick_status == :incorrect && "text-red-300",
-            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect]) && "text-gray-500"
+            @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
+            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-500"
           ]}><%= @contestant_b.seed %></span>
           <span class={[
             "text-xs truncate flex-1",
             @current_pick == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
-            @current_pick == @contestant_b.id && @pick_status == :incorrect && "text-red-300 line-through",
-            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect]) && "text-gray-300"
+            @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
           ]}><%= @contestant_b.name %></span>
           <%= if @current_pick == @contestant_b.id && @pick_status == :correct do %>
             <span class="text-green-300 text-xs">✓</span>
           <% end %>
-          <%= if @current_pick == @contestant_b.id && @pick_status == :incorrect do %>
+          <%= if @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] do %>
             <span class="text-red-400 text-xs">✗</span>
           <% end %>
         <% else %>
@@ -1922,9 +1964,15 @@ defmodule BracketBattleWeb.TournamentLive do
     actual_matchup = Map.get(assigns.matchups_map, matchup_key)
     actual_winner_id = if actual_matchup, do: actual_matchup.winner_id
 
+    # Check if the picked contestant was eliminated in an earlier round
+    # Use eliminated_map built from matchup results
+    eliminated_round = if current_pick, do: Map.get(assigns.eliminated_map, current_pick)
+    current_round = 5  # Final Four is round 5
+
     # Determine pick status
     pick_status = cond do
       is_nil(current_pick) -> :no_pick
+      eliminated_round && eliminated_round < current_round -> :eliminated
       is_nil(actual_winner_id) -> :pending
       current_pick == actual_winner_id -> :correct
       true -> :incorrect
@@ -1944,33 +1992,33 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class={[
         "bg-gray-800 rounded border overflow-hidden w-44 mx-auto",
         @pick_status == :correct && "border-green-500",
-        @pick_status == :incorrect && "border-red-500",
+        @pick_status in [:incorrect, :eliminated] && "border-red-500",
         @pick_status in [:pending, :no_pick] && "border-gray-700"
       ]}>
         <!-- Contestant A -->
         <div class={[
           "flex items-center px-2 py-1.5 border-b border-gray-700",
           @winner && @contestant_a && @winner.id == @contestant_a.id && @pick_status == :correct && "bg-green-600/40",
-          @winner && @contestant_a && @winner.id == @contestant_a.id && @pick_status == :incorrect && "bg-red-600/30"
+          @winner && @contestant_a && @winner.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "bg-red-600/30"
         ]}>
           <%= if @contestant_a do %>
             <span class={[
               "text-xs font-mono w-5",
               @winner && @winner.id == @contestant_a.id && @pick_status == :correct && "text-green-300",
-              @winner && @winner.id == @contestant_a.id && @pick_status == :incorrect && "text-red-300",
+              @winner && @winner.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
               !(@winner && @winner.id == @contestant_a.id) && "text-gray-500"
             ]}><%= @contestant_a.seed %></span>
             <span class={[
               "text-xs truncate flex-1",
               @winner && @winner.id == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
-              @winner && @winner.id == @contestant_a.id && @pick_status == :incorrect && "text-red-300 line-through",
+              @winner && @winner.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
               !(@winner && @winner.id == @contestant_a.id) && "text-gray-300"
             ]}><%= @contestant_a.name %></span>
             <%= if @winner && @winner.id == @contestant_a.id do %>
               <%= if @pick_status == :correct do %>
                 <span class="text-green-300 text-xs">✓</span>
               <% end %>
-              <%= if @pick_status == :incorrect do %>
+              <%= if @pick_status in [:incorrect, :eliminated] do %>
                 <span class="text-red-400 text-xs">✗</span>
               <% end %>
             <% end %>
@@ -1982,26 +2030,26 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class={[
           "flex items-center px-2 py-1.5",
           @winner && @contestant_b && @winner.id == @contestant_b.id && @pick_status == :correct && "bg-green-600/40",
-          @winner && @contestant_b && @winner.id == @contestant_b.id && @pick_status == :incorrect && "bg-red-600/30"
+          @winner && @contestant_b && @winner.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "bg-red-600/30"
         ]}>
           <%= if @contestant_b do %>
             <span class={[
               "text-xs font-mono w-5",
               @winner && @winner.id == @contestant_b.id && @pick_status == :correct && "text-green-300",
-              @winner && @winner.id == @contestant_b.id && @pick_status == :incorrect && "text-red-300",
+              @winner && @winner.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
               !(@winner && @winner.id == @contestant_b.id) && "text-gray-500"
             ]}><%= @contestant_b.seed %></span>
             <span class={[
               "text-xs truncate flex-1",
               @winner && @winner.id == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
-              @winner && @winner.id == @contestant_b.id && @pick_status == :incorrect && "text-red-300 line-through",
+              @winner && @winner.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
               !(@winner && @winner.id == @contestant_b.id) && "text-gray-300"
             ]}><%= @contestant_b.name %></span>
             <%= if @winner && @winner.id == @contestant_b.id do %>
               <%= if @pick_status == :correct do %>
                 <span class="text-green-300 text-xs">✓</span>
               <% end %>
-              <%= if @pick_status == :incorrect do %>
+              <%= if @pick_status in [:incorrect, :eliminated] do %>
                 <span class="text-red-400 text-xs">✗</span>
               <% end %>
             <% end %>
@@ -2038,9 +2086,15 @@ defmodule BracketBattleWeb.TournamentLive do
     actual_matchup = Map.get(assigns.matchups_map, matchup_key)
     actual_winner_id = if actual_matchup, do: actual_matchup.winner_id
 
+    # Check if the picked contestant was eliminated in an earlier round
+    # Use eliminated_map built from matchup results
+    eliminated_round = if champion_pick, do: Map.get(assigns.eliminated_map, champion_pick)
+    current_round = 6  # Championship is round 6
+
     # Determine pick status
     pick_status = cond do
       is_nil(champion_pick) -> :no_pick
+      eliminated_round && eliminated_round < current_round -> :eliminated
       is_nil(actual_winner_id) -> :pending
       champion_pick == actual_winner_id -> :correct
       true -> :incorrect
@@ -2061,27 +2115,27 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class={[
           "mb-3 rounded-lg p-3",
           @pick_status == :correct && "bg-green-900/40 border border-green-500",
-          @pick_status == :incorrect && "bg-red-900/40 border border-red-500",
+          @pick_status in [:incorrect, :eliminated] && "bg-red-900/40 border border-red-500",
           @pick_status in [:pending, :no_pick] && "bg-gray-800 border border-gray-700"
         ]}>
           <div class="flex items-center justify-center gap-2">
             <%= if @pick_status == :correct do %>
               <span class="text-green-300 text-lg">✓</span>
             <% end %>
-            <%= if @pick_status == :incorrect do %>
+            <%= if @pick_status in [:incorrect, :eliminated] do %>
               <span class="text-red-400 text-lg">✗</span>
             <% end %>
             <span class={[
               "text-lg font-bold",
               @pick_status == :correct && "text-green-400",
-              @pick_status == :incorrect && "text-red-400 line-through",
+              @pick_status in [:incorrect, :eliminated] && "text-red-400 line-through",
               @pick_status in [:pending, :no_pick] && "text-white"
             ]}><%= @champion.seed %>. <%= @champion.name %></span>
           </div>
           <div class={[
             "text-xs",
             @pick_status == :correct && "text-green-500/70",
-            @pick_status == :incorrect && "text-red-500/70",
+            @pick_status in [:incorrect, :eliminated] && "text-red-500/70",
             @pick_status in [:pending, :no_pick] && "text-gray-400"
           ]}>Your Champion Pick</div>
         </div>
@@ -2091,33 +2145,33 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class={[
         "bg-gray-800 rounded border overflow-hidden w-48 mx-auto",
         @pick_status == :correct && "border-green-500",
-        @pick_status == :incorrect && "border-red-500",
+        @pick_status in [:incorrect, :eliminated] && "border-red-500",
         @pick_status in [:pending, :no_pick] && "border-yellow-600"
       ]}>
         <!-- Finalist A -->
         <div class={[
           "flex items-center px-2 py-1.5 border-b border-gray-700",
           @champion && @contestant_a && @champion.id == @contestant_a.id && @pick_status == :correct && "bg-green-600/40",
-          @champion && @contestant_a && @champion.id == @contestant_a.id && @pick_status == :incorrect && "bg-red-600/30"
+          @champion && @contestant_a && @champion.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "bg-red-600/30"
         ]}>
           <%= if @contestant_a do %>
             <span class={[
               "text-xs font-mono w-5",
               @champion && @champion.id == @contestant_a.id && @pick_status == :correct && "text-green-300",
-              @champion && @champion.id == @contestant_a.id && @pick_status == :incorrect && "text-red-300",
+              @champion && @champion.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
               !(@champion && @champion.id == @contestant_a.id) && "text-gray-500"
             ]}><%= @contestant_a.seed %></span>
             <span class={[
               "text-xs truncate flex-1",
               @champion && @champion.id == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
-              @champion && @champion.id == @contestant_a.id && @pick_status == :incorrect && "text-red-300 line-through",
+              @champion && @champion.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
               !(@champion && @champion.id == @contestant_a.id) && "text-gray-300"
             ]}><%= @contestant_a.name %></span>
             <%= if @champion && @champion.id == @contestant_a.id do %>
               <%= if @pick_status == :correct do %>
                 <span class="text-green-300 text-xs">✓</span>
               <% end %>
-              <%= if @pick_status == :incorrect do %>
+              <%= if @pick_status in [:incorrect, :eliminated] do %>
                 <span class="text-red-400 text-xs">✗</span>
               <% end %>
             <% end %>
@@ -2129,26 +2183,26 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class={[
           "flex items-center px-2 py-1.5",
           @champion && @contestant_b && @champion.id == @contestant_b.id && @pick_status == :correct && "bg-green-600/40",
-          @champion && @contestant_b && @champion.id == @contestant_b.id && @pick_status == :incorrect && "bg-red-600/30"
+          @champion && @contestant_b && @champion.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "bg-red-600/30"
         ]}>
           <%= if @contestant_b do %>
             <span class={[
               "text-xs font-mono w-5",
               @champion && @champion.id == @contestant_b.id && @pick_status == :correct && "text-green-300",
-              @champion && @champion.id == @contestant_b.id && @pick_status == :incorrect && "text-red-300",
+              @champion && @champion.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
               !(@champion && @champion.id == @contestant_b.id) && "text-gray-500"
             ]}><%= @contestant_b.seed %></span>
             <span class={[
               "text-xs truncate flex-1",
               @champion && @champion.id == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
-              @champion && @champion.id == @contestant_b.id && @pick_status == :incorrect && "text-red-300 line-through",
+              @champion && @champion.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
               !(@champion && @champion.id == @contestant_b.id) && "text-gray-300"
             ]}><%= @contestant_b.name %></span>
             <%= if @champion && @champion.id == @contestant_b.id do %>
               <%= if @pick_status == :correct do %>
                 <span class="text-green-300 text-xs">✓</span>
               <% end %>
-              <%= if @pick_status == :incorrect do %>
+              <%= if @pick_status in [:incorrect, :eliminated] do %>
                 <span class="text-red-400 text-xs">✗</span>
               <% end %>
             <% end %>
