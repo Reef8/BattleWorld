@@ -7,7 +7,7 @@ defmodule BracketBattle.Tournaments.Tournament do
 
   @statuses ~w(draft registration active completed)
   @valid_bracket_sizes [8, 16, 32, 64, 128]
-  @default_regions ["East", "West", "South", "Midwest"]
+  @default_regions ["East", "South", "West", "Midwest"]
 
   schema "tournaments" do
     field :name, :string
