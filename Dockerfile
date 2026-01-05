@@ -13,11 +13,6 @@ FROM ${BUILDER_IMAGE} as builder
 RUN apt-get update -y && apt-get install -y build-essential git curl \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
-# Install Node.js for asset building
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean && rm -f /var/lib/apt/lists/*_*
-
 # prepare build dir
 WORKDIR /app
 
@@ -45,8 +40,8 @@ COPY lib lib
 
 COPY assets assets
 
-# Install npm dependencies and build assets
-RUN cd assets && npm install && cd ..
+# Install esbuild and tailwind, then build assets
+RUN mix assets.setup
 RUN mix assets.deploy
 
 # Compile the release
