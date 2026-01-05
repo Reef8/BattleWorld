@@ -341,9 +341,9 @@ defmodule BracketBattleWeb.HomeLive do
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 class="text-lg font-semibold text-white mb-2">Fill Your Bracket</h3>
+              <h3 class="text-lg font-semibold text-white mb-2">Fill Out Your Bracket</h3>
               <p class="text-gray-400 text-sm">
-                Predict all 63 matchups before the tournament starts
+                Predict all matchups before the tournament starts
               </p>
             </div>
 
@@ -355,7 +355,7 @@ defmodule BracketBattleWeb.HomeLive do
               </div>
               <h3 class="text-lg font-semibold text-white mb-2">Vote on Matchups</h3>
               <p class="text-gray-400 text-sm">
-                24-hour voting rounds determine who moves on
+                Voting on matchups determines who moves on
               </p>
             </div>
 
