@@ -108,6 +108,13 @@ const Hooks = {
       this.el.scrollTop = this.el.scrollHeight
     }
   },
+  ResetForm: {
+    mounted() {
+      this.el.addEventListener("submit", () => {
+        setTimeout(() => this.el.reset(), 0)
+      })
+    }
+  },
   TournamentStartReveal: {
     mounted() {
       const tournamentId = this.el.dataset.tournamentId

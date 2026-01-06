@@ -1072,7 +1072,7 @@ defmodule BracketBattleWeb.TournamentLive do
           <%= if Enum.empty?(@messages) do %>
             <p class="text-gray-500 text-center text-sm">No messages yet. Start the conversation!</p>
           <% else %>
-            <%= for message <- Enum.reverse(@messages) do %>
+            <%= for message <- @messages do %>
               <div class="flex space-x-3">
                 <div class="flex-1">
                   <div class="flex items-baseline space-x-2">
@@ -1096,12 +1096,11 @@ defmodule BracketBattleWeb.TournamentLive do
 
         <!-- Input -->
         <%= if @current_user do %>
-          <form phx-submit="send_message" class="border-t border-gray-700 p-3">
+          <form phx-submit="send_message" phx-hook="ResetForm" id="chat-form" class="border-t border-gray-700 p-3">
             <div class="flex space-x-2">
               <input
                 type="text"
                 name="content"
-                value={@message_input}
                 placeholder="Type a message..."
                 maxlength="500"
                 class="flex-1 bg-gray-700 border-gray-600 text-white rounded px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
@@ -3040,7 +3039,7 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   def handle_info({:new_message, message}, socket) do
-    messages = [message | socket.assigns.messages] |> Enum.take(50)
+    messages = (socket.assigns.messages ++ [message]) |> Enum.take(-50)
     {:noreply, assign(socket, messages: messages)}
   end
 
