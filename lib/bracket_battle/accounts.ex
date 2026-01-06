@@ -84,7 +84,7 @@ defmodule BracketBattle.Accounts do
     client = Resend.client()
 
     Resend.Emails.send(client, %{
-      from: "onboarding@resend.dev",
+      from: "noreply@minnowstournament.com",
       to: [magic_link.email],
       subject: "Sign in to BracketBattle",
       html: """
