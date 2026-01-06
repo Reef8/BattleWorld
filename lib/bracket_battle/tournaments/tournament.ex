@@ -49,7 +49,23 @@ defmodule BracketBattle.Tournaments.Tournament do
                     :default_voting_duration_hours])
     |> validate_required([:name])
     |> validate_inclusion(:status, @statuses)
+    |> validate_status_progression()
     |> validate_bracket_config()
+  end
+
+  defp validate_status_progression(changeset) do
+    old_status = changeset.data.status
+    new_status = get_change(changeset, :status)
+
+    if is_nil(new_status) or is_nil(old_status) do
+      changeset
+    else
+      if old_status != "draft" and new_status == "draft" do
+        add_error(changeset, :status, "cannot be changed back to draft once tournament has started")
+      else
+        changeset
+      end
+    end
   end
 
   defp validate_bracket_config(changeset) do
