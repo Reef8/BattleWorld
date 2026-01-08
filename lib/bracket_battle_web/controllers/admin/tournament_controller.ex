@@ -5,10 +5,7 @@ defmodule BracketBattleWeb.Admin.TournamentController do
 
   def end_round(conn, %{"id" => id}) do
     tournament = Tournaments.get_tournament!(id)
-    IO.inspect({tournament.id, tournament.status, tournament.current_voting_region, tournament.current_round}, label: "END_ROUND: Tournament")
-
     result = Tournaments.end_voting_phase(tournament)
-    IO.inspect(result, label: "END_ROUND: Result")
 
     case result do
       {:ok, {:advanced, _updated}} ->

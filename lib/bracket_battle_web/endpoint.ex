@@ -9,7 +9,9 @@ defmodule BracketBattleWeb.Endpoint do
     key: "_bracket_battle_key",
     signing_salt: "9Y+N9pid",
     same_site: "Lax",
-    max_age: 30 * 24 * 60 * 60  # 30 days in seconds
+    max_age: 7 * 24 * 60 * 60,  # 7 days
+    httponly: true,
+    secure: true
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
