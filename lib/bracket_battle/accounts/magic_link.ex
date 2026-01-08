@@ -10,6 +10,7 @@ defmodule BracketBattle.Accounts.MagicLink do
     field :token, :string
     field :expires_at, :utc_datetime
     field :used_at, :utc_datetime
+    field :ip_address, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -17,7 +18,7 @@ defmodule BracketBattle.Accounts.MagicLink do
   @doc false
   def changeset(magic_link, attrs) do
     magic_link
-    |> cast(attrs, [:email, :token, :expires_at, :used_at])
+    |> cast(attrs, [:email, :token, :expires_at, :used_at, :ip_address])
     |> validate_required([:email, :token, :expires_at])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
     |> unique_constraint(:token)
@@ -27,7 +28,7 @@ defmodule BracketBattle.Accounts.MagicLink do
   Generates a new magic link token for the given email.
   Token expires in 15 minutes.
   """
-  def create_changeset(email) do
+  def create_changeset(email, ip_address \\ nil) do
     token = generate_token()
     expires_at = DateTime.utc_now() |> DateTime.add(15, :minute)
 
@@ -35,7 +36,8 @@ defmodule BracketBattle.Accounts.MagicLink do
     |> changeset(%{
       email: email,
       token: token,
-      expires_at: expires_at
+      expires_at: expires_at,
+      ip_address: ip_address
     })
   end
 

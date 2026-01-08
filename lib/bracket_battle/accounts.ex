@@ -15,17 +15,50 @@ defmodule BracketBattle.Accounts do
   If the user doesn't exist, creates a new user on verification.
   Returns {:ok, magic_link} on success.
   """
-  def create_magic_link(email) do
-    changeset = MagicLink.create_changeset(email)
+  def create_magic_link(email, ip_address \\ nil) do
+    cond do
+      has_recent_magic_link?(email) ->
+        {:error, :rate_limited}
 
-    case Repo.insert(changeset) do
-      {:ok, magic_link} ->
-        send_magic_link_email(magic_link)
-        {:ok, magic_link}
+      ip_address && too_many_requests_from_ip?(ip_address) ->
+        {:error, :rate_limited}
 
-      {:error, _changeset} = error ->
-        error
+      true ->
+        changeset = MagicLink.create_changeset(email, ip_address)
+
+        case Repo.insert(changeset) do
+          {:ok, magic_link} ->
+            send_magic_link_email(magic_link)
+            {:ok, magic_link}
+
+          {:error, _changeset} = error ->
+            error
+        end
     end
+  end
+
+  defp has_recent_magic_link?(email) do
+    import Ecto.Query
+    five_minutes_ago = DateTime.utc_now() |> DateTime.add(-300, :second)
+
+    from(m in MagicLink,
+      where: m.email == ^email and is_nil(m.used_at) and m.inserted_at > ^five_minutes_ago
+    )
+    |> Repo.exists?()
+  end
+
+  defp too_many_requests_from_ip?(ip_address) do
+    import Ecto.Query
+    fifteen_minutes_ago = DateTime.utc_now() |> DateTime.add(-900, :second)
+
+    count =
+      from(m in MagicLink,
+        where: m.ip_address == ^ip_address and m.inserted_at > ^fifteen_minutes_ago,
+        select: count(m.id)
+      )
+      |> Repo.one()
+
+    count >= 5
   end
 
   @doc """

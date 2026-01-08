@@ -5,24 +5,37 @@ defmodule BracketBattleWeb.AuthLive do
 
   @impl true
   def mount(_params, _session, socket) do
+    ip_address = get_connect_info(socket, :peer_data)[:address] |> format_ip()
+
     {:ok,
      assign(socket,
        email: "",
        email_sent: false,
        error: nil,
-       form: to_form(%{"email" => ""})
+       form: to_form(%{"email" => ""}),
+       ip_address: ip_address
      )}
   end
 
+  defp format_ip(nil), do: nil
+  defp format_ip(ip) when is_tuple(ip), do: ip |> :inet.ntoa() |> to_string()
+  defp format_ip(ip), do: to_string(ip)
+
   @impl true
   def handle_event("send_magic_link", %{"email" => email}, socket) do
-    case Accounts.create_magic_link(email) do
+    case Accounts.create_magic_link(email, socket.assigns.ip_address) do
       {:ok, _magic_link} ->
         {:noreply,
          assign(socket,
            email_sent: true,
            email: email,
            error: nil
+         )}
+
+      {:error, :rate_limited} ->
+        {:noreply,
+         assign(socket,
+           error: "Please wait a few minutes before requesting another link"
          )}
 
       {:error, _changeset} ->

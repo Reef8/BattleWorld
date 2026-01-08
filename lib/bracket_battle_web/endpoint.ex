@@ -11,12 +11,12 @@ defmodule BracketBattleWeb.Endpoint do
     same_site: "Lax",
     max_age: 7 * 24 * 60 * 60,  # 7 days
     httponly: true,
-    secure: true
+    secure: Mix.env() == :prod
   ]
 
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [:peer_data, session: @session_options]],
+    longpoll: [connect_info: [:peer_data, session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
