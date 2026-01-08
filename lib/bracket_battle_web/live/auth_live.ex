@@ -5,7 +5,7 @@ defmodule BracketBattleWeb.AuthLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    ip_address = get_connect_info(socket, :peer_data)[:address] |> format_ip()
+    ip_address = get_client_ip(socket)
 
     {:ok,
      assign(socket,
@@ -15,6 +15,17 @@ defmodule BracketBattleWeb.AuthLive do
        form: to_form(%{"email" => ""}),
        ip_address: ip_address
      )}
+  end
+
+  # Get real client IP, checking CloudFlare header first
+  defp get_client_ip(socket) do
+    x_headers = get_connect_info(socket, :x_headers) || []
+
+    # CloudFlare sends real IP in cf-connecting-ip header
+    case List.keyfind(x_headers, "cf-connecting-ip", 0) do
+      {_, ip} -> ip
+      nil -> get_connect_info(socket, :peer_data)[:address] |> format_ip()
+    end
   end
 
   defp format_ip(nil), do: nil
