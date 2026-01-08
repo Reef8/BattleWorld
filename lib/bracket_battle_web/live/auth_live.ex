@@ -13,7 +13,8 @@ defmodule BracketBattleWeb.AuthLive do
        email_sent: false,
        error: nil,
        form: to_form(%{"email" => ""}),
-       ip_address: ip_address
+       ip_address: ip_address,
+       show_privacy: false
      )}
   end
 
@@ -55,6 +56,16 @@ defmodule BracketBattleWeb.AuthLive do
            error: "Please enter a valid email address"
          )}
     end
+  end
+
+  @impl true
+  def handle_event("show_privacy", _, socket) do
+    {:noreply, assign(socket, show_privacy: true)}
+  end
+
+  @impl true
+  def handle_event("hide_privacy", _, socket) do
+    {:noreply, assign(socket, show_privacy: false)}
   end
 
   @impl true
@@ -131,7 +142,52 @@ defmodule BracketBattleWeb.AuthLive do
         <p class="text-center text-gray-500 text-sm mt-8">
           No password needed. We'll email you a secure link to sign in.
         </p>
+        <p class="text-center mt-4">
+          <button phx-click="show_privacy" class="text-gray-500 text-sm underline hover:text-gray-400">
+            Privacy Policy
+          </button>
+        </p>
       </div>
+
+      <!-- Privacy Policy Modal -->
+      <%= if @show_privacy do %>
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" phx-click="hide_privacy">
+          <div class="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700 max-w-lg mx-4 max-h-[80vh] overflow-y-auto" phx-click-away="hide_privacy">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl font-bold text-white">Privacy Policy</h2>
+              <button phx-click="hide_privacy" class="text-gray-400 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="text-gray-300 text-sm space-y-4">
+              <p><strong class="text-white">What we collect:</strong></p>
+              <ul class="list-disc list-inside space-y-2 ml-2">
+                <li><strong>Email address</strong> - Used to send you magic links for authentication and identify your account.</li>
+                <li><strong>IP address</strong> - Temporarily stored to prevent abuse and rate limit login requests. IP addresses are not shared with third parties.</li>
+              </ul>
+
+              <p><strong class="text-white">How we use your data:</strong></p>
+              <ul class="list-disc list-inside space-y-2 ml-2">
+                <li>Your email is used solely for authentication and account-related communications.</li>
+                <li>IP addresses are used for security purposes (rate limiting) and are not used for tracking or analytics.</li>
+              </ul>
+
+              <p><strong class="text-white">Data retention:</strong></p>
+              <ul class="list-disc list-inside space-y-2 ml-2">
+                <li>Magic link records (including IP addresses) are kept for security audit purposes.</li>
+                <li>Your email remains associated with your account until you request deletion.</li>
+              </ul>
+
+              <p><strong class="text-white">Your rights:</strong></p>
+              <p>You may request deletion of your account and associated data by contacting us.</p>
+
+              <p class="text-gray-500 text-xs mt-6">Last updated: January 2026</p>
+            </div>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end
