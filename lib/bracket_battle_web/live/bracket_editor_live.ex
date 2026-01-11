@@ -72,6 +72,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
        contestants_map: contestants_map,
        regions_data: regions_data,
        is_submitted: not is_nil(bracket.submitted_at),
+       is_locked: deadline_passed?(tournament) or tournament.status != "registration",
        picks_count: count_picks(bracket.picks || %{}),
        bracket_config: bracket_config,
        total_matchups: (tournament.bracket_size || 64) - 1,
@@ -174,9 +175,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <div class="text-gray-400 text-sm">
                 <span class="text-white font-medium"><%= @picks_count %></span>/<%= @total_matchups %> picks
               </div>
-              <%= if @is_submitted do %>
-                <span class="bg-green-600 text-white px-3 py-1 rounded text-sm">
-                  Submitted
+              <%= if @is_locked do %>
+                <span class="bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                  Locked
                 </span>
               <% else %>
                 <button
@@ -184,7 +185,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                   disabled={@picks_count != @total_matchups}
                   class={"px-4 py-2 rounded text-sm font-medium transition-colors #{if @picks_count == @total_matchups, do: "bg-green-600 hover:bg-green-700 text-white", else: "bg-gray-700 text-gray-500 cursor-not-allowed"}"}
                 >
-                  Submit Bracket
+                  <%= if @is_submitted, do: "Update Bracket", else: "Submit Bracket" %>
                 </button>
               <% end %>
             </div>
@@ -192,10 +193,26 @@ defmodule BracketBattleWeb.BracketEditorLive do
         </div>
       </header>
 
-      <%= if @is_submitted do %>
+      <%= if @flash["info"] do %>
+        <div class="bg-blue-900/20 border-b border-blue-700 px-4 py-3">
+          <div class="max-w-7xl mx-auto text-center text-blue-400 text-sm font-medium">
+            <%= @flash["info"] %>
+          </div>
+        </div>
+      <% end %>
+
+      <%= if @is_submitted and not @is_locked do %>
         <div class="bg-green-900/20 border-b border-green-700 px-4 py-3">
           <div class="max-w-7xl mx-auto text-center text-green-400 text-sm">
-            Your bracket has been submitted! You can view it below but cannot make changes.
+            Your bracket has been submitted! You can still make changes until the deadline.
+          </div>
+        </div>
+      <% end %>
+
+      <%= if @is_locked do %>
+        <div class="bg-red-900/20 border-b border-red-700 px-4 py-3">
+          <div class="max-w-7xl mx-auto text-center text-red-400 text-sm">
+            Bracket editing is now locked. No further changes can be made.
           </div>
         </div>
       <% end %>
@@ -272,7 +289,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                   region_data={@regions_data[Enum.at(region_names, 0)]}
                   picks={@picks}
                   contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
+                  is_locked={@is_locked}
                   region={Enum.at(region_names, 0)}
                   tournament={@tournament}
                   position="top"
@@ -288,7 +305,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                   region_data={@regions_data[Enum.at(region_names, 1)]}
                   picks={@picks}
                   contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
+                  is_locked={@is_locked}
                   region={Enum.at(region_names, 1)}
                   tournament={@tournament}
                   position="top"
@@ -310,7 +327,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                   placeholder_b={"#{Enum.at(region_names, 2)} Winner"}
                   picks={@picks}
                   contestants_map={@contestants_map}
-                  is_submitted={@is_submitted}
+                  is_locked={@is_locked}
                 />
                 </div>
               </div>
@@ -320,7 +337,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
               <.championship_slot
                 picks={@picks}
                 contestants_map={@contestants_map}
-                is_submitted={@is_submitted}
+                is_locked={@is_locked}
                 tournament={@tournament}
               />
               </div>
@@ -338,7 +355,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                     placeholder_b={"#{Enum.at(region_names, 3)} Winner"}
                     picks={@picks}
                     contestants_map={@contestants_map}
-                    is_submitted={@is_submitted}
+                    is_locked={@is_locked}
                   />
                   </div>
                 <% end %>
@@ -357,7 +374,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                     region_data={@regions_data[Enum.at(region_names, 2)]}
                     picks={@picks}
                     contestants_map={@contestants_map}
-                    is_submitted={@is_submitted}
+                    is_locked={@is_locked}
                     region={Enum.at(region_names, 2)}
                     tournament={@tournament}
                     position="bottom"
@@ -373,7 +390,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                     region_data={@regions_data[Enum.at(region_names, 3)]}
                     picks={@picks}
                     contestants_map={@contestants_map}
-                    is_submitted={@is_submitted}
+                    is_locked={@is_locked}
                     region={Enum.at(region_names, 3)}
                     tournament={@tournament}
                     position="bottom"
@@ -456,7 +473,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
               contestant_a={matchup.contestant_a}
               contestant_b={matchup.contestant_b}
               picks={@picks}
-              is_submitted={@is_submitted}
+              is_locked={@is_locked}
               size="small"
             />
             <!-- Horizontal line to connector -->
@@ -489,7 +506,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                 source_b={source_b}
                 picks={@picks}
                 contestants_map={@contestants_map}
-                is_submitted={@is_submitted}
+                is_locked={@is_locked}
                 size="small"
               />
               <!-- Horizontal line to next connector -->
@@ -523,7 +540,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                 source_b={source_b}
                 picks={@picks}
                 contestants_map={@contestants_map}
-                is_submitted={@is_submitted}
+                is_locked={@is_locked}
               />
               <!-- Only draw connectors if there's another round (Elite 8) -->
               <%= if @regional_rounds >= 4 do %>
@@ -557,7 +574,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
               source_b={@r3_base + 2}
               picks={@picks}
               contestants_map={@contestants_map}
-              is_submitted={@is_submitted}
+              is_locked={@is_locked}
             />
           </div>
         </div>
@@ -629,7 +646,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
               source_b={@r3_base + 2}
               picks={@picks}
               contestants_map={@contestants_map}
-              is_submitted={@is_submitted}
+              is_locked={@is_locked}
             />
             <!-- Horizontal connector extending RIGHT to meet vertical line from R3 -->
             <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -666,7 +683,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                 source_b={source_b}
                 picks={@picks}
                 contestants_map={@contestants_map}
-                is_submitted={@is_submitted}
+                is_locked={@is_locked}
               />
             </div>
           <% end %>
@@ -699,7 +716,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
                 source_b={source_b}
                 picks={@picks}
                 contestants_map={@contestants_map}
-                is_submitted={@is_submitted}
+                is_locked={@is_locked}
                 size="small"
               />
             </div>
@@ -728,7 +745,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
               contestant_a={matchup.contestant_a}
               contestant_b={matchup.contestant_b}
               picks={@picks}
-              is_submitted={@is_submitted}
+              is_locked={@is_locked}
               size="small"
             />
           </div>
@@ -757,14 +774,14 @@ defmodule BracketBattleWeb.BracketEditorLive do
         contestant={@contestant_a}
         position={@position}
         is_picked={@current_pick == (@contestant_a && @contestant_a.id)}
-        is_submitted={@is_submitted}
+        is_locked={@is_locked}
         has_border={true}
       />
       <.pick_contestant_row
         contestant={@contestant_b}
         position={@position}
         is_picked={@current_pick == (@contestant_b && @contestant_b.id)}
-        is_submitted={@is_submitted}
+        is_locked={@is_locked}
         has_border={false}
       />
     </div>
@@ -801,14 +818,14 @@ defmodule BracketBattleWeb.BracketEditorLive do
         contestant={@contestant_a}
         position={@position}
         is_picked={@current_pick == (@contestant_a && @contestant_a.id)}
-        is_submitted={@is_submitted}
+        is_locked={@is_locked}
         has_border={true}
       />
       <.pick_contestant_row
         contestant={@contestant_b}
         position={@position}
         is_picked={@current_pick == (@contestant_b && @contestant_b.id)}
-        is_submitted={@is_submitted}
+        is_locked={@is_locked}
         has_border={false}
       />
     </div>
@@ -823,13 +840,13 @@ defmodule BracketBattleWeb.BracketEditorLive do
         phx-click="pick"
         phx-value-position={@position}
         phx-value-contestant={@contestant.id}
-        disabled={@is_submitted}
+        disabled={@is_locked}
         class={[
           "w-full flex items-center px-2 py-1 transition-colors text-left",
           @has_border && "border-b border-gray-700",
           @is_picked && "bg-purple-600/40",
-          !@is_picked && !@is_submitted && "hover:bg-gray-700",
-          @is_submitted && "cursor-default"
+          !@is_picked && !@is_locked && "hover:bg-gray-700",
+          @is_locked && "cursor-default"
         ]}
       >
         <span class={[
@@ -889,11 +906,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
             phx-click="pick"
             phx-value-position={@position}
             phx-value-contestant={@contestant_a.id}
-            disabled={@is_submitted}
+            disabled={@is_locked}
             class={[
               "w-full flex items-center px-2 py-1 transition-colors text-left border-b border-gray-700",
               @current_pick == @contestant_a.id && "bg-purple-600/40",
-              @current_pick != @contestant_a.id && !@is_submitted && "hover:bg-gray-700"
+              @current_pick != @contestant_a.id && !@is_locked && "hover:bg-gray-700"
             ]}
           >
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
@@ -913,11 +930,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
             phx-click="pick"
             phx-value-position={@position}
             phx-value-contestant={@contestant_b.id}
-            disabled={@is_submitted}
+            disabled={@is_locked}
             class={[
               "w-full flex items-center px-2 py-1 transition-colors text-left",
               @current_pick == @contestant_b.id && "bg-purple-600/40",
-              @current_pick != @contestant_b.id && !@is_submitted && "hover:bg-gray-700"
+              @current_pick != @contestant_b.id && !@is_locked && "hover:bg-gray-700"
             ]}
           >
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
@@ -993,11 +1010,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
             phx-click="pick"
             phx-value-position={@championship_pos}
             phx-value-contestant={@contestant_a.id}
-            disabled={@is_submitted}
+            disabled={@is_locked}
             class={[
               "w-full flex items-center px-2 py-1.5 transition-colors text-left border-b border-gray-700",
               @current_pick == @contestant_a.id && "bg-yellow-600/30",
-              @current_pick != @contestant_a.id && !@is_submitted && "hover:bg-gray-700"
+              @current_pick != @contestant_a.id && !@is_locked && "hover:bg-gray-700"
             ]}
           >
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
@@ -1017,11 +1034,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
             phx-click="pick"
             phx-value-position={@championship_pos}
             phx-value-contestant={@contestant_b.id}
-            disabled={@is_submitted}
+            disabled={@is_locked}
             class={[
               "w-full flex items-center px-2 py-1.5 transition-colors text-left",
               @current_pick == @contestant_b.id && "bg-yellow-600/30",
-              @current_pick != @contestant_b.id && !@is_submitted && "hover:bg-gray-700"
+              @current_pick != @contestant_b.id && !@is_locked && "hover:bg-gray-700"
             ]}
           >
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
@@ -1050,7 +1067,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
   @impl true
   def handle_event("pick", %{"position" => position, "contestant" => contestant_id}, socket) do
-    if socket.assigns.is_submitted do
+    if socket.assigns.is_locked do
       {:noreply, socket}
     else
       position = String.to_integer(position)
@@ -1067,7 +1084,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
       {:ok, bracket} = Brackets.update_picks(socket.assigns.bracket, picks)
 
       {:noreply,
-       assign(socket,
+       socket
+       |> clear_flash()
+       |> assign(
          bracket: bracket,
          picks: picks,
          picks_count: count_picks(picks)
@@ -1078,7 +1097,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
   def handle_event("submit_bracket", _, socket) do
     required_picks = socket.assigns.total_matchups
 
-    if socket.assigns.is_submitted or socket.assigns.picks_count != required_picks do
+    if socket.assigns.is_locked or socket.assigns.picks_count != required_picks do
       {:noreply, socket}
     else
       case Brackets.submit_bracket(socket.assigns.bracket) do
@@ -1086,7 +1105,7 @@ defmodule BracketBattleWeb.BracketEditorLive do
           {:noreply,
            socket
            |> assign(bracket: bracket, is_submitted: true)
-           |> put_flash(:info, "Bracket submitted successfully!")}
+           |> put_flash(:info, if(socket.assigns.is_submitted, do: "Bracket updated!", else: "Bracket submitted successfully!"))}
 
         {:error, :registration_closed} ->
           {:noreply, put_flash(socket, :error, "Registration has closed")}
@@ -1199,7 +1218,8 @@ defmodule BracketBattleWeb.BracketEditorLive do
   @impl true
   def handle_info(:tick_countdown, socket) do
     time_remaining = calculate_time_remaining(socket.assigns.tournament.registration_deadline)
-    {:noreply, assign(socket, time_remaining: time_remaining)}
+    is_locked = time_remaining && time_remaining.expired
+    {:noreply, assign(socket, time_remaining: time_remaining, is_locked: is_locked)}
   end
 
   defp calculate_time_remaining(nil), do: nil
@@ -1215,6 +1235,13 @@ defmodule BracketBattleWeb.BracketEditorLive do
         %{days: days, hours: hours, minutes: minutes, seconds: seconds, expired: false}
       _ ->
         %{days: 0, hours: 0, minutes: 0, seconds: 0, expired: true}
+    end
+  end
+
+  defp deadline_passed?(tournament) do
+    case tournament.registration_deadline do
+      nil -> false
+      deadline -> DateTime.compare(DateTime.utc_now(), deadline) == :gt
     end
   end
 end
