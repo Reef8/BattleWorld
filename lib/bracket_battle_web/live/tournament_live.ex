@@ -844,7 +844,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 </svg>
                 <span class="text-green-400 font-medium">Your votes have been submitted!</span>
               </div>
-              <span class="text-green-400/70 text-sm">You can change your votes until voting ends</span>
+              <span class="text-green-400/70 text-sm">Your votes are locked in</span>
             </div>
           <% end %>
 
@@ -910,7 +910,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 Submit Votes
               </button>
               <p class="text-gray-500 text-sm">
-                You can change your votes until voting ends
+                Your votes are final once submitted
               </p>
             </div>
           </div>
@@ -962,13 +962,16 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="p-3 space-y-2">
         <!-- Contestant 1 -->
         <button
-          phx-click="select_vote"
+          phx-click={if !@has_voted, do: "select_vote"}
           phx-value-matchup={@matchup.id}
           phx-value-contestant={@matchup.contestant_1_id}
+          disabled={@has_voted}
           class={[
             "w-full text-left p-3 rounded transition-all duration-200",
-            is_selected(@selected, @matchup.contestant_1_id) && "bg-blue-600 ring-2 ring-blue-400 scale-[1.02]",
-            !is_selected(@selected, @matchup.contestant_1_id) && "bg-gray-700 hover:bg-gray-600"
+            @has_voted && is_voted(@matchup.user_vote, @matchup.contestant_1_id) && "bg-green-700 ring-2 ring-green-500",
+            @has_voted && !is_voted(@matchup.user_vote, @matchup.contestant_1_id) && "bg-gray-700 opacity-50 cursor-not-allowed",
+            !@has_voted && is_selected(@selected, @matchup.contestant_1_id) && "bg-blue-600 ring-2 ring-blue-400 scale-[1.02]",
+            !@has_voted && !is_selected(@selected, @matchup.contestant_1_id) && "bg-gray-700 hover:bg-gray-600"
           ]}
         >
           <div class="flex justify-between items-center">
@@ -976,21 +979,28 @@ defmodule BracketBattleWeb.TournamentLive do
               <span class="text-gray-400"><%= @matchup.contestant_1.seed %>.</span>
               <%= @matchup.contestant_1.name %>
             </span>
-            <%= if is_selected(@selected, @matchup.contestant_1_id) do %>
-              <span class="text-white font-bold text-xs">SELECTED</span>
+            <%= if @has_voted && is_voted(@matchup.user_vote, @matchup.contestant_1_id) do %>
+              <span class="text-green-300 font-bold text-xs">VOTED</span>
+            <% else %>
+              <%= if is_selected(@selected, @matchup.contestant_1_id) do %>
+                <span class="text-white font-bold text-xs">SELECTED</span>
+              <% end %>
             <% end %>
           </div>
         </button>
 
         <!-- Contestant 2 -->
         <button
-          phx-click="select_vote"
+          phx-click={if !@has_voted, do: "select_vote"}
           phx-value-matchup={@matchup.id}
           phx-value-contestant={@matchup.contestant_2_id}
+          disabled={@has_voted}
           class={[
             "w-full text-left p-3 rounded transition-all duration-200",
-            is_selected(@selected, @matchup.contestant_2_id) && "bg-blue-600 ring-2 ring-blue-400 scale-[1.02]",
-            !is_selected(@selected, @matchup.contestant_2_id) && "bg-gray-700 hover:bg-gray-600"
+            @has_voted && is_voted(@matchup.user_vote, @matchup.contestant_2_id) && "bg-green-700 ring-2 ring-green-500",
+            @has_voted && !is_voted(@matchup.user_vote, @matchup.contestant_2_id) && "bg-gray-700 opacity-50 cursor-not-allowed",
+            !@has_voted && is_selected(@selected, @matchup.contestant_2_id) && "bg-blue-600 ring-2 ring-blue-400 scale-[1.02]",
+            !@has_voted && !is_selected(@selected, @matchup.contestant_2_id) && "bg-gray-700 hover:bg-gray-600"
           ]}
         >
           <div class="flex justify-between items-center">
@@ -998,8 +1008,12 @@ defmodule BracketBattleWeb.TournamentLive do
               <span class="text-gray-400"><%= @matchup.contestant_2.seed %>.</span>
               <%= @matchup.contestant_2.name %>
             </span>
-            <%= if is_selected(@selected, @matchup.contestant_2_id) do %>
-              <span class="text-white font-bold text-xs">SELECTED</span>
+            <%= if @has_voted && is_voted(@matchup.user_vote, @matchup.contestant_2_id) do %>
+              <span class="text-green-300 font-bold text-xs">VOTED</span>
+            <% else %>
+              <%= if is_selected(@selected, @matchup.contestant_2_id) do %>
+                <span class="text-white font-bold text-xs">SELECTED</span>
+              <% end %>
             <% end %>
           </div>
         </button>
@@ -3093,5 +3107,11 @@ defmodule BracketBattleWeb.TournamentLive do
   defp is_selected(nil, _), do: false
   defp is_selected(selected, contestant_id) do
     to_string(selected) == to_string(contestant_id)
+  end
+
+  # Check if a contestant was the one voted for (user_vote is a Vote struct with contestant_id)
+  defp is_voted(nil, _), do: false
+  defp is_voted(user_vote, contestant_id) do
+    to_string(user_vote.contestant_id) == to_string(contestant_id)
   end
 end

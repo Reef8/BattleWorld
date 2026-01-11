@@ -19,17 +19,15 @@ defmodule BracketBattle.Voting do
 
     with :ok <- validate_voting_open(matchup),
          :ok <- validate_has_bracket(matchup.tournament_id, user_id),
-         :ok <- validate_contestant_in_matchup(matchup, contestant_id) do
+         :ok <- validate_contestant_in_matchup(matchup, contestant_id),
+         :ok <- validate_not_already_voted(matchup_id, user_id) do
       %Vote{}
       |> Vote.changeset(%{
         matchup_id: matchup_id,
         user_id: user_id,
         contestant_id: contestant_id
       })
-      |> Repo.insert(
-        on_conflict: {:replace, [:contestant_id, :updated_at]},
-        conflict_target: [:matchup_id, :user_id]
-      )
+      |> Repo.insert()
       |> broadcast_vote()
     end
   end
@@ -149,6 +147,14 @@ defmodule BracketBattle.Voting do
       :ok
     else
       {:error, :invalid_contestant}
+    end
+  end
+
+  defp validate_not_already_voted(matchup_id, user_id) do
+    if has_voted?(matchup_id, user_id) do
+      {:error, :already_voted}
+    else
+      :ok
     end
   end
 

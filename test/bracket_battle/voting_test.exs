@@ -40,7 +40,7 @@ defmodule BracketBattle.VotingTest do
       assert Voting.get_total_votes(matchup.id) == 1
     end
 
-    test "changing vote replaces previous vote", %{
+    test "changing vote is rejected once already voted", %{
       user: user,
       matchup: matchup,
       contestant_1: c1,
@@ -49,16 +49,16 @@ defmodule BracketBattle.VotingTest do
       {:ok, vote1} = Voting.cast_vote(matchup.id, user.id, c1.id)
       assert vote1.contestant_id == c1.id
 
-      {:ok, vote2} = Voting.cast_vote(matchup.id, user.id, c2.id)
-      assert vote2.contestant_id == c2.id
+      # Attempting to change vote should fail
+      assert {:error, :already_voted} = Voting.cast_vote(matchup.id, user.id, c2.id)
 
-      # Total votes should still be 1 (replaced, not added)
+      # Total votes should still be 1
       assert Voting.get_total_votes(matchup.id) == 1
 
-      # Vote counts should show 1 for c2, 0 for c1
+      # Vote counts should still show 1 for c1, 0 for c2 (unchanged)
       counts = Voting.get_vote_counts(matchup.id)
-      assert Map.get(counts, c1.id, 0) == 0
-      assert Map.get(counts, c2.id, 0) == 1
+      assert Map.get(counts, c1.id, 0) == 1
+      assert Map.get(counts, c2.id, 0) == 0
     end
 
     test "fails when voting window closed", %{user: user, tournament: tournament} do
