@@ -1430,6 +1430,8 @@ defmodule BracketBattleWeb.TournamentLive do
       |> assign(:r4_pos, r4_pos)
       |> assign(:r2_matchups_per_region, r2_matchups_per_region)
       |> assign(:r3_matchups_per_region, r3_matchups_per_region)
+      |> assign(:r4_matchups_per_region, r4_matchups_per_region)
+      |> assign(:region_index, region_index)
       |> assign(:container_height, container_height)
 
     ~H"""
@@ -1469,6 +1471,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r2_matchups_per_region - 1) do %>
             <% position = @r2_base + idx + 1 %>
+            <% db_matchup_position = @region_index * @r2_matchups_per_region + idx + 1 %>
             <% source_a = @offset + idx * 2 + 1 %>
             <% source_b = @offset + idx * 2 + 2 %>
             <div class="relative">
@@ -1482,7 +1485,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={2}
-                matchup_position={position}
+                matchup_position={db_matchup_position}
                 size="small"
               />
               <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -1504,6 +1507,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>
             <% position = @r3_base + idx + 1 %>
+            <% db_matchup_position = @region_index * @r3_matchups_per_region + idx + 1 %>
             <% source_a = @r2_base + idx * 2 + 1 %>
             <% source_b = @r2_base + idx * 2 + 2 %>
             <div class="relative">
@@ -1517,7 +1521,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={3}
-                matchup_position={position}
+                matchup_position={db_matchup_position}
               />
               <%= if @regional_rounds >= 4 do %>
                 <div class="absolute right-0 top-1/2 w-4 h-px bg-gray-600 translate-x-full"></div>
@@ -1539,6 +1543,7 @@ defmodule BracketBattleWeb.TournamentLive do
 
       <!-- Round 4 (Elite 8) -->
       <%= if @regional_rounds >= 4 do %>
+        <% db_matchup_position_r4 = @region_index * max(@r4_matchups_per_region, 1) + 1 %>
         <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
           <div class="relative">
             <.my_bracket_matchup_box_from_picks
@@ -1551,7 +1556,7 @@ defmodule BracketBattleWeb.TournamentLive do
               eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={4}
-              matchup_position={@r4_pos}
+              matchup_position={db_matchup_position_r4}
             />
           </div>
         </div>
@@ -1597,12 +1602,15 @@ defmodule BracketBattleWeb.TournamentLive do
       |> assign(:r4_pos, r4_pos)
       |> assign(:r2_matchups_per_region, r2_matchups_per_region)
       |> assign(:r3_matchups_per_region, r3_matchups_per_region)
+      |> assign(:r4_matchups_per_region, r4_matchups_per_region)
+      |> assign(:region_index, region_index)
       |> assign(:container_height, container_height)
 
     ~H"""
     <div class="flex items-center justify-end">
       <!-- Round 4 (Elite 8) -->
       <%= if @regional_rounds >= 4 do %>
+        <% db_matchup_position_r4 = @region_index * max(@r4_matchups_per_region, 1) + 1 %>
         <div class="flex flex-col justify-center" style={"min-height: #{@container_height}px;"}>
           <div class="relative">
             <.my_bracket_matchup_box_from_picks
@@ -1615,7 +1623,7 @@ defmodule BracketBattleWeb.TournamentLive do
               eliminated_map={@eliminated_map}
               region_name={@region_name}
               round={4}
-              matchup_position={@r4_pos}
+              matchup_position={db_matchup_position_r4}
             />
           </div>
         </div>
@@ -1630,6 +1638,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r3_matchups_per_region - 1) do %>
             <% position = @r3_base + idx + 1 %>
+            <% db_matchup_position = @region_index * @r3_matchups_per_region + idx + 1 %>
             <% source_a = @r2_base + idx * 2 + 1 %>
             <% source_b = @r2_base + idx * 2 + 2 %>
             <div class="relative">
@@ -1652,7 +1661,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={3}
-                matchup_position={position}
+                matchup_position={db_matchup_position}
               />
             </div>
           <% end %>
@@ -1666,6 +1675,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex flex-col justify-around" style={"min-height: #{@container_height}px;"}>
           <%= for idx <- 0..(@r2_matchups_per_region - 1) do %>
             <% position = @r2_base + idx + 1 %>
+            <% db_matchup_position = @region_index * @r2_matchups_per_region + idx + 1 %>
             <% source_a = @offset + idx * 2 + 1 %>
             <% source_b = @offset + idx * 2 + 2 %>
             <div class="relative">
@@ -1686,7 +1696,7 @@ defmodule BracketBattleWeb.TournamentLive do
                 eliminated_map={@eliminated_map}
                 region_name={@region_name}
                 round={2}
-                matchup_position={position}
+                matchup_position={db_matchup_position}
                 size="small"
               />
             </div>
