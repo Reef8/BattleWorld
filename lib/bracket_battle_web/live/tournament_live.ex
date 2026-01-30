@@ -2659,9 +2659,17 @@ defmodule BracketBattleWeb.TournamentLive do
       Map.get(assigns.contestants_map, ff2_matchup.winner_id)
     end
 
+    # Get championship matchup (round 6, position 1) and its winner
+    championship_key = {"", 6, assigns.championship_pos}
+    championship_matchup = Map.get(assigns.matchups_map, championship_key)
+    champion = if championship_matchup && championship_matchup.winner_id do
+      Map.get(assigns.contestants_map, championship_matchup.winner_id)
+    end
+
     assigns = assigns
       |> assign(:contestant_a, contestant_a)
       |> assign(:contestant_b, contestant_b)
+      |> assign(:champion, champion)
 
     ~H"""
     <div class="text-center">
@@ -2686,6 +2694,17 @@ defmodule BracketBattleWeb.TournamentLive do
           <% end %>
         </div>
       </div>
+
+      <!-- Champion Display -->
+      <%= if @champion do %>
+        <div class="mt-3 bg-yellow-900/40 border border-yellow-600 rounded p-3 w-48 mx-auto">
+          <div class="text-xs text-yellow-500 mb-1">Champion</div>
+          <div class="text-yellow-400 font-bold text-lg flex items-center justify-center gap-2">
+            <span>🏆</span>
+            <span><%= @champion.name %></span>
+          </div>
+        </div>
+      <% end %>
     </div>
     """
   end
