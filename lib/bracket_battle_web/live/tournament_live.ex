@@ -209,7 +209,7 @@ defmodule BracketBattleWeb.TournamentLive do
       </header>
 
       <!-- Tab Navigation -->
-      <div class="bg-gray-800 border-b border-gray-700 overflow-x-auto">
+      <div class="bg-gray-800 border-b border-gray-700 overflow-x-auto sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4">
           <nav class="flex space-x-1 sm:space-x-4 min-w-max">
             <button
