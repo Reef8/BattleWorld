@@ -85,6 +85,39 @@ defmodule BracketBattle.Voting do
     vote_count > 0 and vote_count == matchup_count
   end
 
+  @doc """
+  Get voting participation for all voting periods (region + round combinations).
+  Returns a map of {region, round} => true/false indicating if user voted on ALL matchups in that period.
+  Only checks decided matchups (periods that have concluded).
+  """
+  def get_voting_participation(tournament_id, user_id) do
+    # Get all decided matchups grouped by region+round with vote counts
+    matchups_query = from(m in Matchup,
+      where: m.tournament_id == ^tournament_id and m.status == "decided",
+      select: %{id: m.id, region: m.region, round: m.round}
+    )
+    matchups = Repo.all(matchups_query)
+
+    # Get all user votes for this tournament's matchups
+    user_votes_query = from(v in Vote,
+      join: m in Matchup, on: v.matchup_id == m.id,
+      where: m.tournament_id == ^tournament_id and v.user_id == ^user_id,
+      select: v.matchup_id
+    )
+    user_voted_matchup_ids = Repo.all(user_votes_query) |> MapSet.new()
+
+    # Group matchups by voting period (region, round)
+    matchups_by_period = Enum.group_by(matchups, fn m -> {m.region, m.round} end)
+
+    # For each period, check if user voted on ALL matchups
+    Map.new(matchups_by_period, fn {{region, round}, period_matchups} ->
+      all_voted = Enum.all?(period_matchups, fn m ->
+        MapSet.member?(user_voted_matchup_ids, m.id)
+      end)
+      {{region, round}, all_voted}
+    end)
+  end
+
   # ============================================================================
   # VOTE TALLYING (called by Oban job)
   # ============================================================================

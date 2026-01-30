@@ -10,6 +10,7 @@ defmodule BracketBattle.Scoring do
   alias BracketBattle.Brackets.UserBracket
   alias BracketBattle.Tournaments
   alias BracketBattle.Tournaments.Tournament
+  alias BracketBattle.Voting
 
   # Default ESPN-style scoring: doubles each round
   @default_points_per_round %{
@@ -74,6 +75,12 @@ defmodule BracketBattle.Scoring do
     total_rounds = Tournament.total_rounds(tournament)
     picks = bracket.picks || %{}
 
+    # Get voting participation for this user - returns map of {region, round} => true/false
+    voting_participation = Voting.get_voting_participation(tournament.id, bracket.user_id)
+
+    # Build map of bracket position -> {region, round} for checking voting participation
+    position_to_period = build_position_to_period_map(tournament)
+
     scores = for round <- 1..total_rounds do
       round_positions = get_positions_for_round(tournament, round)
       points = points_for_round(tournament, round)
@@ -81,7 +88,13 @@ defmodule BracketBattle.Scoring do
       correct = Enum.count(round_positions, fn pos ->
         pick = Map.get(picks, to_string(pos))
         result = Map.get(official_results, pos)
-        pick && result && pick == result
+
+        # Check if user voted in this position's voting period
+        voting_period = Map.get(position_to_period, pos)
+        user_voted = Map.get(voting_participation, voting_period, false)
+
+        # Only count if pick is correct AND user voted in the period
+        pick && result && pick == result && user_voted
       end)
 
       {round, correct * points, correct}
@@ -90,7 +103,7 @@ defmodule BracketBattle.Scoring do
     round_scores = Map.new(scores, fn {r, pts, _} -> {:"round_#{r}_score", pts} end)
     total_score = Enum.sum(Enum.map(scores, fn {_, pts, _} -> pts end))
     correct_picks = Enum.sum(Enum.map(scores, fn {_, _, c} -> c end))
-    possible = calculate_possible_score(tournament, picks, official_results)
+    possible = calculate_possible_score(tournament, picks, official_results, voting_participation, position_to_period)
 
     bracket
     |> UserBracket.score_changeset(
@@ -146,7 +159,18 @@ defmodule BracketBattle.Scoring do
     Enum.to_list((base + 1)..(base + matchups))
   end
 
-  defp calculate_possible_score(%Tournament{} = tournament, picks, official_results) do
+  # Build a map of bracket position -> {region, round} for voting period lookup
+  defp build_position_to_period_map(tournament) do
+    matchups = Tournaments.get_all_matchups(tournament.id)
+
+    Map.new(matchups, fn matchup ->
+      bracket_position = matchup_to_position(matchup, tournament)
+      # Use nil-safe region (Final Four/Championship have nil region)
+      {bracket_position, {matchup.region, matchup.round}}
+    end)
+  end
+
+  defp calculate_possible_score(%Tournament{} = tournament, picks, official_results, voting_participation, position_to_period) do
     # Calculate maximum possible remaining score
     total_rounds = Tournament.total_rounds(tournament)
 
@@ -162,13 +186,15 @@ defmodule BracketBattle.Scoring do
 
       viable_count = Enum.count(positions, fn pos ->
         pick = Map.get(picks, to_string(pos))
+        voting_period = Map.get(position_to_period, pos)
+        user_voted = Map.get(voting_participation, voting_period, false)
 
         cond do
-          # Position already decided - count if correct
+          # Position already decided - count if correct AND user voted
           pos <= max_decided_position ->
-            Map.get(official_results, pos) == pick
+            Map.get(official_results, pos) == pick && user_voted
 
-          # Future position - check if pick is still alive
+          # Future position - check if pick is still alive (can't know voting yet)
           pick && not MapSet.member?(eliminated, pick) ->
             true
 

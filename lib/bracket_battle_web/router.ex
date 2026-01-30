@@ -25,6 +25,7 @@ defmodule BracketBattleWeb.Router do
     live "/auth/signin", AuthLive, :index
     get "/auth/verify", AuthController, :verify
     get "/auth/signout", AuthController, :signout
+    get "/auth/dev-login", AuthController, :dev_login
 
     # Tournament pages
     live "/tournament/:id", TournamentLive, :index
