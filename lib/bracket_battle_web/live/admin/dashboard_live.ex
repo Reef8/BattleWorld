@@ -33,7 +33,8 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
        tournament: tournament,
        all_tournaments: all_tournaments,
        stats: stats,
-       brackets: brackets
+       brackets: brackets,
+       show_mobile_menu: false
      )}
   end
 
@@ -42,7 +43,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
     ~H"""
     <div class="min-h-screen bg-gray-900">
       <!-- Admin Header -->
-      <header class="bg-gray-800 border-b border-gray-700">
+      <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center space-x-2 sm:space-x-4">
@@ -51,17 +52,55 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
               </a>
               <h1 class="text-base sm:text-xl font-bold text-white">Admin Dashboard</h1>
             </div>
-            <nav class="flex items-center space-x-2 sm:space-x-4">
-              <.link navigate="/admin/tournaments" class="text-gray-400 hover:text-white text-xs sm:text-sm">
+            <!-- Desktop nav -->
+            <nav class="hidden md:flex items-center space-x-4">
+              <.link navigate="/admin/tournaments" class="text-gray-400 hover:text-white text-sm">
                 Tournaments
               </.link>
-              <span class="hidden sm:inline text-gray-600">|</span>
-              <span class="hidden sm:inline text-blue-400 text-sm">
+              <span class="text-gray-600">|</span>
+              <span class="text-blue-400 text-sm">
                 <%= @current_user.email %>
               </span>
+              <a href="/auth/signout" class="text-gray-400 hover:text-white text-sm">
+                Sign Out
+              </a>
             </nav>
+
+            <!-- Mobile hamburger button -->
+            <button
+              phx-click="toggle_mobile_menu"
+              class="md:hidden p-2 text-gray-400 hover:text-white"
+              aria-label="Toggle menu"
+            >
+              <%= if @show_mobile_menu do %>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              <% else %>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              <% end %>
+            </button>
           </div>
         </div>
+
+        <!-- Mobile menu -->
+        <%= if @show_mobile_menu do %>
+          <div class="md:hidden border-t border-gray-700 bg-gray-800">
+            <div class="px-4 py-3 space-y-2">
+              <.link navigate="/admin/tournaments" class="block py-2 text-gray-400 hover:text-white">
+                Tournaments
+              </.link>
+              <div class="py-2 text-blue-400 text-sm">
+                <%= @current_user.email %>
+              </div>
+              <a href="/auth/signout" class="block py-2 text-gray-400 hover:text-white">
+                Sign Out
+              </a>
+            </div>
+          </div>
+        <% end %>
       </header>
 
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -313,6 +352,11 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, "Failed to start: #{inspect(reason)}")}
     end
+  end
+
+  @impl true
+  def handle_event("toggle_mobile_menu", _, socket) do
+    {:noreply, assign(socket, show_mobile_menu: !socket.assigns.show_mobile_menu)}
   end
 
   defp update_stats(tournament) do

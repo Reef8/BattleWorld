@@ -195,6 +195,11 @@ defmodule BracketBattleWeb.TournamentLive do
                 <a href="/dashboard" class="block py-2 text-gray-400 hover:text-white">
                   My Dashboard
                 </a>
+                <%= if @current_user.is_admin do %>
+                  <a href="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
+                    Admin
+                  </a>
+                <% end %>
                 <a href="/auth/signout" class="block py-2 text-gray-400 hover:text-white">
                   Sign Out
                 </a>
@@ -209,7 +214,7 @@ defmodule BracketBattleWeb.TournamentLive do
       </header>
 
       <!-- Tab Navigation -->
-      <div class="bg-gray-800 border-b border-gray-700 overflow-x-auto sticky top-0 z-40">
+      <div class="bg-gray-800 border-b border-gray-700 overflow-x-auto sticky top-16 z-[5]">
         <div class="max-w-7xl mx-auto px-4">
           <nav class="flex space-x-1 sm:space-x-4 min-w-max">
             <button

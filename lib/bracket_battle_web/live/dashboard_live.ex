@@ -60,7 +60,7 @@ defmodule BracketBattleWeb.DashboardLive do
     ~H"""
     <div class="min-h-screen bg-gray-900">
       <!-- Header -->
-      <header class="bg-gray-800 border-b border-gray-700">
+      <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center space-x-4">
