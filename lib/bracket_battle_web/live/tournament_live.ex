@@ -240,6 +240,15 @@ defmodule BracketBattleWeb.TournamentLive do
                 <% end %>
               </button>
             <% end %>
+            <%= if @has_bracket do %>
+              <button
+                phx-click="switch_tab"
+                phx-value-tab="my_bracket"
+                class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "my_bracket", do: "border-blue-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
+              >
+                My Bracket
+              </button>
+            <% end %>
             <button
               phx-click="switch_tab"
               phx-value-tab="leaderboard"
@@ -259,15 +268,6 @@ defmodule BracketBattleWeb.TournamentLive do
                 </span>
               <% end %>
             </button>
-            <%= if @has_bracket do %>
-              <button
-                phx-click="switch_tab"
-                phx-value-tab="my_bracket"
-                class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "my_bracket", do: "border-blue-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
-              >
-                My Bracket
-              </button>
-            <% end %>
           </nav>
         </div>
       </div>
