@@ -898,32 +898,38 @@ defmodule BracketBattleWeb.TournamentLive do
           <div class="mt-8 pt-6 border-t border-gray-700">
             <div class="flex flex-col items-center space-y-4">
               <div class="text-center">
-                <span class={[
-                  "text-lg font-semibold",
-                  @all_voted && "text-green-400",
-                  !@all_voted && "text-gray-400"
-                ]}>
-                  <%= @votes_cast %>/<%= @total_matchups %> matchups selected
-                </span>
-                <%= if @all_voted do %>
-                  <span class="ml-2 text-green-400">✓</span>
+                <%= if @submitted do %>
+                  <span class="text-lg font-semibold text-green-400">Matchups Submitted ✓</span>
+                <% else %>
+                  <span class={[
+                    "text-lg font-semibold",
+                    @all_voted && "text-green-400",
+                    !@all_voted && "text-gray-400"
+                  ]}>
+                    <%= @votes_cast %>/<%= @total_matchups %> matchups selected
+                  </span>
+                  <%= if @all_voted do %>
+                    <span class="ml-2 text-green-400">✓</span>
+                  <% end %>
                 <% end %>
               </div>
               <button
                 phx-click="submit_votes"
                 phx-disable-with="Submitting..."
-                disabled={@votes_cast == 0}
+                disabled={@votes_cast == 0 || @submitted}
                 class={[
                   "px-8 py-3 rounded-lg font-semibold text-lg transition-all",
-                  @votes_cast > 0 && "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer",
-                  @votes_cast == 0 && "bg-gray-700 text-gray-500 cursor-not-allowed"
+                  @votes_cast > 0 && !@submitted && "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer",
+                  (@votes_cast == 0 || @submitted) && "bg-gray-700 text-gray-500 cursor-not-allowed"
                 ]}
               >
-                Submit Votes
+                <%= if @submitted, do: "Votes Submitted", else: "Submit Votes" %>
               </button>
+              <%= unless @submitted do %>
               <p class="text-gray-500 text-sm">
                 Your votes are final once submitted
               </p>
+              <% end %>
             </div>
           </div>
         <% end %>
