@@ -1,6 +1,8 @@
 defmodule BracketBattleWeb.HomeLive do
   use BracketBattleWeb, :live_view
 
+  import BracketBattleWeb.Helpers.ThemeHelpers
+
   alias BracketBattle.Accounts
   alias BracketBattle.Brackets
   alias BracketBattle.Tournaments
@@ -403,36 +405,6 @@ defmodule BracketBattleWeb.HomeLive do
     Calendar.strftime(datetime, "%b %d at %I:%M %p")
   end
 
-  # Theme helpers - return full Tailwind class names for JIT compatibility
-  defp theme_gradient("candy"), do: "from-[#1a0a2e] via-[#2d1b4e] to-[#1a0a2e]"
-  defp theme_gradient(_), do: "from-[#0a1628] via-[#1e3a5f] to-[#0d2137]"
-
-  defp theme_text_accent("candy"), do: "text-pink-400"
-  defp theme_text_accent(_), do: "text-blue-400"
-
-  defp theme_text_accent_hover("candy"), do: "hover:text-pink-300"
-  defp theme_text_accent_hover(_), do: "hover:text-blue-300"
-
-  defp theme_bg("candy"), do: "bg-pink-600"
-  defp theme_bg(_), do: "bg-blue-600"
-
-  defp theme_bg_hover("candy"), do: "hover:bg-pink-700"
-  defp theme_bg_hover(_), do: "hover:bg-blue-700"
-
-  defp theme_border("candy"), do: "border-pink-900/50"
-  defp theme_border(_), do: "border-blue-900/50"
-
-  defp theme_card_bg("candy"), do: "bg-[#1a0a2e]/70"
-  defp theme_card_bg(_), do: "bg-[#0d2137]/70"
-
-  defp theme_icon_bg("candy"), do: "bg-pink-600/20"
-  defp theme_icon_bg(_), do: "bg-blue-600/20"
-
-  defp theme_tagline("candy"), do: "Let the sweet showdown begin"
-  defp theme_tagline(_), do: "Let the feeding frenzy begin"
-
-  defp theme_splash_cta("candy"), do: "text-pink-200"
-  defp theme_splash_cta(_), do: "text-blue-200"
 
   defp load_ticker_matchups(tournament) do
     tournament.id

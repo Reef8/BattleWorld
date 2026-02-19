@@ -1,6 +1,8 @@
 defmodule BracketBattleWeb.BracketEditorLive do
   use BracketBattleWeb, :live_view
 
+  import BracketBattleWeb.Helpers.ThemeHelpers
+
   alias BracketBattle.Accounts
   alias BracketBattle.Tournaments
   alias BracketBattle.Tournaments.Tournament
@@ -76,7 +78,8 @@ defmodule BracketBattleWeb.BracketEditorLive do
        picks_count: count_picks(bracket.picks || %{}),
        bracket_config: bracket_config,
        total_matchups: (tournament.bracket_size || 64) - 1,
-       time_remaining: calculate_time_remaining(tournament.registration_deadline)
+       time_remaining: calculate_time_remaining(tournament.registration_deadline),
+       theme: tournament.theme || "default"
      )}
   end
 
@@ -194,8 +197,8 @@ defmodule BracketBattleWeb.BracketEditorLive do
       </header>
 
       <%= if @flash["info"] do %>
-        <div class="bg-blue-900/20 border-b border-blue-700 px-4 py-3">
-          <div class="max-w-7xl mx-auto text-center text-blue-400 text-sm font-medium">
+        <div class={"#{theme_info_bg(@theme)} border-b #{theme_info_border(@theme)} px-4 py-3"}>
+          <div class={"max-w-7xl mx-auto text-center #{theme_text_accent(@theme)} text-sm font-medium"}>
             <%= @flash["info"] %>
           </div>
         </div>
