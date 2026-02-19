@@ -269,6 +269,24 @@ const Hooks = {
   }
 }
 
+Hooks.TabScroll = {
+  beforeUpdate() {
+    this._scrollY = window.scrollY
+    this._prevTab = this.el.dataset.tab
+  },
+  updated() {
+    const newTab = this.el.dataset.tab
+    this._savedScrolls = this._savedScrolls || {}
+    if (this._prevTab) {
+      this._savedScrolls[this._prevTab] = this._scrollY
+    }
+    const saved = this._savedScrolls[newTab]
+    if (saved !== undefined) {
+      window.scrollTo(0, saved)
+    }
+  }
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,

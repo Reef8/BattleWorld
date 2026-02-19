@@ -272,7 +272,7 @@ defmodule BracketBattleWeb.TournamentLive do
         </div>
       </div>
 
-      <main class="max-w-7xl mx-auto px-4 py-6">
+      <main id="tab-content" phx-hook="TabScroll" data-tab={@tab} class="max-w-7xl mx-auto px-4 py-6">
         <%= case @tab do %>
           <% "bracket" -> %>
             <.bracket_tab matchups={@all_matchups} tournament={@tournament} user_bracket={@user_bracket} />
