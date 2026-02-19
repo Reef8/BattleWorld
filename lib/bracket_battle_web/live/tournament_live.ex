@@ -99,7 +99,9 @@ defmodule BracketBattleWeb.TournamentLive do
        user_final_rank: nil,
        user_final_score: nil,
        # Mobile menu
-       show_mobile_menu: false
+       show_mobile_menu: false,
+       # Chat notification
+       unread_chat_count: 0
      )}
   end
 
@@ -251,6 +253,11 @@ defmodule BracketBattleWeb.TournamentLive do
               class={"px-3 sm:px-4 py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap #{if @tab == "chat", do: "border-blue-500 text-white", else: "border-transparent text-gray-400 hover:text-white"}"}
             >
               Chat
+              <%= if @unread_chat_count > 0 and @tab != "chat" do %>
+                <span class="ml-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  <%= @unread_chat_count %>
+                </span>
+              <% end %>
             </button>
             <%= if @has_bracket do %>
               <button
@@ -2912,7 +2919,9 @@ defmodule BracketBattleWeb.TournamentLive do
   end
 
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
-    {:noreply, assign(socket, tab: tab)}
+    socket = assign(socket, tab: tab)
+    socket = if tab == "chat", do: assign(socket, unread_chat_count: 0), else: socket
+    {:noreply, socket}
   end
 
   # Select a vote locally (doesn't save to database yet)
@@ -3088,7 +3097,8 @@ defmodule BracketBattleWeb.TournamentLive do
 
   def handle_info({:new_message, message}, socket) do
     messages = (socket.assigns.messages ++ [message]) |> Enum.take(-50)
-    {:noreply, assign(socket, messages: messages)}
+    unread_chat_count = if socket.assigns.tab == "chat", do: 0, else: socket.assigns.unread_chat_count + 1
+    {:noreply, assign(socket, messages: messages, unread_chat_count: unread_chat_count)}
   end
 
   def handle_info(:tick, socket) do
