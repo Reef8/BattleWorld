@@ -139,7 +139,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center space-x-2 md:space-x-4 min-w-0">
-              <a href="/" class="text-gray-400 hover:text-white text-sm shrink-0">&larr; Home</a>
+              <.link navigate="/" class="text-gray-400 hover:text-white text-sm shrink-0">&larr; Home</.link>
               <h1 class="text-lg md:text-xl font-bold text-white truncate"><%= @tournament.name %></h1>
               <span class={"hidden sm:inline-block px-2 py-1 rounded text-xs font-medium shrink-0 #{status_color(@tournament.status)}"}>
                 <%= status_label(@tournament.status) %>
@@ -150,15 +150,15 @@ defmodule BracketBattleWeb.TournamentLive do
             <div class="hidden md:flex items-center space-x-4">
               <%= if @current_user do %>
                 <%= if @tournament.status == "registration" do %>
-                  <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                  <.link navigate={"/tournament/#{@tournament.id}/bracket"} class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                     <%= if @has_bracket, do: "View Bracket", else: "Fill Bracket" %>
-                  </a>
+                  </.link>
                 <% end %>
                 <span class="text-gray-400 text-sm"><%= @current_user.display_name || @current_user.email %></span>
               <% else %>
-                <a href="/auth/signin" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                <.link navigate="/auth/signin" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                   Sign In
-                </a>
+                </.link>
               <% end %>
             </div>
 
@@ -187,28 +187,28 @@ defmodule BracketBattleWeb.TournamentLive do
             <div class="px-4 py-3 space-y-2">
               <%= if @current_user do %>
                 <%= if @tournament.status == "registration" do %>
-                  <a href={"/tournament/#{@tournament.id}/bracket"} class="block py-2 text-blue-400 hover:text-blue-300">
+                  <.link navigate={"/tournament/#{@tournament.id}/bracket"} class="block py-2 text-blue-400 hover:text-blue-300">
                     <%= if @has_bracket, do: "View Bracket", else: "Fill Bracket" %>
-                  </a>
+                  </.link>
                 <% end %>
                 <div class="py-2 text-gray-400 text-sm">
                   <%= @current_user.display_name || @current_user.email %>
                 </div>
-                <a href="/dashboard" class="block py-2 text-gray-400 hover:text-white">
+                <.link navigate="/dashboard" class="block py-2 text-gray-400 hover:text-white">
                   My Dashboard
-                </a>
+                </.link>
                 <%= if @current_user.is_admin do %>
-                  <a href="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
+                  <.link navigate="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
                     Admin
-                  </a>
+                  </.link>
                 <% end %>
                 <a href="/auth/signout" class="block py-2 text-gray-400 hover:text-white">
                   Sign Out
                 </a>
               <% else %>
-                <a href="/auth/signin" class="block py-2 text-blue-400 hover:text-blue-300">
+                <.link navigate="/auth/signin" class="block py-2 text-blue-400 hover:text-blue-300">
                   Sign In
-                </a>
+                </.link>
               <% end %>
             </div>
           </div>
@@ -325,10 +325,10 @@ defmodule BracketBattleWeb.TournamentLive do
           <% end %>
         </p>
         <%= if @status == "registration" do %>
-          <a href={"/tournament/#{@tournament.id}/bracket"}
+          <.link navigate={"/tournament/#{@tournament.id}/bracket"}
              class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             Fill Out Your Bracket →
-          </a>
+          </.link>
         <% end %>
       </div>
       """
@@ -837,9 +837,9 @@ defmodule BracketBattleWeb.TournamentLive do
       <%= if !@has_bracket do %>
         <div class="bg-yellow-900/20 border border-yellow-700 rounded-lg p-6 text-center">
           <p class="text-yellow-400 mb-4">You need to submit a bracket before you can vote!</p>
-          <a href={"/tournament/#{@tournament.id}/bracket"} class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
+          <.link navigate={"/tournament/#{@tournament.id}/bracket"} class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
             Fill Out Bracket
-          </a>
+          </.link>
         </div>
       <% else %>
         <%= if Enum.empty?(@matchups) do %>
@@ -1142,9 +1142,9 @@ defmodule BracketBattleWeb.TournamentLive do
           </form>
         <% else %>
           <div class="border-t border-gray-700 p-4 text-center">
-            <a href="/auth/signin" class="text-blue-400 hover:text-blue-300 text-sm">
+            <.link navigate="/auth/signin" class="text-blue-400 hover:text-blue-300 text-sm">
               Sign in to chat
-            </a>
+            </.link>
           </div>
         <% end %>
       </div>

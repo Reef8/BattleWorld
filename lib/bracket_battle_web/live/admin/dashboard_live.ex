@@ -47,9 +47,9 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center space-x-2 sm:space-x-4">
-              <a href="/" class="text-gray-400 hover:text-white text-xs sm:text-sm">
+              <.link navigate="/" class="text-gray-400 hover:text-white text-xs sm:text-sm">
                 &larr; Back
-              </a>
+              </.link>
               <h1 class="text-base sm:text-xl font-bold text-white">Admin Dashboard</h1>
             </div>
             <!-- Desktop nav -->

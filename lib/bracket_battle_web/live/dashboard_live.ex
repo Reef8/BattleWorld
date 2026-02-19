@@ -64,16 +64,16 @@ defmodule BracketBattleWeb.DashboardLive do
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center h-16">
             <div class="flex items-center space-x-4">
-              <a href="/" class="text-gray-400 hover:text-white text-sm">&larr; Home</a>
+              <.link navigate="/" class="text-gray-400 hover:text-white text-sm">&larr; Home</.link>
               <h1 class="text-xl font-bold text-white">My Dashboard</h1>
             </div>
 
             <!-- Desktop nav -->
             <nav class="hidden md:flex items-center space-x-4">
               <%= if @user.is_admin do %>
-                <a href="/admin" class="text-blue-400 hover:text-blue-300 text-sm">
+                <.link navigate="/admin" class="text-blue-400 hover:text-blue-300 text-sm">
                   Admin
-                </a>
+                </.link>
               <% end %>
               <a href="/auth/signout" class="text-gray-400 hover:text-white text-sm">
                 Sign Out
@@ -104,9 +104,9 @@ defmodule BracketBattleWeb.DashboardLive do
           <div class="md:hidden border-t border-gray-700 bg-gray-800">
             <div class="px-4 py-3 space-y-2">
               <%= if @user.is_admin do %>
-                <a href="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
+                <.link navigate="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
                   Admin
-                </a>
+                </.link>
               <% end %>
               <a href="/auth/signout" class="block py-2 text-gray-400 hover:text-white">
                 Sign Out
@@ -312,21 +312,21 @@ defmodule BracketBattleWeb.DashboardLive do
                   </div>
 
                   <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <a href={"/tournament/#{@active_tournament.id}"} class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors">
+                    <.link navigate={"/tournament/#{@active_tournament.id}"} class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors">
                       View Tournament
-                    </a>
+                    </.link>
                     <%= if !@current_bracket.submitted_at do %>
-                      <a href={"/tournament/#{@active_tournament.id}/bracket"} class="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors">
+                      <.link navigate={"/tournament/#{@active_tournament.id}/bracket"} class="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-center font-medium transition-colors">
                         Edit Bracket
-                      </a>
+                      </.link>
                     <% end %>
                   </div>
                 <% else %>
                   <div class="text-center py-4">
                     <p class="text-gray-400 mb-4">You haven't created a bracket for this tournament yet.</p>
-                    <a href={"/tournament/#{@active_tournament.id}/bracket"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                    <.link navigate={"/tournament/#{@active_tournament.id}/bracket"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
                       Create Bracket
-                    </a>
+                    </.link>
                   </div>
                 <% end %>
               </div>
@@ -364,9 +364,9 @@ defmodule BracketBattleWeb.DashboardLive do
                   <%= for bracket <- @past_brackets do %>
                     <tr class="border-b border-gray-700/50 hover:bg-gray-750">
                       <td class="py-2 sm:py-3 pr-2">
-                        <a href={"/tournament/#{bracket.tournament_id}"} class="text-white hover:text-blue-400 text-sm sm:text-base">
+                        <.link navigate={"/tournament/#{bracket.tournament_id}"} class="text-white hover:text-blue-400 text-sm sm:text-base">
                           <%= bracket.tournament.name %>
-                        </a>
+                        </.link>
                       </td>
                       <td class="py-2 sm:py-3 px-2 text-center">
                         <span class={"font-bold text-sm sm:text-base #{rank_color(bracket.final_rank)}"}>

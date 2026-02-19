@@ -166,20 +166,20 @@ defmodule BracketBattleWeb.HomeLive do
             <nav class="hidden md:flex items-center space-x-4">
               <%= if @current_user do %>
                 <%= if @current_user.is_admin do %>
-                  <a href="/admin" class="text-blue-400 hover:text-blue-300 text-sm">
+                  <.link navigate="/admin" class="text-blue-400 hover:text-blue-300 text-sm">
                     Admin
-                  </a>
+                  </.link>
                 <% end %>
-                <a href="/dashboard" class="text-gray-400 hover:text-white text-sm">
+                <.link navigate="/dashboard" class="text-gray-400 hover:text-white text-sm">
                   <%= @current_user.display_name || @current_user.email %>
-                </a>
+                </.link>
                 <a href="/auth/signout" class="text-gray-400 hover:text-white text-sm">
                   Sign Out
                 </a>
               <% else %>
-                <a href="/auth/signin" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <.link navigate="/auth/signin" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                   Sign In
-                </a>
+                </.link>
               <% end %>
             </nav>
 
@@ -208,20 +208,20 @@ defmodule BracketBattleWeb.HomeLive do
             <div class="px-4 py-3 space-y-2">
               <%= if @current_user do %>
                 <%= if @current_user.is_admin do %>
-                  <a href="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
+                  <.link navigate="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
                     Admin
-                  </a>
+                  </.link>
                 <% end %>
-                <a href="/dashboard" class="block py-2 text-gray-400 hover:text-white">
+                <.link navigate="/dashboard" class="block py-2 text-gray-400 hover:text-white">
                   <%= @current_user.display_name || @current_user.email %>
-                </a>
+                </.link>
                 <a href="/auth/signout" class="block py-2 text-gray-400 hover:text-white">
                   Sign Out
                 </a>
               <% else %>
-                <a href="/auth/signin" class="block py-2 text-blue-400 hover:text-blue-300">
+                <.link navigate="/auth/signin" class="block py-2 text-blue-400 hover:text-blue-300">
                   Sign In
-                </a>
+                </.link>
               <% end %>
             </div>
           </div>
@@ -261,13 +261,13 @@ defmodule BracketBattleWeb.HomeLive do
                 <%= case @tournament.status do %>
                   <% "registration" -> %>
                     <div class="space-y-2">
-                      <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                      <.link navigate={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                         View Tournament
-                      </a>
+                      </.link>
                       <div>
-                        <a href={"/tournament/#{@tournament.id}/bracket"} class="text-blue-400 hover:text-blue-300 text-sm">
+                        <.link navigate={"/tournament/#{@tournament.id}/bracket"} class="text-blue-400 hover:text-blue-300 text-sm">
                           Fill Out Your Bracket →
-                        </a>
+                        </.link>
                       </div>
                     </div>
                   <% "active" -> %>
@@ -290,24 +290,24 @@ defmodule BracketBattleWeb.HomeLive do
                           ><%= format_time(@voting_ends_at) %> UTC</span>
                         </div>
                       <% end %>
-                      <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                      <.link navigate={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                         <%= if @has_voted, do: "View Bracket", else: "Vote Now" %>
-                      </a>
+                      </.link>
                     </div>
                   <% "completed" -> %>
-                    <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                    <.link navigate={"/tournament/#{@tournament.id}"} class="inline-block bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                       View Final Bracket
-                    </a>
+                    </.link>
                 <% end %>
               <% else %>
                 <div class="space-y-3">
-                  <a href={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                  <.link navigate={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                     View Tournament
-                  </a>
+                  </.link>
                   <div>
-                    <a href="/auth/signin" class="text-blue-400 hover:text-blue-300 text-sm">
+                    <.link navigate="/auth/signin" class="text-blue-400 hover:text-blue-300 text-sm">
                       Sign in to participate →
-                    </a>
+                    </.link>
                   </div>
                 </div>
               <% end %>
@@ -327,9 +327,9 @@ defmodule BracketBattleWeb.HomeLive do
                   You're signed in and ready to compete!
                 </div>
               <% else %>
-                <a href="/auth/signin" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                <.link navigate="/auth/signin" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                   Sign In to Get Started
-                </a>
+                </.link>
               <% end %>
             <% end %>
           </div>
@@ -469,8 +469,8 @@ defmodule BracketBattleWeb.HomeLive do
         </p>
 
         <!-- CTA Button - Navigate to tournament -->
-        <a
-          href={"/tournament/#{@tournament.id}"}
+        <.link
+          navigate={"/tournament/#{@tournament.id}"}
           phx-click="dismiss_tournament_start"
           class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-6 py-3 rounded-lg font-semibold transition-colors inline-flex items-center justify-center"
         >
@@ -478,7 +478,7 @@ defmodule BracketBattleWeb.HomeLive do
           <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
           </svg>
-        </a>
+        </.link>
       </div>
     </div>
     """
@@ -526,11 +526,11 @@ defmodule BracketBattleWeb.HomeLive do
           <% end %>
         </div>
 
-        <a href={"/tournament/#{@tournament.id}?tab=leaderboard"}
+        <.link navigate={"/tournament/#{@tournament.id}?tab=leaderboard"}
            phx-click="dismiss_tournament_complete"
            class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
           View Leaderboard
-        </a>
+        </.link>
       </div>
     </div>
     """
