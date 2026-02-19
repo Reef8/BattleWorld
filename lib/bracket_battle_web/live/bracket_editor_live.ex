@@ -315,16 +315,16 @@ defmodule BracketBattleWeb.BracketEditorLive do
 
             <!-- Center Section: Final Four + Championship (horizontal) - matches region layout -->
             <div class="flex justify-between items-start my-6">
-              <!-- Left spacer with Final Four 1 (East vs South - left-side regions) -->
+              <!-- Left spacer with Final Four 1 (East vs West - cross-paired regions) -->
               <div class="flex-1 flex justify-end">
                 <div class="w-48">
                 <.final_four_slot
                   position={ff1_pos}
                   label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
                   source_a={regional_winner_1}
-                  source_b={regional_winner_2}
+                  source_b={regional_winner_3}
                   placeholder_a={"#{Enum.at(region_names, 0)} Winner"}
-                  placeholder_b={"#{Enum.at(region_names, 1)} Winner"}
+                  placeholder_b={"#{Enum.at(region_names, 2)} Winner"}
                   picks={@picks}
                   contestants_map={@contestants_map}
                   is_locked={@is_locked}
@@ -342,16 +342,16 @@ defmodule BracketBattleWeb.BracketEditorLive do
               />
               </div>
 
-              <!-- Right spacer with Final Four 2 (West vs Midwest - right-side regions) -->
+              <!-- Right spacer with Final Four 2 (South vs Midwest - cross-paired regions) -->
               <div class="flex-1 flex justify-start">
                 <%= if region_count >= 4 do %>
                   <div class="w-48">
                   <.final_four_slot
                     position={ff2_pos}
                     label={Tournaments.get_round_name(@tournament, Tournament.total_rounds(@tournament) - 1)}
-                    source_a={regional_winner_3}
+                    source_a={regional_winner_2}
                     source_b={regional_winner_4}
-                    placeholder_a={"#{Enum.at(region_names, 2)} Winner"}
+                    placeholder_a={"#{Enum.at(region_names, 1)} Winner"}
                     placeholder_b={"#{Enum.at(region_names, 3)} Winner"}
                     picks={@picks}
                     contestants_map={@contestants_map}

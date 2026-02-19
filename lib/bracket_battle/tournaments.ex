@@ -764,8 +764,9 @@ defmodule BracketBattle.Tournaments do
       )
       |> Repo.all()
 
-    # Pair: [Region1 vs Region2, Region3 vs Region4]
-    winner_pairs = Enum.chunk_every(regional_winners, 2)
+    # Cross-pair: Region[0] vs Region[2], Region[1] vs Region[3] (East vs West, South vs Midwest)
+    [r1, r2, r3, r4] = regional_winners
+    winner_pairs = [[r1, r3], [r2, r4]]
 
     Enum.zip(winner_pairs, final_four_matchups)
     |> Enum.each(fn {[w1, w2], matchup} ->
