@@ -24,6 +24,7 @@ defmodule BracketBattle.Tournaments.Tournament do
     field :region_names, {:array, :string}, default: @default_regions
     field :round_names, :map, default: %{}
     field :scoring_config, :map, default: %{}
+    field :theme, :string, default: "default"
 
     # Region-based voting fields
     field :current_voting_region, :string
@@ -46,7 +47,7 @@ defmodule BracketBattle.Tournaments.Tournament do
                     :started_at, :completed_at, :current_round, :created_by_id,
                     :bracket_size, :region_count, :region_names, :round_names, :scoring_config,
                     :current_voting_region, :current_voting_round, :voting_durations,
-                    :default_voting_duration_hours])
+                    :default_voting_duration_hours, :theme])
     |> validate_required([:name])
     |> validate_inclusion(:status, @statuses)
     |> validate_status_progression()

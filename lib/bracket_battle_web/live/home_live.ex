@@ -45,10 +45,13 @@ defmodule BracketBattleWeb.HomeLive do
         {nil, nil}
       end
 
+    theme = (tournament && tournament.theme) || "default"
+
     {:ok,
      assign(socket,
        current_user: user,
        tournament: tournament,
+       theme: theme,
        has_voted: has_voted,
        matchups: matchups,
        voting_ends_at: voting_ends_at,
@@ -68,7 +71,7 @@ defmodule BracketBattleWeb.HomeLive do
     <!-- Welcome Splash for first-time visitors -->
     <div id="welcome-splash-check" phx-hook="WelcomeSplash" class="hidden"></div>
     <%= if @show_welcome_splash do %>
-      <.welcome_splash />
+      <.welcome_splash theme={@theme} />
     <% end %>
 
     <!-- Tournament Start Check (localStorage hook) -->
@@ -141,18 +144,31 @@ defmodule BracketBattleWeb.HomeLive do
       </div>
     <% end %>
 
-    <div class="min-h-screen bg-gradient-to-b from-[#0a1628] via-[#1e3a5f] to-[#0d2137] relative overflow-hidden">
-      <!-- Ambient bubbles -->
-      <div class="ambient-bubbles">
-        <div class="ambient-bubble"></div>
-        <div class="ambient-bubble"></div>
-        <div class="ambient-bubble"></div>
-        <div class="ambient-bubble"></div>
-        <div class="ambient-bubble"></div>
-        <div class="ambient-bubble"></div>
-        <div class="ambient-bubble"></div>
-        <div class="ambient-bubble"></div>
-      </div>
+    <div class={"min-h-screen bg-gradient-to-b #{theme_gradient(@theme)} relative overflow-hidden"}>
+      <!-- Floating background elements -->
+      <%= if @theme == "candy" do %>
+        <div class="ambient-candies">
+          <span class="ambient-candy">🍬</span>
+          <span class="ambient-candy">🍭</span>
+          <span class="ambient-candy">🍫</span>
+          <span class="ambient-candy">🍬</span>
+          <span class="ambient-candy">🍭</span>
+          <span class="ambient-candy">🍫</span>
+          <span class="ambient-candy">🍬</span>
+          <span class="ambient-candy">🍭</span>
+        </div>
+      <% else %>
+        <div class="ambient-bubbles">
+          <div class="ambient-bubble"></div>
+          <div class="ambient-bubble"></div>
+          <div class="ambient-bubble"></div>
+          <div class="ambient-bubble"></div>
+          <div class="ambient-bubble"></div>
+          <div class="ambient-bubble"></div>
+          <div class="ambient-bubble"></div>
+          <div class="ambient-bubble"></div>
+        </div>
+      <% end %>
 
       <!-- Header -->
       <header class="border-b border-gray-800">
@@ -166,7 +182,7 @@ defmodule BracketBattleWeb.HomeLive do
             <nav class="hidden md:flex items-center space-x-4">
               <%= if @current_user do %>
                 <%= if @current_user.is_admin do %>
-                  <.link navigate="/admin" class="text-blue-400 hover:text-blue-300 text-sm">
+                  <.link navigate="/admin" class={"#{theme_text_accent(@theme)} #{theme_text_accent_hover(@theme)} text-sm"}>
                     Admin
                   </.link>
                 <% end %>
@@ -177,7 +193,7 @@ defmodule BracketBattleWeb.HomeLive do
                   Sign Out
                 </a>
               <% else %>
-                <.link navigate="/auth/signin" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <.link navigate="/auth/signin" class={"#{theme_bg(@theme)} #{theme_bg_hover(@theme)} text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"}>
                   Sign In
                 </.link>
               <% end %>
@@ -208,7 +224,7 @@ defmodule BracketBattleWeb.HomeLive do
             <div class="px-4 py-3 space-y-2">
               <%= if @current_user do %>
                 <%= if @current_user.is_admin do %>
-                  <.link navigate="/admin" class="block py-2 text-blue-400 hover:text-blue-300">
+                  <.link navigate="/admin" class={"block py-2 #{theme_text_accent(@theme)} #{theme_text_accent_hover(@theme)}"}>
                     Admin
                   </.link>
                 <% end %>
@@ -219,7 +235,7 @@ defmodule BracketBattleWeb.HomeLive do
                   Sign Out
                 </a>
               <% else %>
-                <.link navigate="/auth/signin" class="block py-2 text-blue-400 hover:text-blue-300">
+                <.link navigate="/auth/signin" class={"block py-2 #{theme_text_accent(@theme)} #{theme_text_accent_hover(@theme)}"}>
                   Sign In
                 </.link>
               <% end %>
@@ -234,7 +250,7 @@ defmodule BracketBattleWeb.HomeLive do
           <!-- Hero Section -->
           <div class="mb-8 sm:mb-12">
             <h2 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-3 sm:mb-4">
-              <span class="text-blue-400">Minnows</span>
+              <span class={"#{theme_text_accent(@theme)}"}>Minnows</span>
             </h2>
             <p class="text-lg sm:text-xl md:text-2xl text-gray-300 font-medium mb-2">
               In a sea of minnows, be the shark
@@ -245,7 +261,7 @@ defmodule BracketBattleWeb.HomeLive do
           </div>
 
           <!-- Tournament Status Card -->
-          <div class="bg-[#0d2137]/70 border border-blue-900/50 rounded-2xl p-4 sm:p-6 md:p-8 max-w-lg mx-auto">
+          <div class={"#{theme_card_bg(@theme)} border #{theme_border(@theme)} rounded-2xl p-4 sm:p-6 md:p-8 max-w-lg mx-auto"}>
             <%= if @tournament do %>
               <div class="text-gray-400 text-xs sm:text-sm uppercase tracking-wide mb-2">
                 <%= status_label(@tournament.status) %>
@@ -261,11 +277,11 @@ defmodule BracketBattleWeb.HomeLive do
                 <%= case @tournament.status do %>
                   <% "registration" -> %>
                     <div class="space-y-2">
-                      <.link navigate={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                      <.link navigate={"/tournament/#{@tournament.id}"} class={"inline-block #{theme_bg(@theme)} #{theme_bg_hover(@theme)} text-white px-6 py-3 rounded-lg font-medium transition-colors"}>
                         View Tournament
                       </.link>
                       <div>
-                        <.link navigate={"/tournament/#{@tournament.id}/bracket"} class="text-blue-400 hover:text-blue-300 text-sm">
+                        <.link navigate={"/tournament/#{@tournament.id}/bracket"} class={"#{theme_text_accent(@theme)} #{theme_text_accent_hover(@theme)} text-sm"}>
                           Fill Out Your Bracket →
                         </.link>
                       </div>
@@ -290,7 +306,7 @@ defmodule BracketBattleWeb.HomeLive do
                           ><%= format_time(@voting_ends_at) %> UTC</span>
                         </div>
                       <% end %>
-                      <.link navigate={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                      <.link navigate={"/tournament/#{@tournament.id}"} class={"inline-block #{theme_bg(@theme)} #{theme_bg_hover(@theme)} text-white px-6 py-3 rounded-lg font-medium transition-colors"}>
                         <%= if @has_voted, do: "View Bracket", else: "Vote Now" %>
                       </.link>
                     </div>
@@ -301,11 +317,11 @@ defmodule BracketBattleWeb.HomeLive do
                 <% end %>
               <% else %>
                 <div class="space-y-3">
-                  <.link navigate={"/tournament/#{@tournament.id}"} class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                  <.link navigate={"/tournament/#{@tournament.id}"} class={"inline-block #{theme_bg(@theme)} #{theme_bg_hover(@theme)} text-white px-6 py-3 rounded-lg font-medium transition-colors"}>
                     View Tournament
                   </.link>
                   <div>
-                    <.link navigate="/auth/signin" class="text-blue-400 hover:text-blue-300 text-sm">
+                    <.link navigate="/auth/signin" class={"#{theme_text_accent(@theme)} #{theme_text_accent_hover(@theme)} text-sm"}>
                       Sign in to participate →
                     </.link>
                   </div>
@@ -327,7 +343,7 @@ defmodule BracketBattleWeb.HomeLive do
                   You're signed in and ready to compete!
                 </div>
               <% else %>
-                <.link navigate="/auth/signin" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                <.link navigate="/auth/signin" class={"inline-block #{theme_bg(@theme)} #{theme_bg_hover(@theme)} text-white px-6 py-3 rounded-lg font-medium transition-colors"}>
                   Sign In to Get Started
                 </.link>
               <% end %>
@@ -337,8 +353,8 @@ defmodule BracketBattleWeb.HomeLive do
           <!-- Features -->
           <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6">
-              <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class={"w-12 h-12 #{theme_icon_bg(@theme)} rounded-lg flex items-center justify-center mb-4 mx-auto"}>
+                <svg xmlns="http://www.w3.org/2000/svg" class={"h-6 w-6 #{theme_text_accent(@theme)}"} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -349,8 +365,8 @@ defmodule BracketBattleWeb.HomeLive do
             </div>
 
             <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6">
-              <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class={"w-12 h-12 #{theme_icon_bg(@theme)} rounded-lg flex items-center justify-center mb-4 mx-auto"}>
+                <svg xmlns="http://www.w3.org/2000/svg" class={"h-6 w-6 #{theme_text_accent(@theme)}"} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
@@ -361,8 +377,8 @@ defmodule BracketBattleWeb.HomeLive do
             </div>
 
             <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl p-6">
-              <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div class={"w-12 h-12 #{theme_icon_bg(@theme)} rounded-lg flex items-center justify-center mb-4 mx-auto"}>
+                <svg xmlns="http://www.w3.org/2000/svg" class={"h-6 w-6 #{theme_text_accent(@theme)}"} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
@@ -386,6 +402,37 @@ defmodule BracketBattleWeb.HomeLive do
   defp format_time(datetime) do
     Calendar.strftime(datetime, "%b %d at %I:%M %p")
   end
+
+  # Theme helpers - return full Tailwind class names for JIT compatibility
+  defp theme_gradient("candy"), do: "from-[#1a0a2e] via-[#2d1b4e] to-[#1a0a2e]"
+  defp theme_gradient(_), do: "from-[#0a1628] via-[#1e3a5f] to-[#0d2137]"
+
+  defp theme_text_accent("candy"), do: "text-pink-400"
+  defp theme_text_accent(_), do: "text-blue-400"
+
+  defp theme_text_accent_hover("candy"), do: "hover:text-pink-300"
+  defp theme_text_accent_hover(_), do: "hover:text-blue-300"
+
+  defp theme_bg("candy"), do: "bg-pink-600"
+  defp theme_bg(_), do: "bg-blue-600"
+
+  defp theme_bg_hover("candy"), do: "hover:bg-pink-700"
+  defp theme_bg_hover(_), do: "hover:bg-blue-700"
+
+  defp theme_border("candy"), do: "border-pink-900/50"
+  defp theme_border(_), do: "border-blue-900/50"
+
+  defp theme_card_bg("candy"), do: "bg-[#1a0a2e]/70"
+  defp theme_card_bg(_), do: "bg-[#0d2137]/70"
+
+  defp theme_icon_bg("candy"), do: "bg-pink-600/20"
+  defp theme_icon_bg(_), do: "bg-blue-600/20"
+
+  defp theme_tagline("candy"), do: "Let the sweet showdown begin"
+  defp theme_tagline(_), do: "Let the feeding frenzy begin"
+
+  defp theme_splash_cta("candy"), do: "text-pink-200"
+  defp theme_splash_cta(_), do: "text-blue-200"
 
   defp load_ticker_matchups(tournament) do
     tournament.id
@@ -522,13 +569,13 @@ defmodule BracketBattleWeb.HomeLive do
           <div class="text-4xl font-bold text-white mb-1">#<%= @rank %></div>
           <div class="text-gray-400 text-sm">Final Placement</div>
           <%= if @score do %>
-            <div class="text-blue-400 font-semibold mt-2"><%= @score %> points</div>
+            <div class={"#{theme_text_accent(@theme)} font-semibold mt-2"}><%= @score %> points</div>
           <% end %>
         </div>
 
         <.link navigate={"/tournament/#{@tournament.id}?tab=leaderboard"}
            phx-click="dismiss_tournament_complete"
-           class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+           class={"inline-block #{theme_bg(@theme)} #{theme_bg_hover(@theme)} text-white px-6 py-3 rounded-lg font-semibold transition-colors"}>
           View Leaderboard
         </.link>
       </div>
@@ -539,29 +586,44 @@ defmodule BracketBattleWeb.HomeLive do
   # Welcome Splash - Epic Title Reveal for first-time visitors
   defp welcome_splash(assigns) do
     ~H"""
-    <div id="welcome-splash" class="welcome-splash" phx-click="dismiss_welcome_splash">
-      <!-- Bubbles floating up from the deep -->
-      <div class="splash-bubble bubble-1"></div>
-      <div class="splash-bubble bubble-2"></div>
-      <div class="splash-bubble bubble-3"></div>
-      <div class="splash-bubble bubble-4"></div>
-      <div class="splash-bubble bubble-5"></div>
-      <div class="splash-bubble bubble-6"></div>
-      <div class="splash-bubble bubble-7"></div>
-      <div class="splash-bubble bubble-8"></div>
-      <div class="splash-bubble bubble-9"></div>
-      <div class="splash-bubble bubble-10"></div>
-      <div class="splash-bubble bubble-11"></div>
-      <div class="splash-bubble bubble-12"></div>
+    <div id="welcome-splash" class={"welcome-splash theme-#{@theme}"} data-theme={@theme} phx-click="dismiss_welcome_splash">
+      <!-- Floating elements -->
+      <%= if @theme == "candy" do %>
+        <span class="splash-candy candy-1">🍬</span>
+        <span class="splash-candy candy-2">🍭</span>
+        <span class="splash-candy candy-3">🍫</span>
+        <span class="splash-candy candy-4">🍬</span>
+        <span class="splash-candy candy-5">🍭</span>
+        <span class="splash-candy candy-6">🍫</span>
+        <span class="splash-candy candy-7">🍬</span>
+        <span class="splash-candy candy-8">🍭</span>
+        <span class="splash-candy candy-9">🍫</span>
+        <span class="splash-candy candy-10">🍬</span>
+        <span class="splash-candy candy-11">🍭</span>
+        <span class="splash-candy candy-12">🍫</span>
+      <% else %>
+        <div class="splash-bubble bubble-1"></div>
+        <div class="splash-bubble bubble-2"></div>
+        <div class="splash-bubble bubble-3"></div>
+        <div class="splash-bubble bubble-4"></div>
+        <div class="splash-bubble bubble-5"></div>
+        <div class="splash-bubble bubble-6"></div>
+        <div class="splash-bubble bubble-7"></div>
+        <div class="splash-bubble bubble-8"></div>
+        <div class="splash-bubble bubble-9"></div>
+        <div class="splash-bubble bubble-10"></div>
+        <div class="splash-bubble bubble-11"></div>
+        <div class="splash-bubble bubble-12"></div>
+      <% end %>
 
       <!-- Animated Title -->
       <div class="text-center relative z-10">
-        <h1 class="splash-title">
+        <h1 class={"splash-title theme-#{@theme}"}>
           <span class="text-white">Minnows</span>
         </h1>
-        <p class="splash-tagline">Let the feeding frenzy begin</p>
+        <p class="splash-tagline"><%= theme_tagline(@theme) %></p>
         <div class="splash-cta">
-          <span class="text-blue-200 text-sm">Click anywhere to continue</span>
+          <span class={"#{theme_splash_cta(@theme)} text-sm"}>Click anywhere to continue</span>
         </div>
       </div>
 

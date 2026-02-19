@@ -295,6 +295,18 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
               <p class="text-gray-500 text-sm mt-1">How long each voting phase stays open (default: 24 hours)</p>
             </div>
 
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-300 mb-2">Theme</label>
+              <select
+                name="tournament[theme]"
+                class="bg-gray-800 border-gray-600 text-white rounded px-3 py-2"
+              >
+                <option value="default" selected={(@tournament.theme || "default") == "default"}>Default (Ocean)</option>
+                <option value="candy" selected={(@tournament.theme || "default") == "candy"}>Candy</option>
+              </select>
+              <p class="text-gray-500 text-sm mt-1">Visual theme for the home page when this tournament is active</p>
+            </div>
+
             <!-- Custom Round Names (Collapsible) -->
             <div class="mb-4">
               <button

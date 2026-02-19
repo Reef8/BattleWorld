@@ -154,7 +154,10 @@ const Hooks = {
 
     createParticles() {
       const container = this.el
-      const colors = ['#9333ea', '#a855f7', '#fbbf24', '#f59e0b', '#c084fc']
+      const theme = this.el.dataset.theme || 'default'
+      const colors = theme === 'candy'
+        ? ['#ec4899', '#f472b6', '#fbbf24', '#a855f7', '#fb923c']
+        : ['#9333ea', '#a855f7', '#fbbf24', '#f59e0b', '#c084fc']
 
       // Create burst particles
       for (let i = 0; i < 20; i++) {

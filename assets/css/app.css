@@ -328,17 +328,24 @@
   }
 }
 
-/* Welcome Splash - Underwater Rising Effect */
+/* Welcome Splash */
 .welcome-splash {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, #0a1628 0%, #1e3a5f 50%, #0d2137 100%);
   z-index: 200;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+}
+
+.welcome-splash.theme-default {
+  background: linear-gradient(180deg, #0a1628 0%, #1e3a5f 50%, #0d2137 100%);
+}
+
+.welcome-splash.theme-candy {
+  background: linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
 }
 
 /* Title animation - Float up from the deep */
@@ -374,8 +381,8 @@
 @keyframes bubble-float-11 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-100vh) translateX(5px); } }
 @keyframes bubble-float-12 { 0% { opacity: 0; transform: translateY(0) translateX(0); } 20% { opacity: 0.5; } 100% { opacity: 0; transform: translateY(-100vh) translateX(-5px); } }
 
-/* Glow pulse effect */
-@keyframes glow-pulse {
+/* Glow pulse - default (purple) */
+@keyframes glow-pulse-default {
   0%, 100% {
     text-shadow:
       0 0 20px rgba(147, 51, 234, 0.8),
@@ -387,6 +394,23 @@
       0 0 40px rgba(147, 51, 234, 1),
       0 0 80px rgba(147, 51, 234, 0.8),
       0 0 120px rgba(147, 51, 234, 0.6),
+      0 0 160px rgba(251, 191, 36, 0.4);
+  }
+}
+
+/* Glow pulse - candy (pink) */
+@keyframes glow-pulse-candy {
+  0%, 100% {
+    text-shadow:
+      0 0 20px rgba(236, 72, 153, 0.8),
+      0 0 40px rgba(236, 72, 153, 0.6),
+      0 0 60px rgba(236, 72, 153, 0.4);
+  }
+  50% {
+    text-shadow:
+      0 0 40px rgba(236, 72, 153, 1),
+      0 0 80px rgba(236, 72, 153, 0.8),
+      0 0 120px rgba(236, 72, 153, 0.6),
       0 0 160px rgba(251, 191, 36, 0.4);
   }
 }
@@ -458,12 +482,23 @@
   font-weight: 900;
   color: white;
   position: relative;
-  /* Float up from the deep with gold glow */
+  animation: title-rise 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.splash-title.theme-default {
   animation: title-rise 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
              gold-glow-pulse 2s ease-in-out 2.5s infinite;
   text-shadow: 0 0 20px rgba(234, 179, 8, 0.6),
                0 0 40px rgba(234, 179, 8, 0.4),
                0 0 60px rgba(234, 179, 8, 0.2);
+}
+
+.splash-title.theme-candy {
+  animation: title-rise 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
+             glow-pulse-candy 2s ease-in-out 2.5s infinite;
+  text-shadow: 0 0 20px rgba(236, 72, 153, 0.6),
+               0 0 40px rgba(236, 72, 153, 0.4),
+               0 0 60px rgba(236, 72, 153, 0.2);
 }
 
 .splash-tagline {
@@ -492,7 +527,7 @@
   animation: tagline-reveal 0.8s ease-out 3.5s forwards;
 }
 
-/* Bubbles floating up from the deep */
+/* Splash bubbles - default theme */
 .splash-bubble {
   position: absolute;
   bottom: -20px;
@@ -503,7 +538,6 @@
   box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* 12 bubbles with varied sizes, positions, and timing */
 .bubble-1 { left: 10%; width: 12px; height: 12px; animation: bubble-float-1 3s ease-out 0s infinite; }
 .bubble-2 { left: 20%; width: 8px; height: 8px; animation: bubble-float-2 3.5s ease-out 0.5s infinite; }
 .bubble-3 { left: 30%; width: 16px; height: 16px; animation: bubble-float-3 2.8s ease-out 0.2s infinite; }
@@ -517,7 +551,30 @@
 .bubble-11 { left: 75%; width: 12px; height: 12px; animation: bubble-float-11 3s ease-out 0.7s infinite; }
 .bubble-12 { left: 90%; width: 8px; height: 8px; animation: bubble-float-12 3.6s ease-out 0.9s infinite; }
 
-/* Ambient bubbles for home page background */
+/* Splash candies - candy theme */
+.splash-candy {
+  position: absolute;
+  bottom: -20px;
+  opacity: 0;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* 12 candies with varied sizes, positions, and timing */
+.candy-1 { left: 10%; font-size: 20px; animation: bubble-float-1 3s ease-out 0s infinite; }
+.candy-2 { left: 20%; font-size: 16px; animation: bubble-float-2 3.5s ease-out 0.5s infinite; }
+.candy-3 { left: 30%; font-size: 24px; animation: bubble-float-3 2.8s ease-out 0.2s infinite; }
+.candy-4 { left: 40%; font-size: 18px; animation: bubble-float-4 3.2s ease-out 0.8s infinite; }
+.candy-5 { left: 50%; font-size: 22px; animation: bubble-float-5 2.5s ease-out 0.3s infinite; }
+.candy-6 { left: 60%; font-size: 16px; animation: bubble-float-6 3.8s ease-out 1s infinite; }
+.candy-7 { left: 70%; font-size: 26px; animation: bubble-float-7 2.6s ease-out 0.1s infinite; }
+.candy-8 { left: 80%; font-size: 18px; animation: bubble-float-8 3.4s ease-out 0.6s infinite; }
+.candy-9 { left: 15%; font-size: 14px; animation: bubble-float-9 4s ease-out 1.2s infinite; }
+.candy-10 { left: 45%; font-size: 28px; animation: bubble-float-10 2.2s ease-out 0.4s infinite; }
+.candy-11 { left: 75%; font-size: 20px; animation: bubble-float-11 3s ease-out 0.7s infinite; }
+.candy-12 { left: 90%; font-size: 16px; animation: bubble-float-12 3.6s ease-out 0.9s infinite; }
+
+/* Ambient bubbles - default theme */
 .ambient-bubbles {
   position: fixed;
   inset: 0;
@@ -531,7 +588,7 @@
   bottom: -20px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(147, 197, 253, 0.1));
-  animation: ambient-float linear infinite;
+  animation: ambient-float-default linear infinite;
 }
 
 .ambient-bubble:nth-child(1) { left: 5%; width: 8px; height: 8px; animation-duration: 12s; animation-delay: 0s; }
@@ -543,7 +600,7 @@
 .ambient-bubble:nth-child(7) { left: 85%; width: 6px; height: 6px; animation-duration: 13s; animation-delay: 10s; }
 .ambient-bubble:nth-child(8) { left: 95%; width: 10px; height: 10px; animation-duration: 12s; animation-delay: 7s; }
 
-@keyframes ambient-float {
+@keyframes ambient-float-default {
   0% {
     transform: translateY(0) translateX(0);
     opacity: 0;
@@ -556,6 +613,48 @@
   }
   100% {
     transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+/* Ambient floating candies - candy theme */
+.ambient-candies {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.ambient-candy {
+  position: absolute;
+  bottom: -30px;
+  line-height: 1;
+  animation: ambient-float linear infinite;
+}
+
+.ambient-candy:nth-child(1) { left: 5%; font-size: 16px; animation-duration: 12s; animation-delay: 0s; }
+.ambient-candy:nth-child(2) { left: 15%; font-size: 20px; animation-duration: 15s; animation-delay: 3s; }
+.ambient-candy:nth-child(3) { left: 30%; font-size: 14px; animation-duration: 10s; animation-delay: 6s; }
+.ambient-candy:nth-child(4) { left: 45%; font-size: 18px; animation-duration: 14s; animation-delay: 2s; }
+.ambient-candy:nth-child(5) { left: 60%; font-size: 16px; animation-duration: 11s; animation-delay: 8s; }
+.ambient-candy:nth-child(6) { left: 75%; font-size: 22px; animation-duration: 16s; animation-delay: 4s; }
+.ambient-candy:nth-child(7) { left: 85%; font-size: 14px; animation-duration: 13s; animation-delay: 10s; }
+.ambient-candy:nth-child(8) { left: 95%; font-size: 18px; animation-duration: 12s; animation-delay: 7s; }
+
+@keyframes ambient-float {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(20px) rotate(45deg);
     opacity: 0;
   }
 }
