@@ -859,13 +859,17 @@ defmodule BracketBattleWeb.BracketEditorLive do
         ]}>
           <%= @contestant.seed %>
         </span>
-        <span class={[
-          "text-xs truncate flex-1",
-          @is_picked && "text-white font-semibold",
-          !@is_picked && "text-gray-300"
-        ]}>
+        <.contestant_name
+          id={"pick-#{@position}-#{@contestant.id}"}
+          name={@contestant.name}
+          class={[
+            "text-xs truncate flex-1",
+            @is_picked && "text-white font-semibold",
+            !@is_picked && "text-gray-300"
+          ]}
+        >
           <%= @contestant.name %>
-        </span>
+        </.contestant_name>
         <%= if @is_picked do %>
           <span class="text-purple-300 text-xs">✓</span>
         <% end %>
@@ -917,9 +921,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
             ]}
           >
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
-            <span class={["text-xs truncate flex-1", @current_pick == @contestant_a.id && "text-white font-semibold", @current_pick != @contestant_a.id && "text-gray-300"]}>
+            <.contestant_name id={"ff-pick-ca-#{@position}"} name={@contestant_a.name} class={["text-xs truncate flex-1", @current_pick == @contestant_a.id && "text-white font-semibold", @current_pick != @contestant_a.id && "text-gray-300"]}>
               <%= @contestant_a.name %>
-            </span>
+            </.contestant_name>
             <%= if @current_pick == @contestant_a.id do %><span class="text-purple-300 text-xs">✓</span><% end %>
           </button>
         <% else %>
@@ -941,9 +945,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
             ]}
           >
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
-            <span class={["text-xs truncate flex-1", @current_pick == @contestant_b.id && "text-white font-semibold", @current_pick != @contestant_b.id && "text-gray-300"]}>
+            <.contestant_name id={"ff-pick-cb-#{@position}"} name={@contestant_b.name} class={["text-xs truncate flex-1", @current_pick == @contestant_b.id && "text-white font-semibold", @current_pick != @contestant_b.id && "text-gray-300"]}>
               <%= @contestant_b.name %>
-            </span>
+            </.contestant_name>
             <%= if @current_pick == @contestant_b.id do %><span class="text-purple-300 text-xs">✓</span><% end %>
           </button>
         <% else %>
@@ -1021,9 +1025,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
             ]}
           >
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
-            <span class={["text-sm truncate flex-1", @current_pick == @contestant_a.id && "text-yellow-400 font-bold", @current_pick != @contestant_a.id && "text-gray-300"]}>
+            <.contestant_name id={"ch-pick-ca-#{@championship_pos}"} name={@contestant_a.name} class={["text-sm truncate flex-1", @current_pick == @contestant_a.id && "text-yellow-400 font-bold", @current_pick != @contestant_a.id && "text-gray-300"]}>
               <%= @contestant_a.name %>
-            </span>
+            </.contestant_name>
             <%= if @current_pick == @contestant_a.id do %><span class="text-yellow-400 text-xs">👑</span><% end %>
           </button>
         <% else %>
@@ -1045,9 +1049,9 @@ defmodule BracketBattleWeb.BracketEditorLive do
             ]}
           >
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
-            <span class={["text-sm truncate flex-1", @current_pick == @contestant_b.id && "text-yellow-400 font-bold", @current_pick != @contestant_b.id && "text-gray-300"]}>
+            <.contestant_name id={"ch-pick-cb-#{@championship_pos}"} name={@contestant_b.name} class={["text-sm truncate flex-1", @current_pick == @contestant_b.id && "text-yellow-400 font-bold", @current_pick != @contestant_b.id && "text-gray-300"]}>
               <%= @contestant_b.name %>
-            </span>
+            </.contestant_name>
             <%= if @current_pick == @contestant_b.id do %><span class="text-yellow-400 text-xs">👑</span><% end %>
           </button>
         <% else %>
@@ -1246,5 +1250,11 @@ defmodule BracketBattleWeb.BracketEditorLive do
       nil -> false
       deadline -> DateTime.compare(DateTime.utc_now(), deadline) == :gt
     end
+  end
+
+  defp contestant_name(assigns) do
+    ~H"""
+    <span id={@id} phx-hook={@id && "Truncated"} data-name={@name} class={@class}><%= render_slot(@inner_block) %></span>
+    """
   end
 end

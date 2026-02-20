@@ -753,3 +753,34 @@
 .brackets-viewer svg .connector {
   stroke: var(--connector-color);
 }
+
+/* Truncated name tooltip */
+.name-tooltip {
+  position: absolute;
+  z-index: 100;
+  background: #111827;
+  color: #fff;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: tooltip-fade 0.15s ease-out;
+}
+
+.name-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #111827;
+}
+
+@keyframes tooltip-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

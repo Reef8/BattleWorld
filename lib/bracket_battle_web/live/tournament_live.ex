@@ -757,15 +757,19 @@ defmodule BracketBattleWeb.TournamentLive do
             <%= @matchup.contestant_1.seed %>
           </span>
         <% end %>
-        <span class={[
-          "text-xs truncate flex-1",
-          @c1_pick_status == :correct && "text-green-400 font-semibold",
-          @c1_pick_status == :incorrect && "text-red-400",
-          @c1_pick_status in [:pending, :no_pick] && "text-gray-300",
-          !@matchup.contestant_1 && "text-center"
-        ]}>
+        <.contestant_name
+          id={if @matchup.contestant_1, do: "br-c1-#{@matchup.id}"}
+          name={if @matchup.contestant_1, do: @matchup.contestant_1.name}
+          class={[
+            "text-xs truncate flex-1",
+            @c1_pick_status == :correct && "text-green-400 font-semibold",
+            @c1_pick_status == :incorrect && "text-red-400",
+            @c1_pick_status in [:pending, :no_pick] && "text-gray-300",
+            !@matchup.contestant_1 && "text-center"
+          ]}
+        >
           <%= if @matchup.contestant_1, do: @matchup.contestant_1.name, else: "TBD" %>
-        </span>
+        </.contestant_name>
         <%= cond do %>
           <% @c1_pick_status == :correct -> %>
             <span class="text-green-400 text-xs">✓</span>
@@ -794,15 +798,19 @@ defmodule BracketBattleWeb.TournamentLive do
             <%= @matchup.contestant_2.seed %>
           </span>
         <% end %>
-        <span class={[
-          "text-xs truncate flex-1",
-          @c2_pick_status == :correct && "text-green-400 font-semibold",
-          @c2_pick_status == :incorrect && "text-red-400",
-          @c2_pick_status in [:pending, :no_pick] && "text-gray-300",
-          !@matchup.contestant_2 && "text-center"
-        ]}>
+        <.contestant_name
+          id={if @matchup.contestant_2, do: "br-c2-#{@matchup.id}"}
+          name={if @matchup.contestant_2, do: @matchup.contestant_2.name}
+          class={[
+            "text-xs truncate flex-1",
+            @c2_pick_status == :correct && "text-green-400 font-semibold",
+            @c2_pick_status == :incorrect && "text-red-400",
+            @c2_pick_status in [:pending, :no_pick] && "text-gray-300",
+            !@matchup.contestant_2 && "text-center"
+          ]}
+        >
           <%= if @matchup.contestant_2, do: @matchup.contestant_2.name, else: "TBD" %>
-        </span>
+        </.contestant_name>
         <%= cond do %>
           <% @c2_pick_status == :correct -> %>
             <span class="text-green-400 text-xs">✓</span>
@@ -999,16 +1007,16 @@ defmodule BracketBattleWeb.TournamentLive do
             !@has_voted && !is_selected(@selected, @matchup.contestant_1_id) && "bg-gray-700 hover:bg-gray-600"
           ]}
         >
-          <div class="flex justify-between items-center">
-            <span class="text-white text-sm">
+          <div class="flex justify-between items-center min-w-0">
+            <.contestant_name id={"vote-c1-#{@matchup.id}"} name={@matchup.contestant_1.name} class="text-white text-sm truncate min-w-0">
               <span class="text-gray-400"><%= @matchup.contestant_1.seed %>.</span>
               <%= @matchup.contestant_1.name %>
-            </span>
+            </.contestant_name>
             <%= if @has_voted && is_voted(@matchup.user_vote, @matchup.contestant_1_id) do %>
-              <span class="text-green-300 font-bold text-xs">VOTED</span>
+              <span class="text-green-300 font-bold text-xs shrink-0 ml-2">VOTED</span>
             <% else %>
               <%= if is_selected(@selected, @matchup.contestant_1_id) do %>
-                <span class="text-white font-bold text-xs">SELECTED</span>
+                <span class="text-white font-bold text-xs shrink-0 ml-2">SELECTED</span>
               <% end %>
             <% end %>
           </div>
@@ -1028,16 +1036,16 @@ defmodule BracketBattleWeb.TournamentLive do
             !@has_voted && !is_selected(@selected, @matchup.contestant_2_id) && "bg-gray-700 hover:bg-gray-600"
           ]}
         >
-          <div class="flex justify-between items-center">
-            <span class="text-white text-sm">
+          <div class="flex justify-between items-center min-w-0">
+            <.contestant_name id={"vote-c2-#{@matchup.id}"} name={@matchup.contestant_2.name} class="text-white text-sm truncate min-w-0">
               <span class="text-gray-400"><%= @matchup.contestant_2.seed %>.</span>
               <%= @matchup.contestant_2.name %>
-            </span>
+            </.contestant_name>
             <%= if @has_voted && is_voted(@matchup.user_vote, @matchup.contestant_2_id) do %>
-              <span class="text-green-300 font-bold text-xs">VOTED</span>
+              <span class="text-green-300 font-bold text-xs shrink-0 ml-2">VOTED</span>
             <% else %>
               <%= if is_selected(@selected, @matchup.contestant_2_id) do %>
-                <span class="text-white font-bold text-xs">SELECTED</span>
+                <span class="text-white font-bold text-xs shrink-0 ml-2">SELECTED</span>
               <% end %>
             <% end %>
           </div>
@@ -1818,12 +1826,16 @@ defmodule BracketBattleWeb.TournamentLive do
             @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
             !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-500"
           ]}><%= @contestant_a.seed %></span>
-          <span class={[
-            "text-xs truncate flex-1",
-            @current_pick == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
-            @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
-            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
-          ]}><%= @contestant_a.name %></span>
+          <.contestant_name
+            id={"mb-ca-#{@position}"}
+            name={@contestant_a.name}
+            class={[
+              "text-xs truncate flex-1",
+              @current_pick == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
+              @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+              !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
+            ]}
+          ><%= @contestant_a.name %></.contestant_name>
           <%= if @current_pick == @contestant_a.id && @pick_status == :correct do %>
             <span class="text-green-300 text-xs">✓</span>
           <% end %>
@@ -1847,12 +1859,16 @@ defmodule BracketBattleWeb.TournamentLive do
             @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
             !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-500"
           ]}><%= @contestant_b.seed %></span>
-          <span class={[
-            "text-xs truncate flex-1",
-            @current_pick == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
-            @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
-            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
-          ]}><%= @contestant_b.name %></span>
+          <.contestant_name
+            id={"mb-cb-#{@position}"}
+            name={@contestant_b.name}
+            class={[
+              "text-xs truncate flex-1",
+              @current_pick == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
+              @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+              !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
+            ]}
+          ><%= @contestant_b.name %></.contestant_name>
           <%= if @current_pick == @contestant_b.id && @pick_status == :correct do %>
             <span class="text-green-300 text-xs">✓</span>
           <% end %>
@@ -1931,12 +1947,16 @@ defmodule BracketBattleWeb.TournamentLive do
             @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
             !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-500"
           ]}><%= @contestant_a.seed %></span>
-          <span class={[
-            "text-xs truncate flex-1",
-            @current_pick == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
-            @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
-            !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
-          ]}><%= @contestant_a.name %></span>
+          <.contestant_name
+            id={"mbp-ca-#{@position}"}
+            name={@contestant_a.name}
+            class={[
+              "text-xs truncate flex-1",
+              @current_pick == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
+              @current_pick == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+              !(@current_pick == @contestant_a.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
+            ]}
+          ><%= @contestant_a.name %></.contestant_name>
           <%= if @current_pick == @contestant_a.id && @pick_status == :correct do %>
             <span class="text-green-300 text-xs">✓</span>
           <% end %>
@@ -1960,12 +1980,16 @@ defmodule BracketBattleWeb.TournamentLive do
             @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
             !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-500"
           ]}><%= @contestant_b.seed %></span>
-          <span class={[
-            "text-xs truncate flex-1",
-            @current_pick == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
-            @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
-            !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
-          ]}><%= @contestant_b.name %></span>
+          <.contestant_name
+            id={"mbp-cb-#{@position}"}
+            name={@contestant_b.name}
+            class={[
+              "text-xs truncate flex-1",
+              @current_pick == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
+              @current_pick == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+              !(@current_pick == @contestant_b.id && @pick_status in [:correct, :incorrect, :eliminated]) && "text-gray-300"
+            ]}
+          ><%= @contestant_b.name %></.contestant_name>
           <%= if @current_pick == @contestant_b.id && @pick_status == :correct do %>
             <span class="text-green-300 text-xs">✓</span>
           <% end %>
@@ -2056,12 +2080,16 @@ defmodule BracketBattleWeb.TournamentLive do
               @winner && @winner.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
               !(@winner && @winner.id == @contestant_a.id) && "text-gray-500"
             ]}><%= @contestant_a.seed %></span>
-            <span class={[
-              "text-xs truncate flex-1",
-              @winner && @winner.id == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
-              @winner && @winner.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
-              !(@winner && @winner.id == @contestant_a.id) && "text-gray-300"
-            ]}><%= @contestant_a.name %></span>
+            <.contestant_name
+              id={"ff-ca-#{@position}"}
+              name={@contestant_a.name}
+              class={[
+                "text-xs truncate flex-1",
+                @winner && @winner.id == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
+                @winner && @winner.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+                !(@winner && @winner.id == @contestant_a.id) && "text-gray-300"
+              ]}
+            ><%= @contestant_a.name %></.contestant_name>
             <%= if @winner && @winner.id == @contestant_a.id do %>
               <%= if @pick_status == :correct do %>
                 <span class="text-green-300 text-xs">✓</span>
@@ -2087,12 +2115,16 @@ defmodule BracketBattleWeb.TournamentLive do
               @winner && @winner.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
               !(@winner && @winner.id == @contestant_b.id) && "text-gray-500"
             ]}><%= @contestant_b.seed %></span>
-            <span class={[
-              "text-xs truncate flex-1",
-              @winner && @winner.id == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
-              @winner && @winner.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
-              !(@winner && @winner.id == @contestant_b.id) && "text-gray-300"
-            ]}><%= @contestant_b.name %></span>
+            <.contestant_name
+              id={"ff-cb-#{@position}"}
+              name={@contestant_b.name}
+              class={[
+                "text-xs truncate flex-1",
+                @winner && @winner.id == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
+                @winner && @winner.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+                !(@winner && @winner.id == @contestant_b.id) && "text-gray-300"
+              ]}
+            ><%= @contestant_b.name %></.contestant_name>
             <%= if @winner && @winner.id == @contestant_b.id do %>
               <%= if @pick_status == :correct do %>
                 <span class="text-green-300 text-xs">✓</span>
@@ -2209,12 +2241,16 @@ defmodule BracketBattleWeb.TournamentLive do
               @champion && @champion.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
               !(@champion && @champion.id == @contestant_a.id) && "text-gray-500"
             ]}><%= @contestant_a.seed %></span>
-            <span class={[
-              "text-xs truncate flex-1",
-              @champion && @champion.id == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
-              @champion && @champion.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
-              !(@champion && @champion.id == @contestant_a.id) && "text-gray-300"
-            ]}><%= @contestant_a.name %></span>
+            <.contestant_name
+              id={"ch-ca-#{@championship_pos}"}
+              name={@contestant_a.name}
+              class={[
+                "text-xs truncate flex-1",
+                @champion && @champion.id == @contestant_a.id && @pick_status == :correct && "text-white font-semibold",
+                @champion && @champion.id == @contestant_a.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+                !(@champion && @champion.id == @contestant_a.id) && "text-gray-300"
+              ]}
+            ><%= @contestant_a.name %></.contestant_name>
             <%= if @champion && @champion.id == @contestant_a.id do %>
               <%= if @pick_status == :correct do %>
                 <span class="text-green-300 text-xs">✓</span>
@@ -2240,12 +2276,16 @@ defmodule BracketBattleWeb.TournamentLive do
               @champion && @champion.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300",
               !(@champion && @champion.id == @contestant_b.id) && "text-gray-500"
             ]}><%= @contestant_b.seed %></span>
-            <span class={[
-              "text-xs truncate flex-1",
-              @champion && @champion.id == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
-              @champion && @champion.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
-              !(@champion && @champion.id == @contestant_b.id) && "text-gray-300"
-            ]}><%= @contestant_b.name %></span>
+            <.contestant_name
+              id={"ch-cb-#{@championship_pos}"}
+              name={@contestant_b.name}
+              class={[
+                "text-xs truncate flex-1",
+                @champion && @champion.id == @contestant_b.id && @pick_status == :correct && "text-white font-semibold",
+                @champion && @champion.id == @contestant_b.id && @pick_status in [:incorrect, :eliminated] && "text-red-300 line-through",
+                !(@champion && @champion.id == @contestant_b.id) && "text-gray-300"
+              ]}
+            ><%= @contestant_b.name %></.contestant_name>
             <%= if @champion && @champion.id == @contestant_b.id do %>
               <%= if @pick_status == :correct do %>
                 <span class="text-green-300 text-xs">✓</span>
@@ -2558,7 +2598,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex items-center px-2 py-1 border-b border-gray-700">
         <%= if @contestant_a do %>
           <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
-          <span class="text-xs truncate flex-1 text-gray-300"><%= @contestant_a.name %></span>
+          <.contestant_name id={"res-ca-#{@region}-#{@position}"} name={@contestant_a.name} class="text-xs truncate flex-1 text-gray-300"><%= @contestant_a.name %></.contestant_name>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
         <% end %>
@@ -2567,7 +2607,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex items-center px-2 py-1">
         <%= if @contestant_b do %>
           <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
-          <span class="text-xs truncate flex-1 text-gray-300"><%= @contestant_b.name %></span>
+          <.contestant_name id={"res-cb-#{@region}-#{@position}"} name={@contestant_b.name} class="text-xs truncate flex-1 text-gray-300"><%= @contestant_b.name %></.contestant_name>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
         <% end %>
@@ -2605,7 +2645,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex items-center px-2 py-1 border-b border-gray-700">
         <%= if @contestant_a do %>
           <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
-          <span class="text-xs truncate flex-1 text-gray-300"><%= @contestant_a.name %></span>
+          <.contestant_name id={"resm-ca-#{@region}-#{@round}-#{@position}"} name={@contestant_a.name} class="text-xs truncate flex-1 text-gray-300"><%= @contestant_a.name %></.contestant_name>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
         <% end %>
@@ -2614,7 +2654,7 @@ defmodule BracketBattleWeb.TournamentLive do
       <div class="flex items-center px-2 py-1">
         <%= if @contestant_b do %>
           <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
-          <span class="text-xs truncate flex-1 text-gray-300"><%= @contestant_b.name %></span>
+          <.contestant_name id={"resm-cb-#{@region}-#{@round}-#{@position}"} name={@contestant_b.name} class="text-xs truncate flex-1 text-gray-300"><%= @contestant_b.name %></.contestant_name>
         <% else %>
           <span class="text-gray-600 text-xs italic">TBD</span>
         <% end %>
@@ -2649,7 +2689,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex items-center px-2 py-1.5 border-b border-gray-700">
           <%= if @contestant_a do %>
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
-            <span class="text-xs truncate flex-1 text-white"><%= @contestant_a.name %></span>
+            <.contestant_name id={"rff-ca-#{@position}"} name={@contestant_a.name} class="text-xs truncate flex-1 text-white"><%= @contestant_a.name %></.contestant_name>
           <% else %>
             <span class="text-gray-500 text-xs"><%= @placeholder_a %></span>
           <% end %>
@@ -2658,7 +2698,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex items-center px-2 py-1.5">
           <%= if @contestant_b do %>
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
-            <span class="text-xs truncate flex-1 text-white"><%= @contestant_b.name %></span>
+            <.contestant_name id={"rff-cb-#{@position}"} name={@contestant_b.name} class="text-xs truncate flex-1 text-white"><%= @contestant_b.name %></.contestant_name>
           <% else %>
             <span class="text-gray-500 text-xs"><%= @placeholder_b %></span>
           <% end %>
@@ -2704,7 +2744,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex items-center px-2 py-1.5 border-b border-gray-700">
           <%= if @contestant_a do %>
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_a.seed %></span>
-            <span class="text-xs truncate flex-1 text-white"><%= @contestant_a.name %></span>
+            <.contestant_name id={"rch-ca-#{@championship_pos}"} name={@contestant_a.name} class="text-xs truncate flex-1 text-white"><%= @contestant_a.name %></.contestant_name>
           <% else %>
             <span class="text-gray-500 text-xs">Final Four 1 Winner</span>
           <% end %>
@@ -2713,7 +2753,7 @@ defmodule BracketBattleWeb.TournamentLive do
         <div class="flex items-center px-2 py-1.5">
           <%= if @contestant_b do %>
             <span class="text-xs font-mono w-5 text-gray-500"><%= @contestant_b.seed %></span>
-            <span class="text-xs truncate flex-1 text-white"><%= @contestant_b.name %></span>
+            <.contestant_name id={"rch-cb-#{@championship_pos}"} name={@contestant_b.name} class="text-xs truncate flex-1 text-white"><%= @contestant_b.name %></.contestant_name>
           <% else %>
             <span class="text-gray-500 text-xs">Final Four 2 Winner</span>
           <% end %>
@@ -3170,5 +3210,15 @@ defmodule BracketBattleWeb.TournamentLive do
   defp is_voted(nil, _), do: false
   defp is_voted(user_vote, contestant_id) do
     to_string(user_vote.contestant_id) == to_string(contestant_id)
+  end
+
+  # Reusable contestant name span with truncation tooltip.
+  # Wraps content in a span with the Truncated hook for mobile tap-to-show-full-name.
+  # When id is nil (e.g. TBD contestants), the hook is not attached.
+  # Usage: <.contestant_name id="..." name={name} class={...}>content</.contestant_name>
+  defp contestant_name(assigns) do
+    ~H"""
+    <span id={@id} phx-hook={@id && "Truncated"} data-name={@name} class={@class}><%= render_slot(@inner_block) %></span>
+    """
   end
 end

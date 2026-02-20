@@ -272,6 +272,47 @@ const Hooks = {
   }
 }
 
+Hooks.Truncated = {
+  mounted() {
+    const name = this.el.dataset.name
+    if (name) this.el.title = name
+
+    this.el.addEventListener("click", (e) => {
+      if (this.el.scrollWidth <= this.el.clientWidth) return
+
+      // Remove any existing tooltips
+      document.querySelectorAll('.name-tooltip').forEach(t => t.remove())
+
+      const tooltip = document.createElement('div')
+      tooltip.className = 'name-tooltip'
+      tooltip.textContent = name
+      document.body.appendChild(tooltip)
+
+      const rect = this.el.getBoundingClientRect()
+      tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`
+      tooltip.style.top = `${rect.top + window.scrollY - tooltip.offsetHeight - 8}px`
+
+      // Clamp to viewport edges
+      const tooltipRect = tooltip.getBoundingClientRect()
+      if (tooltipRect.left < 8) tooltip.style.left = '8px'
+      if (tooltipRect.right > window.innerWidth - 8) {
+        tooltip.style.left = `${window.innerWidth - tooltip.offsetWidth - 8}px`
+      }
+
+      clearTimeout(this._tooltipTimer)
+      this._tooltipTimer = setTimeout(() => tooltip.remove(), 2000)
+    })
+  },
+  updated() {
+    const name = this.el.dataset.name
+    if (name) this.el.title = name
+  },
+  destroyed() {
+    clearTimeout(this._tooltipTimer)
+    document.querySelectorAll('.name-tooltip').forEach(t => t.remove())
+  }
+}
+
 Hooks.TabScroll = {
   beforeUpdate() {
     this._scrollY = window.scrollY
