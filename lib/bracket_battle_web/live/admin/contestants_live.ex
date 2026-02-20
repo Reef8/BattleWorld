@@ -44,7 +44,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
       <!-- Header -->
       <header class="bg-gray-800 border-b border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center h-16">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-3 sm:h-16 gap-1">
             <div class="flex items-center space-x-4">
               <.link navigate={"/admin/tournaments/#{@tournament.id}"} class="text-gray-400 hover:text-white text-sm">
                 &larr; Back to Tournament
@@ -80,7 +80,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
 
         <!-- Actions -->
         <%= if @tournament.status == "draft" do %>
-          <div class="flex space-x-4 mb-6">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-6">
             <button
               phx-click="show_form"
               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
@@ -109,7 +109,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
               <%= if @editing, do: "Edit Contestant", else: "Add Contestant" %>
             </h3>
             <.form for={@form} phx-submit="save_contestant" class="space-y-4">
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-300 mb-1">Name</label>
                   <.input
@@ -129,7 +129,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
                   />
                 </div>
               </div>
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-300 mb-1">Seed (1-<%= @max_seed %>)</label>
                   <.input
@@ -150,7 +150,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
                   />
                 </div>
               </div>
-              <div class="flex space-x-2">
+              <div class="flex flex-col sm:flex-row gap-2">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                   <%= if @editing, do: "Update", else: "Add" %>
                 </button>
@@ -190,7 +190,7 @@ defmodule BracketBattleWeb.Admin.ContestantsLive do
                 class="w-full bg-gray-700 border-gray-600 text-white rounded px-3 py-2 font-mono text-sm"
               ><%= @bulk_text %></textarea>
 
-              <div class="flex space-x-2 mt-4">
+              <div class="flex flex-col sm:flex-row gap-2 mt-4">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
                   Import <%= @contestants_per_region %> to <%= @bulk_region %>
                 </button>

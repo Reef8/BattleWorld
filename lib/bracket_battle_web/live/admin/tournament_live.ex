@@ -229,7 +229,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
           <div class="border-t border-gray-700 pt-6 mt-6">
             <h3 class="text-lg font-semibold text-white mb-4">Tournament Configuration</h3>
 
-            <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label class="block text-sm font-medium text-gray-300 mb-2">Bracket Size</label>
                 <select
@@ -346,7 +346,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
           </div>
         <% end %>
 
-        <div class="flex space-x-4">
+        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
           <button
             type="submit"
             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium"
@@ -395,7 +395,7 @@ defmodule BracketBattleWeb.Admin.TournamentLive do
           <% end %>
 
           <h4 class="text-sm font-medium text-gray-400 mb-3">Quick Links</h4>
-          <div class="flex space-x-4">
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
             <.link
               navigate={"/admin/tournaments/#{@tournament.id}/contestants"}
               class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm"

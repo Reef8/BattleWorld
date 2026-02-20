@@ -184,12 +184,12 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
           <% @matchup.status == "voting" and @is_tie -> %>
             <div class="space-y-2">
               <div class="text-yellow-400 text-xs">Tie! Admin decision required:</div>
-              <div class="flex space-x-2">
+              <div class="flex flex-col sm:flex-row gap-2">
                 <button
                   phx-click="decide"
                   phx-value-matchup={@matchup.id}
                   phx-value-winner={@matchup.contestant_1_id}
-                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 rounded"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 rounded truncate"
                 >
                   <%= @matchup.contestant_1 && @matchup.contestant_1.name %>
                 </button>
@@ -197,7 +197,7 @@ defmodule BracketBattleWeb.Admin.MatchupsLive do
                   phx-click="decide"
                   phx-value-matchup={@matchup.id}
                   phx-value-winner={@matchup.contestant_2_id}
-                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 rounded"
+                  class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 rounded truncate"
                 >
                   <%= @matchup.contestant_2 && @matchup.contestant_2.name %>
                 </button>

@@ -139,7 +139,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
           <h2 class="text-lg font-semibold text-white mb-4">Active Tournament</h2>
           <%= if @tournament do %>
             <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-              <div class="flex justify-between items-start">
+              <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
                   <h3 class="text-xl font-bold text-white"><%= @tournament.name %></h3>
                   <p class="text-gray-400 mt-1"><%= @tournament.description %></p>
@@ -147,7 +147,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
                     Created by <%= @tournament.created_by.email %>
                   </p>
                 </div>
-                <div class="flex space-x-2">
+                <div class="flex flex-wrap gap-2">
                   <.link
                     navigate={"/admin/tournaments/#{@tournament.id}/contestants"}
                     class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm"
@@ -171,7 +171,7 @@ defmodule BracketBattleWeb.Admin.DashboardLive do
 
               <!-- State Actions -->
               <div class="mt-6 pt-4 border-t border-gray-700">
-                <div class="flex items-center space-x-4">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <span class="text-gray-400 text-sm">Actions:</span>
                   <%= case @tournament.status do %>
                     <% "draft" -> %>
